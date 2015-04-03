@@ -6,7 +6,7 @@ import (
 	"fmt"
 	//"hash"
 	"net/http"
-	"text/template"
+	//"text/template"
 )
 
 type LoginInput struct {
