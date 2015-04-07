@@ -8,19 +8,13 @@ import (
 	//"hash"
 	"io"
 	//"os"
+	"encoding/hex"
 )
 
 const saltSize = 0
 
 func generateSalt(secret []byte) []byte {
 	buf := make([]byte, saltSize, saltSize+sha1.Size)
-	//_, err := io.ReadFull(rand.Reader, buf)
-
-	//if err != nil {
-	//	fmt.Printf("random read failed: %v", err)
-	//	os.Exit(1)
-	//}
-
 	hash := sha1.New()
 	hash.Write(buf)
 	hash.Write(secret)
@@ -45,8 +39,14 @@ func validatePassword(username string, password []byte, dbPasswordHash string) b
 
 	passwordHash := generatePassword(username, password)
 	//temp := hash.Hash([]byte(dbPasswordHash))
-	fmt.Printf("Validate hash gen = %v\n", passwordHash)
+	fmt.Printf("Validate hash gen = %x\n", passwordHash)
+	decodedHexString, err := hex.DecodeString(dbPasswordHash)
+	if err != nil {
+		fmt.Println("Error = %v", err.Error())
+	}
+	fmt.Printf("dbPasswordHash = %x\n", decodedHexString)
 
-	match := bytes.Equal(passwordHash, []byte(dbPasswordHash))
+	//match := bytes.Equal(passwordHash, []byte(dbPasswordHash))
+	match := bytes.Equal(passwordHash, []byte(decodedHexString))
 	return match
 }
