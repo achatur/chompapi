@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"net/url"
+	"reflect"
+	"strconv"
 )
 
 func getUserInfo(username string) map[string]string {
@@ -41,7 +44,7 @@ func getUserInfo(username string) map[string]string {
 		var value string
 		for i, col := range values {
 			if col == nil {
-				value = "NULL"
+				value = "null"
 			} else {
 				value = string(col)
 			}
@@ -54,4 +57,90 @@ func getUserInfo(username string) map[string]string {
 		panic(err.Error())
 	}
 	return m
+}
+
+//func setUserInfo(userInfo map[string]string) error {
+//func (userInfo RegisterInput) SetUserInfo() error {
+func (userInfo RegisterInput) SetUserInfo() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+	}
+	defer db.Close()
+	//m := map[string]string{}
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
+	//ielements := reflect.TypeOf(userInfo).Elem().NumField()
+	////v := reflect.ValueOf(userInfo)
+	////fmt.Println("value = %v\n", v)
+	////values := make([]interface{}, v.NumFields())
+	//tempintslice := []int{0}
+
+	//for i := 0; i < ielements; i++ {
+	//	//values[i] = v.Field(i).Interface()
+	//	tempintslice[0] = i
+	//	f := reflect.TypeOf(userInfo).Elem().FieldByIndex(tempintslice)
+	//	fmt.Println(f.Name)
+	//}
+	userMap := structToMap(&userInfo)
+	fmt.Println("struct2map = %v\n", userMap)
+	//valueOfUserEmail, err := userInfo.Email.Value()
+	//fmt.Println("value = %v, err = %v", valueOfUserEmail, err)
+	query := fmt.Sprintf("INSERT into chomp_users SET chomp_username=?, email=?, phone_number=?, password_hash=?, dob=?, gender=?", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+	fmt.Println("Query = %v\n", query)
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		//panic(err.Error()) // proper error handling instead of panic in your app
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec()
+	if err != nil {
+		//panic(err.Error()) // proper error handling instead of panic in your app
+		return err
+	}
+	return nil
+}
+
+func isValid(s sql.NullString) string {
+	//nullOrString, err := s.Value()
+	if s.Valid {
+		fmt.Println("s is valid")
+		return s.String
+	} else {
+		fmt.Println("s is not valid")
+		return s.String
+	}
+}
+
+func structToMap(i interface{}) (values url.Values) {
+	values = url.Values{}
+	iVal := reflect.ValueOf(i).Elem()
+	typ := iVal.Type()
+	for i := 0; i < iVal.NumField(); i++ {
+		f := iVal.Field(i)
+		// You ca use tags here...
+		// tag := typ.Field(i).Tag.Get("tagname")
+		// Convert each type into a string for the url.Values string map
+		var v string
+		switch f.Interface().(type) {
+		case int, int8, int16, int32, int64:
+			v = strconv.FormatInt(f.Int(), 10)
+		case uint, uint8, uint16, uint32, uint64:
+			v = strconv.FormatUint(f.Uint(), 10)
+		case float32:
+			v = strconv.FormatFloat(f.Float(), 'f', 4, 32)
+		case float64:
+			v = strconv.FormatFloat(f.Float(), 'f', 4, 64)
+		case []byte:
+			v = string(f.Bytes())
+		case string:
+			v = f.String()
+		}
+		values.Set(typ.Field(i).Name, v)
+	}
+	return
 }
