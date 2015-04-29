@@ -2,12 +2,9 @@ package main
 
 import (
 	"bytes"
-	//"crypto/rand"
 	"crypto/sha1"
 	"fmt"
-	//"hash"
 	"io"
-	//"os"
 	"encoding/hex"
 )
 
@@ -26,8 +23,7 @@ func generatePassword(username string, password []byte) []byte {
 	fmt.Printf("Password : %s\n", string(password))
 	salt := generateSalt([]byte(username))
 	fmt.Printf("salt : %x\n", string(salt))
-
-	//generate password + salt to store into db
+	
 	combination := string(salt) + string(password)
 	passwordHash := sha1.New()
 	io.WriteString(passwordHash, combination)
@@ -38,7 +34,6 @@ func generatePassword(username string, password []byte) []byte {
 func validatePassword(username string, password []byte, dbPasswordHash string) bool {
 
 	passwordHash := generatePassword(username, password)
-	//temp := hash.Hash([]byte(dbPasswordHash))
 	fmt.Printf("Validate hash gen = %x\n", passwordHash)
 	decodedHexString, err := hex.DecodeString(dbPasswordHash)
 	if err != nil {
@@ -46,7 +41,6 @@ func validatePassword(username string, password []byte, dbPasswordHash string) b
 	}
 	fmt.Printf("dbPasswordHash = %x\n", decodedHexString)
 
-	//match := bytes.Equal(passwordHash, []byte(dbPasswordHash))
 	match := bytes.Equal(passwordHash, []byte(decodedHexString))
 	return match
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	//"reflect"
 )
 
 type LoginInput struct {
@@ -44,7 +43,6 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		validated := validatePassword(input.Username, []byte(input.Password), dbPassword)
 		fmt.Printf("answer = %v\n", validated)
 
-		//assuming passwords in DB has been validated against what the user typed
 		if validated == true {
 			//create session using the request data which includes the cookie/sessionid
 			sessionStore, err := globalSessions.SessionStart(w, r)

@@ -59,35 +59,19 @@ func getUserInfo(username string) map[string]string {
 	return m
 }
 
-//func setUserInfo(userInfo map[string]string) error {
-//func (userInfo RegisterInput) SetUserInfo() error {
 func (userInfo RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 	}
 	defer db.Close()
-	//m := map[string]string{}
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
-	//ielements := reflect.TypeOf(userInfo).Elem().NumField()
-	////v := reflect.ValueOf(userInfo)
-	////fmt.Println("value = %v\n", v)
-	////values := make([]interface{}, v.NumFields())
-	//tempintslice := []int{0}
-
-	//for i := 0; i < ielements; i++ {
-	//	//values[i] = v.Field(i).Interface()
-	//	tempintslice[0] = i
-	//	f := reflect.TypeOf(userInfo).Elem().FieldByIndex(tempintslice)
-	//	fmt.Println(f.Name)
-	//}
 	userMap := structToMap(&userInfo)
 	fmt.Println("struct2map = %v\n", userMap)
-	//valueOfUserEmail, err := userInfo.Email.Value()
-	//fmt.Println("value = %v, err = %v", valueOfUserEmail, err)
+
 	query := fmt.Sprintf("INSERT into chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
@@ -106,7 +90,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 }
 
 func isValid(s sql.NullString) string {
-	//nullOrString, err := s.Value()
+
 	if s.Valid {
 		fmt.Println("s is valid")
 		return s.String

@@ -3,19 +3,14 @@ package main
 import (
 	"fmt"
 	"github.com/astaxie/beego/session"
-	//_ "github.com/astaxie/session/providers/memory"
-	//"github.com/astaxie/beego/session/providers/mysql"
 	_ "github.com/astaxie/beego/session/mysql"
-	//"github.com/go-sql-driver/mysql"
 	"html"
 	"log"
 	"net/http"
-	//"session"
 )
 
+//Global Variable
 var globalSessions *session.Manager
-
-//var mysqlProvider = &session.MysqlProvider
 
 func main() {
 	http.HandleFunc("/register", doRegister)
