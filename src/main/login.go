@@ -29,7 +29,7 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		var input LoginInput
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
-			fmt.Printf("something %v", err)
+			fmt.Printf("something went wrong in login %v", err)
 		}
 
 		fmt.Printf("input = %v\n", input)

@@ -88,7 +88,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	fmt.Println("struct2map = %v\n", userMap)
 	//valueOfUserEmail, err := userInfo.Email.Value()
 	//fmt.Println("value = %v, err = %v", valueOfUserEmail, err)
-	query := fmt.Sprintf("INSERT into chomp_users SET chomp_username=?, email=?, phone_number=?, password_hash=?, dob=?, gender=?", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+	query := fmt.Sprintf("INSERT into chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)

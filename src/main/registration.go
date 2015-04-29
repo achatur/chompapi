@@ -40,10 +40,10 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		m["gender"] = "m"
 		fmt.Printf("%+v", input)
 		fmt.Printf("%+v", m)
-		decodedHexString, err_ := hex.DecodeString(input.Hash)
-		if err_ != nil {
-			fmt.Println("Error! = %v\n", err_)
-		}
+		//decodedHexString, err_ := hex.DecodeString(input.Hash)
+		//if err_ != nil {
+		//	fmt.Println("Error! = %v\n", err_)
+		//}
 		//input.Hash = string(generatePassword(input.Username, []byte(decodedHexString)))
 		//input.Hash = hex.Dump(generatePassword(input.Username, []byte(decodedHexString)))
 		if isValidInput(input.Email) == false {
@@ -51,7 +51,8 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		input.Hash = hex.EncodeToString(generatePassword(input.Username, []byte(decodedHexString)))
+		//input.Hash = hex.EncodeToString(generatePassword(input.Username, []byte(decodedHexString)))
+		input.Hash = hex.EncodeToString(generatePassword(input.Username, []byte(input.Password)))
 		fmt.Printf("Hash = %s\n", input.Hash)
 		err := input.SetUserInfo()
 		if err != nil {
