@@ -45,19 +45,20 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
-func isValidInput(userInfo *RegisterInput) {
-	if isValidString(input.Email) == false {
-			fmt.Println("not valid email = ", input.Email)
-			return false
+func isValidInput(userInfo *RegisterInput) bool {
+	if isValidString(userInfo.Email) == false {
+		fmt.Println("not valid email = ", userInfo.Email)
+		return false
 	}
-	if isValidString(input.Username) == false {
-			fmt.Println("not valid username", input.Email)
-			return false
+	if isValidString(userInfo.Username) == false {
+		fmt.Println("not valid username", userInfo.Email)
+		return false
 	}
-	if isValidString(input.Password) == false {
-			fmt.Println("not valid password", input.Email)
-			return false
+	if isValidString(userInfo.Password) == false {
+		fmt.Println("not valid password", userInfo.Email)
+		return false
 	}
+	return true
 }
 func isValidString(s string) bool {
 	fmt.Println("inside isValidString func")
