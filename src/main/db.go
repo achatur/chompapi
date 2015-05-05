@@ -9,7 +9,7 @@ import (
 	"strconv"
 )
 
-func getUserInfo(username string) (map[string]string, err error) {
+func getUserInfo(username string) (map[string]string, err) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
