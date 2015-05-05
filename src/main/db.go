@@ -13,7 +13,7 @@ func getUserInfo(username string) (map[string]string, err error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
-		return map[string]string, err
+		return (map[string]string, err)
 	}
 	defer db.Close()
 	m := map[string]string{}
