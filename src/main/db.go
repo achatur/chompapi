@@ -27,12 +27,12 @@ func getUserInfo(username string) (map[string]string, error) {
 	rows, err := db.Query("SELECT * FROM chomp_users WHERE chomp_username=?", username)
 	if err != nil {
 		//panic(err.Error()) // proper error handling instead of panic in your app
-		return "", err 
+		return make(map[string]string), err 
 	}
 	columns, err := rows.Columns()
 	if err != nil {
 		//panic(err.Error()) // proper error handling instead of panic in your app
-		return "", err
+		return make(map[string]string), err
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -44,7 +44,7 @@ func getUserInfo(username string) (map[string]string, error) {
 		err = rows.Scan(scanArgs...)
 		if err != nil {
 			//panic(err.Error())
-			return "", err
+			return make(map[string]string), err
 		}
 		var value string
 		for i, col := range values {
@@ -60,7 +60,7 @@ func getUserInfo(username string) (map[string]string, error) {
 	}
 	if err = rows.Err(); err != nil {
 		//panic(err.Error())
-		return "", err
+		return make(map[string]string), err
 	}
 	return m, err
 }
