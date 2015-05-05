@@ -34,7 +34,10 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalSessions.GetActiveSession())
 
-		userInfo := getUserInfo(input.Username)
+		userInfo, err := getUserInfo(input.Username)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 		fmt.Println("return from db = %v", userInfo)
 
 		dbPassword := userInfo["password_hash"]

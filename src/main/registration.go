@@ -39,6 +39,7 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		err := input.SetUserInfo()
 		if err != nil {
 			fmt.Println("Error! = %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
 		}
 
 	default:

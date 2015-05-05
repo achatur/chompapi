@@ -9,26 +9,30 @@ import (
 	"strconv"
 )
 
-func getUserInfo(username string) map[string]string {
+func getUserInfo(username string) map[string]string err error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		return "", err
 	}
 	defer db.Close()
 	m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	query := "SELECT * from chomp_users where chomp_username="
+	query := "SELECT * FROM chomp_users WHERE chomp_username="
 	query += "'"
 	query += username
 	query += "'"
-	rows, err := db.Query(string(query))
+	//rows, err := db.Query(string(query))
+	rows, err := db.Query("SELECT * FROM chomp_users WHERE chomp_username=?", username)
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		//panic(err.Error()) // proper error handling instead of panic in your app
+		return "", err 
 	}
 	columns, err := rows.Columns()
 	if err != nil {
-		panic(err.Error()) // proper error handling instead of panic in your app
+		//panic(err.Error()) // proper error handling instead of panic in your app
+		return "", err
 	}
 	values := make([]sql.RawBytes, len(columns))
 	scanArgs := make([]interface{}, len(values))
@@ -39,7 +43,8 @@ func getUserInfo(username string) map[string]string {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		if err != nil {
-			panic(err.Error())
+			//panic(err.Error())
+			return "", err
 		}
 		var value string
 		for i, col := range values {
@@ -54,15 +59,17 @@ func getUserInfo(username string) map[string]string {
 		fmt.Println("--------------------------------")
 	}
 	if err = rows.Err(); err != nil {
-		panic(err.Error())
+		//panic(err.Error())
+		return "", err
 	}
-	return m
+	return m, err
 }
 
 func (userInfo RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
+		return err
 	}
 	defer db.Close()
 
@@ -72,7 +79,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	userMap := structToMap(&userInfo)
 	fmt.Println("struct2map = %v\n", userMap)
 
-	query := fmt.Sprintf("INSERT into chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
