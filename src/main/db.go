@@ -71,6 +71,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
+		fmt.Println("Error occurd")
 		return err
 	}
 	defer stmt.Close()
