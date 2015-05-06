@@ -9,15 +9,16 @@ import (
 )
 
 type RegisterInput struct {
-	Username string
-	Email    string
-	Password string
-	Dob      string
-	Gender   string
-	Fname    string
-	Lname    string
-	Phone    string
-	Hash     string
+	Username	 string
+	Email   	 string
+	Password	 string
+	Dob     	 string
+	Gender  	 string
+	Fname    	 string
+	Lname    	 string
+	Phone     	 string
+	Hash     	 string
+	PhotoLocation	 string
 }
 
 func doRegister(w http.ResponseWriter, r *http.Request) {

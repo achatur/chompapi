@@ -66,7 +66,10 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
 	
-	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s',
+		email='%s', phone_number='%s', password_hash='%s', dob='%s',
+		gender='%s', profile_pic='%s'", userInfo.Username, userInfo.Email, userInfo.Phone,
+		userInfo.Hash, userInfo.Dob, userInfo.Gender, userInfo.PhotoLocation)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)

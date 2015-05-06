@@ -32,7 +32,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 func init() {
 	var err error
-	//globalSessions, err = session.NewManager("mysql", `{"SessionOn":true, "cookieName":"gosessionid","gclifetime":3600,"ProviderConfig":"root:''@protocol(172.16.0.1:3306)/chomp"}`)
 	globalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 	if err != nil {
 		fmt.Printf("Error")
