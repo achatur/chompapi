@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 type RegisterInput struct {
@@ -39,7 +40,7 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		err := input.SetUserInfo()
 		if err != nil {
 			fmt.Println("Error! = %v\n", err)
-			if err.Error().Contains("Error 1062") {
+			if strings.Contains(err.Error(), "Error 1062") {
 				w.WriteHeader(http.StatusConflict)
 			}
 			w.WriteHeader(http.StatusInternalServerError)
