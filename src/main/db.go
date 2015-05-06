@@ -12,26 +12,18 @@ import (
 func getUserInfo(username string) (map[string]string, error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 		return make(map[string]string), err
 	}
 	defer db.Close()
 	m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	query := "SELECT * FROM chomp_users WHERE chomp_username="
-	query += "'"
-	query += username
-	query += "'"
-	//rows, err := db.Query(string(query))
 	rows, err := db.Query("SELECT * FROM chomp_users WHERE chomp_username=?", username)
 	if err != nil {
-		//panic(err.Error()) // proper error handling instead of panic in your app
 		return make(map[string]string), err 
 	}
 	columns, err := rows.Columns()
 	if err != nil {
-		//panic(err.Error()) // proper error handling instead of panic in your app
 		return make(map[string]string), err
 	}
 	values := make([]sql.RawBytes, len(columns))
@@ -43,7 +35,6 @@ func getUserInfo(username string) (map[string]string, error) {
 	for rows.Next() {
 		err = rows.Scan(scanArgs...)
 		if err != nil {
-			//panic(err.Error())
 			return make(map[string]string), err
 		}
 		var value string
@@ -59,7 +50,6 @@ func getUserInfo(username string) (map[string]string, error) {
 		fmt.Println("--------------------------------")
 	}
 	if err = rows.Err(); err != nil {
-		//panic(err.Error())
 		return make(map[string]string), err
 	}
 	return m, err
@@ -68,7 +58,6 @@ func getUserInfo(username string) (map[string]string, error) {
 func (userInfo RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		//panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic
 		return err
 	}
 	defer db.Close()
@@ -76,21 +65,17 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
-	userMap := structToMap(&userInfo)
-	fmt.Println("struct2map = %v\n", userMap)
-
+	
 	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
-		//panic(err.Error()) // proper error handling instead of panic in your app
 		return err
 	}
 	defer stmt.Close()
 	_, err = stmt.Exec()
 	if err != nil {
-		//panic(err.Error()) // proper error handling instead of panic in your app
 		return err
 	}
 	return nil
