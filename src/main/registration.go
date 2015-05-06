@@ -39,6 +39,9 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		err := input.SetUserInfo()
 		if err != nil {
 			fmt.Println("Error! = %v\n", err)
+			if err.Contains("Error 1062") {
+				w.WriteHeader(http.StatusConflict)
+			}
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 
