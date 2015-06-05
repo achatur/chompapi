@@ -20,7 +20,7 @@ func getUserInfo(username string) (map[string]string, error) {
 	// Prepare statement for reading chomp_users table data
 	rows, err := db.Query("SELECT * FROM chomp_users WHERE chomp_username=?", username)
 	if err != nil {
-		return make(map[string]string), err 
+		return make(map[string]string), err
 	}
 	columns, err := rows.Columns()
 	if err != nil {
@@ -65,11 +65,8 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
-	
-	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s',
-		email='%s', phone_number='%s', password_hash='%s', dob='%s',
-		gender='%s', profile_pic='%s'", userInfo.Username, userInfo.Email, userInfo.Phone,
-		userInfo.Hash, userInfo.Dob, userInfo.Gender, userInfo.PhotoLocation)
+
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s', profile_pic='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender, userInfo.PhotoLocation)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
