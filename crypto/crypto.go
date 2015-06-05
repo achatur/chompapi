@@ -1,4 +1,4 @@
-package main
+package crypto
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ func generateSalt(secret []byte) []byte {
 	return hash.Sum(buf)
 }
 
-func generatePassword(username string, password []byte) []byte {
+func GeneratePassword(username string, password []byte) []byte {
 
 	fmt.Printf("Password : %s\n", string(password))
 	salt := generateSalt([]byte(username))
@@ -31,9 +31,9 @@ func generatePassword(username string, password []byte) []byte {
 	return (passwordHash.Sum(nil))
 }
 
-func validatePassword(username string, password []byte, dbPasswordHash string) bool {
+func ValidatePassword(username string, password []byte, dbPasswordHash string) bool {
 
-	passwordHash := generatePassword(username, password)
+	passwordHash := GeneratePassword(username, password)
 	fmt.Printf("Validate hash gen = %x\n", passwordHash)
 	decodedHexString, err := hex.DecodeString(dbPasswordHash)
 	if err != nil {

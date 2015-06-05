@@ -1,4 +1,4 @@
-package main
+package register
 
 import (
 	"encoding/hex"
@@ -6,26 +6,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"chompapi/db"
+	"chompapi/crypto"
 )
 
-type RegisterInput struct {
-	Username	 string
-	Email   	 string
-	Password	 string
-	Dob     	 string
-	Gender  	 string
-	Fname    	 string
-	Lname    	 string
-	Phone     	 string
-	Hash     	 string
-	PhotoLocation	 string
-}
-
-func doRegister(w http.ResponseWriter, r *http.Request) {
+func DoRegister(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		input := NewUser()
+		input := newUser()
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
@@ -36,7 +25,7 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		input.Hash = hex.EncodeToString(generatePassword(input.Username, []byte(input.Password)))
+		input.Hash = hex.EncodeToString(crypto.GeneratePassword(input.Username, []byte(input.Password)))
 		fmt.Printf("Hash = %s\n", input.Hash)
 		err := input.SetUserInfo()
 		if err != nil {
@@ -51,7 +40,7 @@ func doRegister(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
-func isValidInput(userInfo *RegisterInput) bool {
+func isValidInput(userInfo *db.RegisterInput) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
 		return false
@@ -75,6 +64,6 @@ func isValidString(s string) bool {
 	}
 }
 
-func NewUser() *RegisterInput {
-	return &RegisterInput{}
+func newUser() *db.RegisterInput {
+	return &db.RegisterInput{}
 }

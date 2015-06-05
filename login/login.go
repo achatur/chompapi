@@ -1,9 +1,12 @@
-package main
+package login
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"chompapi/db"
+	"chompapi/crypto"
+	"github.com/astaxie/beego/session"
 )
 
 type LoginInput struct {
@@ -21,7 +24,9 @@ type UserInfo struct {
 	Gender        string
 }
 
-func doLogin(w http.ResponseWriter, r *http.Request) {
+var globalSessions *session.Manager
+
+func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
@@ -34,7 +39,7 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalSessions.GetActiveSession())
 
-		userInfo, err := getUserInfo(input.Username)
+		userInfo, err := db.GetUserInfo(input.Username)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
@@ -43,7 +48,7 @@ func doLogin(w http.ResponseWriter, r *http.Request) {
 		dbPassword := userInfo["password_hash"]
 		fmt.Printf("dbPass= %+v\n", dbPassword)
 
-		validated := validatePassword(input.Username, []byte(input.Password), dbPassword)
+		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
 		fmt.Printf("answer = %v\n", validated)
 
 		if validated == true {

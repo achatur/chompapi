@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -9,7 +9,20 @@ import (
 	"strconv"
 )
 
-func getUserInfo(username string) (map[string]string, error) {
+type RegisterInput struct {
+	Username	 string
+	Email   	 string
+	Password	 string
+	Dob     	 string
+	Gender  	 string
+	Fname    	 string
+	Lname    	 string
+	Phone     	 string
+	Hash     	 string
+	PhotoLocation	 string
+}
+
+func GetUserInfo(username string) (map[string]string, error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return make(map[string]string), err
@@ -82,7 +95,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	return nil
 }
 
-func isValid(s sql.NullString) string {
+func IsValid(s sql.NullString) string {
 
 	if s.Valid {
 		fmt.Println("s is valid")

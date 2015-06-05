@@ -9,14 +9,16 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"chompapi/login"
+	"chompapi/register"
 )
 
 //Global Variable
 var globalSessions *session.Manager
 
 func main() {
-	http.HandleFunc("/register", doRegister)
-	http.HandleFunc("/login", doLogin)
+	http.HandleFunc("/register", register.DoRegister)
+	http.HandleFunc("/login", login.DoLogin)
 
 	port := os.Getenv("PORT")
 	if strings.Contains(string(port), "443") {
