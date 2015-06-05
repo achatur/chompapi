@@ -7,6 +7,7 @@ import (
 	"chompapi/db"
 	"chompapi/crypto"
 	"github.com/astaxie/beego/session"
+	"chompapi/globalsessionkeeper"
 )
 
 type LoginInput struct {
@@ -37,7 +38,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Printf("input = %v\n", input)
-		fmt.Printf("Number of active sessions: %v\n", globalSessions.GetActiveSession())
+		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
 
 		userInfo, err := db.GetUserInfo(input.Username)
 		if err != nil {
@@ -53,7 +54,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		if validated == true {
 			//create session using the request data which includes the cookie/sessionid
-			sessionStore, err := globalSessions.SessionStart(w, r)
+			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				fmt.Printf("Error, could not start session %v\n", err)
 			}

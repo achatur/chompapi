@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/astaxie/beego/session"
-	_ "github.com/astaxie/beego/session/mysql"
 	"html"
 	"log"
 	"net/http"
@@ -12,9 +10,6 @@ import (
 	"chompapi/login"
 	"chompapi/register"
 )
-
-//Global Variable
-var globalSessions *session.Manager
 
 func main() {
 	http.HandleFunc("/register", register.DoRegister)
@@ -32,12 +27,3 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 }
 
-func init() {
-	var err error
-	globalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
-	if err != nil {
-		fmt.Printf("Error")
-	}
-	globalSessions.SetSecure(true)
-	go globalSessions.GC()
-}
