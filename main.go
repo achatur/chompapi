@@ -37,6 +37,5 @@ func init() {
 		fmt.Printf("Error")
 	}
 	globalsessionkeeper.GlobalSessions.SetSecure(true)
-	//go globalsessionkeeper.GlobalSessions.GC()
-	globalsessionkeeper.GlobalSessions.GC()
+	go globalsessionkeeper.GlobalSessions.GC()
 }
