@@ -84,7 +84,6 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 		//Send back 204 no content (with cookie)
-		w.WriteHeader(http.StatusNoContent)
 	default:
 		w.WriteHeader(http.StatusUnauthorized)
 	}
