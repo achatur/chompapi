@@ -17,11 +17,11 @@ type RegisterInput struct {
 	Lname    	 string
 	Phone     	 string
 	Hash     	 string
-	Photo
+	Photo		 PhotoType
 }
 
-type Photo struct {
-	ID 	int
+type PhotoType struct {
+	ID 	string
 }
 
 func GetUserInfo(username string) (map[string]string, error) {
