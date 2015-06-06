@@ -16,11 +16,10 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		input := newUser()
 		decoder := json.NewDecoder(r.Body)
-		fmt.Println("Before unmarshal = %v", r.Body)
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
 		}
-		fmt.Printf("Json Input = %+v", input)
+		fmt.Printf("Json Input = %v", input)
 		if isValidInput(input) == false {
 			fmt.Println("Something not valid")
 			w.WriteHeader(http.StatusMethodNotAllowed)
