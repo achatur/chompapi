@@ -19,7 +19,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
 		}
-		fmt.Printf("%+v", input)
+		fmt.Printf("Json Input = %+v", input)
 		if isValidInput(input) == false {
 			fmt.Println("Something not valid")
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -40,6 +40,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
+
 func isValidInput(userInfo *db.RegisterInput) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
@@ -55,6 +56,7 @@ func isValidInput(userInfo *db.RegisterInput) bool {
 	}
 	return true
 }
+
 func isValidString(s string) bool {
 	fmt.Println("inside isValidString func")
 	if s == "" {
