@@ -69,7 +69,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			if sessionStore.Get("username") == nil {
 				//need logging here instead of print
 				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore)
-				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore.GET("usernamestring"))
+				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore.Get("usernamestring"))
 				err = sessionStore.Set("username", input.Username)
 				if err != nil {
 					//need logging here instead of print
