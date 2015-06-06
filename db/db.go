@@ -17,10 +17,10 @@ type RegisterInput struct {
 	Lname    	 string
 	Phone     	 string
 	Hash     	 string
-	Photo		 PhotoType
+	Photo		 
 }
 
-type PhotoType struct {
+type Photo struct {
 	ID 	string
 }
 
