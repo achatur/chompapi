@@ -9,6 +9,7 @@ import (
 	"strings"
 	"chompapi/login"
 	"chompapi/register"
+	"chompapi/globalsessionkepper"
 )
 
 func main() {
@@ -27,3 +28,13 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 }
 
+func init() {
+	var err error
+	fmt.Println("Session init")
+	globalsessionkepper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	if err != nil {
+		fmt.Printf("Error")
+	}
+	globalsessionkepper.GlobalSessions.SetSecure(true)
+	go globalsessionkepper.GlobalSessions.GC()
+}
