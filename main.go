@@ -9,7 +9,8 @@ import (
 	"strings"
 	"chompapi/login"
 	"chompapi/register"
-	"chompapi/globalsessionkepper"
+	"chompapi/globalsessionkeeper"
+	"github.com/astaxie/beego/session"
 )
 
 func main() {
@@ -31,10 +32,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 	var err error
 	fmt.Println("Session init")
-	globalsessionkepper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 	if err != nil {
 		fmt.Printf("Error")
 	}
-	globalsessionkepper.GlobalSessions.SetSecure(true)
-	go globalsessionkepper.GlobalSessions.GC()
+	globalsessionkeeper.GlobalSessions.SetSecure(true)
+	go globalsessionkeeper.GlobalSessions.GC()
 }

@@ -1,9 +1,9 @@
-package session globalsessionkeeper
+package globalsessionkeeper
 
 import (
 	"github.com/astaxie/beego/session"
 	_ "github.com/astaxie/beego/session/mysql"
-	"fmt"
+	_ "fmt"
 )
 
 //Global Variable
