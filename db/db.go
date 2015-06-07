@@ -17,7 +17,7 @@ type RegisterInput struct {
 	Lname    	 string
 	Phone     	 string
 	Hash     	 string
-	Photo		 
+	Photo		 Photo
 }
 
 type Photo struct {
