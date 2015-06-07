@@ -32,13 +32,17 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error! = %v\n", err)
 			if strings.Contains(err.Error(), "Error 1062") {
 				w.WriteHeader(http.StatusConflict)
+				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
-		return http.StatusNoContent
+		w.WriteHeader(http.StatusNoContent)
+		return
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 }
 
