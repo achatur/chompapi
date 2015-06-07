@@ -35,6 +35,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+		return http.StatusNoContent
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
