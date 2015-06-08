@@ -11,7 +11,7 @@ type RegisterInput struct {
 	Username	 string
 	Email   	 string
 	Password	 string
-	Dob     	 string
+	Dob     	 int
 	Gender  	 string
 	Fname    	 string
 	Lname    	 string
@@ -81,7 +81,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
 
-	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s', photo_id='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender, userInfo.Photo.ID)
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
