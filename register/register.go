@@ -8,6 +8,7 @@ import (
 	"strings"
 	"chompapi/db"
 	"chompapi/crypto"
+	"time"
 )
 
 func DoRegister(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +20,8 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
 		}
-		fmt.Printf("%+v", input)
+		fmt.Printf("Json Input = %+v\n", input)
+		fmt.Println("int = %v", input.Dob)
 		if isValidInput(input) == false {
 			fmt.Println("Something not valid")
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -32,14 +34,20 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error! = %v\n", err)
 			if strings.Contains(err.Error(), "Error 1062") {
 				w.WriteHeader(http.StatusConflict)
+				return
 			}
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
+		w.WriteHeader(http.StatusNoContent)
+		return
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 }
+
 func isValidInput(userInfo *db.RegisterInput) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
@@ -53,8 +61,13 @@ func isValidInput(userInfo *db.RegisterInput) bool {
 		fmt.Println("not valid password", userInfo.Email)
 		return false
 	}
+	if userInfo.Dob == 0 || age(time.Unix(int64(userInfo.Dob), 0)) < 18 {
+			return false
+	}
+	
 	return true
 }
+
 func isValidString(s string) bool {
 	fmt.Println("inside isValidString func")
 	if s == "" {
@@ -66,4 +79,15 @@ func isValidString(s string) bool {
 
 func newUser() *db.RegisterInput {
 	return &db.RegisterInput{}
+}
+
+func age(birthday time.Time) int {
+	fmt.Println("made it here")
+	now := time.Now()
+	years := now.Year() - birthday.Year()
+	if now.YearDay() < birthday.YearDay(){
+		years--
+	}
+	fmt.Println("Age = %v", years)
+	return years
 }

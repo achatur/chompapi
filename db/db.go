@@ -4,22 +4,24 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"net/url"
 	"reflect"
-	"strconv"
 )
 
 type RegisterInput struct {
 	Username	 string
 	Email   	 string
 	Password	 string
-	Dob     	 string
+	Dob     	 int
 	Gender  	 string
 	Fname    	 string
 	Lname    	 string
 	Phone     	 string
 	Hash     	 string
-	PhotoLocation	 string
+	Photo		 Photo
+}
+
+type Photo struct {
+	ID 	string
 }
 
 func GetUserInfo(username string) (map[string]string, error) {
@@ -79,7 +81,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
 
-	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%s', gender='%s', profile_pic='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender, userInfo.PhotoLocation)
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
@@ -104,33 +106,4 @@ func IsValid(s sql.NullString) string {
 		fmt.Println("s is not valid")
 		return s.String
 	}
-}
-
-func structToMap(i interface{}) (values url.Values) {
-	values = url.Values{}
-	iVal := reflect.ValueOf(i).Elem()
-	typ := iVal.Type()
-	for i := 0; i < iVal.NumField(); i++ {
-		f := iVal.Field(i)
-		// You ca use tags here...
-		// tag := typ.Field(i).Tag.Get("tagname")
-		// Convert each type into a string for the url.Values string map
-		var v string
-		switch f.Interface().(type) {
-		case int, int8, int16, int32, int64:
-			v = strconv.FormatInt(f.Int(), 10)
-		case uint, uint8, uint16, uint32, uint64:
-			v = strconv.FormatUint(f.Uint(), 10)
-		case float32:
-			v = strconv.FormatFloat(f.Float(), 'f', 4, 32)
-		case float64:
-			v = strconv.FormatFloat(f.Float(), 'f', 4, 64)
-		case []byte:
-			v = string(f.Bytes())
-		case string:
-			v = f.String()
-		}
-		values.Set(typ.Field(i).Name, v)
-	}
-	return
 }
