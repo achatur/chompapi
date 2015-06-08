@@ -46,6 +46,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 		fmt.Println("return from db = %v", userInfo)
 
@@ -83,11 +84,15 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		} else {
 			fmt.Printf("Login Failed")
 			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
 		//Send back 204 no content (with cookie)
 		w.WriteHeader(http.StatusNoContent)
+		return
 	default:
 		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 	w.WriteHeader(http.StatusUnauthorized)
+	return
 }
