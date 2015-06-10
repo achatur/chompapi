@@ -45,13 +45,14 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		userInfo, err := db.GetUserInfo(input.Username)
 		if err != nil {
 			//need logging here instead of print
+			fmt.Println("Username not found..", input.Username)
+			fmt.Println("Username not found..", input.Password)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 		fmt.Println("return from db = %v", userInfo)
 
 		dbPassword := userInfo["password_hash"]
-		fmt.Printf("dbPass= %+v\n", dbPassword)
 
 		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
 		//need logging here instead of print or get rid of this statement in full once final

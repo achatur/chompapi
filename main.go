@@ -11,11 +11,13 @@ import (
 	"chompapi/register"
 	"chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
+	"chompapi/me"
 )
 
 func main() {
 	http.HandleFunc("/register", register.DoRegister)
 	http.HandleFunc("/login", login.DoLogin)
+	http.HandleFunc("/me", me.GetMe)
 
 	port := os.Getenv("PORT")
 	if strings.Contains(string(port), "443") {
@@ -32,7 +34,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 	var err error
 	fmt.Println("Session init")
-	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":120,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":300,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 	if err != nil {
 		fmt.Printf("Error")
 	}
