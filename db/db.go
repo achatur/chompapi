@@ -5,6 +5,8 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
+	//"github.com/pborman/uuid"
+	 //"gopkg.in/gorp.v1"
 )
 
 type RegisterInput struct {
@@ -22,6 +24,17 @@ type RegisterInput struct {
 
 type Photo struct {
 	ID 	string
+}
+
+type Photos struct {
+	ID			int
+	DishID		int
+	UserID		int
+	FilePath	string
+	FileHash	string
+	TimeStamp	string
+	Uuid		string
+	Username 	string
 }
 
 func GetUserInfo(username string) (map[string]string, error) {
@@ -143,6 +156,98 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	}
 	return nil
 }
+
+// func (photos *PhotoTable) SetPhoto() error {
+// 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp", "parseTime=true")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer db.Close()
+
+// 	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"}}
+// 	err := dbmap.Insert(photos)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
+
+func (photo Photos) SetMePhoto() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+
+	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
+	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid) SELECT chomp_user_id, '%s', '%s', '%s' from chomp_users WHERE chomp_username='%s'", 
+						photo.FilePath, photo.FileHash, photo.Uuid, photo.Username)
+	fmt.Println("Query = %v\n", query)
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		fmt.Println("Error occurd")
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetPhotoInfoByUuid( uuid string) (map[string]string, error) {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return make(map[string]string), err
+	}
+	defer db.Close()
+	m := map[string]string{}
+
+	// Prepare statement for reading chomp_users table data
+	rows, err := db.Query("SELECT * from photos where uuid=?", uuid)
+	if err != nil {
+		return make(map[string]string), err
+	}
+	columns, err := rows.Columns()
+	if err != nil {
+		return make(map[string]string), err
+	}
+	values := make([]sql.RawBytes, len(columns))
+	scanArgs := make([]interface{}, len(values))
+	for i := range values {
+		scanArgs[i] = &values[i]
+	}
+	fmt.Println("scanArgs = %v\n", scanArgs)
+	for rows.Next() {
+		err = rows.Scan(scanArgs...)
+		if err != nil {
+			return make(map[string]string), err
+		}
+		var value string
+		for i, col := range values {
+			if col == nil {
+				value = "null"
+			} else {
+				value = string(col)
+			}
+			m[columns[i]] = value
+			fmt.Println(columns[i], ": ", value)
+		}
+		fmt.Println("--------------------------------")
+	}
+	if err = rows.Err(); err != nil {
+		return make(map[string]string), err
+	}
+	return m, err
+}
+
 
 func IsValid(s sql.NullString) string {
 

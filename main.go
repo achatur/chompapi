@@ -18,6 +18,7 @@ func main() {
 	http.HandleFunc("/register", register.DoRegister)
 	http.HandleFunc("/login", login.DoLogin)
 	http.HandleFunc("/me", me.GetMe)
+	http.HandleFunc("/me/photos", me.PostPhotoId)
 
 	port := os.Getenv("PORT")
 	if strings.Contains(string(port), "443") {
