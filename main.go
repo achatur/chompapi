@@ -12,19 +12,25 @@ import (
 	"chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
 	"chompapi/me"
+	"github.com/gorilla/mux"
 )
 
 func main() {
-	http.HandleFunc("/register", register.DoRegister)
-	http.HandleFunc("/login", login.DoLogin)
-	http.HandleFunc("/me", me.GetMe)
-	http.HandleFunc("/me/photos", me.PostPhotoId)
+	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/register", register.DoRegister)
+	router.HandleFunc("/login", login.DoLogin)
+	router.HandleFunc("/me", me.GetMe)
+	router.HandleFunc("/me/photos", me.PostPhotoId)
+	router.HandleFunc("/me/photos/{photo_id}", me.PostPhotoId)
 
-	port := os.Getenv("PORT")
+	port := "8000"
+	if os.Getenv("PORT") != "" {
+		port = os.Getenv("PORT")
+	}
 	if strings.Contains(string(port), "443") {
 		log.Fatal(http.ListenAndServeTLS(":"+port, "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.pem", "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.key.pem", nil))
 	} else {
-		log.Fatal(http.ListenAndServe(":8000", nil))
+		log.Fatal(http.ListenAndServe(":" + port, router))
 	}
 }
 
@@ -35,7 +41,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 	var err error
 	fmt.Println("Session init")
-	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":300,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":300,"maxlifetime":3600,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 	if err != nil {
 		fmt.Printf("Error")
 	}

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"reflect"
 	"github.com/pborman/uuid"
+	"github.com/gorilla/mux"
+	"strconv"
 )
 
 type UserInfo struct {
@@ -108,7 +110,9 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 	} else {
 		username := reflect.ValueOf(sessionUser).String()
 		switch r.Method {
+
 		case "POST":
+
 			var photoInfo db.Photos
 			w.Header().Set("Content-Type", "application/json")
 			
@@ -121,18 +125,123 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			} 
-			photoTable, err2 := db.GetPhotoInfoByUuid(photoInfo.Uuid)
+			err2 := photoInfo.GetPhotoInfoByUuid()
 			if err2 != nil {
 				//need logging here instead of print
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			} 
+			err = photoInfo.UpdatePhotoIDUserTable()
+			if err != nil {
+				//need logging here instead of print
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
 		
-			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoTable["id"]))
-			w.Header().Set("UUID", photoTable["uuid"])
+			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
+			w.Header().Set("UUID", photoInfo.Uuid)
 			w.WriteHeader(http.StatusCreated)
 			return
+
 		case "GET":
+
+			var photoInfo db.Photos
+			photoInfo.Username = username
+			vars := mux.Vars(r)
+    		photo_id, thisErr := strconv.Atoi(vars["photo_id"])
+    		if thisErr != nil {
+    			fmt.Println("Not An Integer")
+    			w.WriteHeader(http.StatusServiceUnavailable)
+				return
+    		}
+    		photoInfo.ID =  photo_id
+
+            err := photoInfo.GetMePhotoByPhotoID()
+            if err != nil {
+                //need logging here instead of print
+                http.Error(w, err.Error(), http.StatusServiceUnavailable)
+                //w.WriteHeader(http.StatusServiceUnavailable)
+                return
+            } else {
+                fmt.Println("type for userInfo = ", photoInfo)
+                w.Header().Set("Content-Type", "application/json")
+                json.NewEncoder(w).Encode(photoInfo)
+                if err != nil {
+                    http.Error(w, err.Error(), http.StatusInternalServerError)
+                    return
+                }
+                return
+            }
+            return
+
+		case "PUT":
+
+			var photoInfo db.Photos
+			photoInfo.Username = username
+
+			vars := mux.Vars(r)
+    		photo_id, thisErr := strconv.Atoi(vars["photo_id"])
+    		if thisErr != nil {
+    			fmt.Println("Not An Integer")
+    			w.WriteHeader(http.StatusServiceUnavailable)
+				return
+    		}
+    		photoInfo.ID =  photo_id
+    		photoInfo.Uuid = generateUuid()
+    		fmt.Println("uuid = ", photoInfo.Uuid)
+    		if photoInfo.Uuid == "" {
+    			w.WriteHeader(http.StatusServiceUnavailable)
+    			return
+    		}
+			photoInfo.Username = username
+		
+            err := photoInfo.UpdateMePhoto()
+            if err != nil {
+                //need logging here instead of print
+                http.Error(w, err.Error(), http.StatusServiceUnavailable)
+                return
+            } 
+            err = photoInfo.UpdatePhotoIDUserTable()
+			if err != nil {
+				//need logging here instead of print
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+		
+			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
+			w.Header().Set("UUID", photoInfo.Uuid)
+			w.WriteHeader(http.StatusNoContent)
+            return
+
+		case "DELETE":
+
+			var photoInfo db.Photos
+			photoInfo.Username = username
+
+			vars := mux.Vars(r)
+    		photo_id, thisErr := strconv.Atoi(vars["photo_id"])
+    		if thisErr != nil {
+    			fmt.Println("Not An Integer")
+    			w.WriteHeader(http.StatusServiceUnavailable)
+				return
+    		}
+    		photoInfo.ID =  photo_id
+
+            err := photoInfo.DeleteMePhoto()
+            if err != nil {
+                //need logging here instead of print
+                http.Error(w, err.Error(), http.StatusServiceUnavailable)
+                return
+            } 
+            photoInfo.ID = 0
+            err = photoInfo.UpdatePhotoIDUserTable()
+			if err != nil {
+				//need logging here instead of print
+				w.WriteHeader(http.StatusServiceUnavailable)
+				return
+			}
+            w.WriteHeader(http.StatusNoContent)
+
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return

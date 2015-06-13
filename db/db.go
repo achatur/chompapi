@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
+	"errors"
 	//"github.com/pborman/uuid"
 	 //"gopkg.in/gorp.v1"
 )
@@ -202,50 +203,121 @@ func (photo Photos) SetMePhoto() error {
 	return nil
 }
 
-func GetPhotoInfoByUuid( uuid string) (map[string]string, error) {
+func (photo Photos) UpdatePhotoIDUserTable() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return make(map[string]string), err
+		return err
 	}
 	defer db.Close()
-	m := map[string]string{}
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+
+	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
+	query := fmt.Sprintf("UPDATE chomp_users SET photo_id='%d' WHERE chomp_username='%s'", 
+						photo.ID, photo.Username)
+	fmt.Println("Query = %v\n", query)
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		fmt.Println("Error occurd")
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+func (photo *Photos) GetPhotoInfoByUuid() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	// m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	rows, err := db.Query("SELECT * from photos where uuid=?", uuid)
+	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, time_stamp, uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	fmt.Println("Row =", row)
+	fmt.Println("Row Type = ", reflect.TypeOf(photo))
+	if row != nil {
+		err = errors.New("Could not return photo info")
+	}
+	return err
+}
+
+func (photo *Photos) GetMePhotoByUsername() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return make(map[string]string), err
+		return err
 	}
-	columns, err := rows.Columns()
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
+
+	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, time_stamp, uuid
+						FROM photos
+						JOIN chomp_users on photos.id = chomp_users.photo_id
+						WHERE chomp_users.chomp_username=?`,photo.Username).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	return err
+}
+
+func (photo *Photos) GetMePhotoByPhotoID() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return make(map[string]string), err
+		return err
 	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+
+	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, time_stamp, uuid
+						FROM photos
+						WHERE id=?`,photo.ID).Scan(&photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	return err
+}
+
+
+func (photo *Photos) UpdateMePhoto() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
 	}
-	fmt.Println("scanArgs = %v\n", scanArgs)
-	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		if err != nil {
-			return make(map[string]string), err
-		}
-		var value string
-		for i, col := range values {
-			if col == nil {
-				value = "null"
-			} else {
-				value = string(col)
-			}
-			m[columns[i]] = value
-			fmt.Println(columns[i], ": ", value)
-		}
-		fmt.Println("--------------------------------")
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
+
+	_, err = db.Query("UPDATE photos set uuid=? WHERE id=?", 
+					photo.Uuid, photo.ID)
+
+	return err
+}
+
+func (photo *Photos) DeleteMePhoto() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
 	}
-	if err = rows.Err(); err != nil {
-		return make(map[string]string), err
-	}
-	return m, err
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", photo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
+
+	_, err = db.Query("DELETE FROM photos WHERE id=?", photo.ID)
+
+	return err
 }
 
 
