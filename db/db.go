@@ -278,7 +278,7 @@ func (photo *Photos) GetMePhotoByPhotoID() error {
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
-	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
 	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, time_stamp, uuid
 						FROM photos
