@@ -28,7 +28,7 @@ func main() {
 		port = os.Getenv("PORT")
 	}
 	if strings.Contains(string(port), "443") {
-		log.Fatal(http.ListenAndServeTLS(":"+port, "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.pem", "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.key.pem", nil))
+		log.Fatal(http.ListenAndServeTLS(":"+port, "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.pem", "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.key.pem", router))
 	} else {
 		log.Fatal(http.ListenAndServe(":" + port, router))
 	}
@@ -41,7 +41,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 	var err error
 	fmt.Println("Session init")
-	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"enableSetCookie":true, "SessionOn":true, "cookieName":"chomp_sessionid","gclifetime":300,"maxlifetime":3600,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"EnableSetCookie":true, "Secure":true, "CookieLifetime":604800, "CookieName":"chomp_sessionid","Gclifetime":604800,"Maxlifetime":604800,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 	if err != nil {
 		fmt.Printf("Error")
 	}

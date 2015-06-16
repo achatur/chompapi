@@ -10,6 +10,7 @@ import (
 	"chompapi/crypto"
 	"time"
 	"chompapi/globalsessionkeeper"
+	"chompapi/me"
 )
 
 func DoRegister(w http.ResponseWriter, r *http.Request) {
@@ -51,6 +52,38 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
+		// set user photo now
+		var photoInfo db.Photos
+		photoInfo.Uuid = me.GenerateUuid()
+		photoInfo.Username = input.Username
+		err = photoInfo.SetMePhoto()
+			if err != nil {
+				//need logging here instead of print
+				myErrorResponse.Code = http.StatusInternalServerError
+				myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			} 
+
+		err = photoInfo.GetPhotoInfoByUuid()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+		input.Photo.ID = photoInfo.ID
+		err = photoInfo.UpdatePhotoIDUserTable()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
+		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)
 		return
 

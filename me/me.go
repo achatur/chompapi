@@ -115,8 +115,8 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 
 			var photoInfo db.Photos
 			w.Header().Set("Content-Type", "application/json")
-			
-			photoInfo.Uuid = generateUuid()
+
+			photoInfo.Uuid = GenerateUuid()
 			photoInfo.Username = username
 		
 			err := photoInfo.SetMePhoto()
@@ -130,14 +130,8 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 				//need logging here instead of print
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
-			} 
-			err = photoInfo.UpdatePhotoIDUserTable()
-			if err != nil {
-				//need logging here instead of print
-				w.WriteHeader(http.StatusServiceUnavailable)
-				return
 			}
-		
+
 			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 			w.Header().Set("UUID", photoInfo.Uuid)
 			w.WriteHeader(http.StatusCreated)
@@ -159,7 +153,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
             err := photoInfo.GetMePhotoByPhotoID()
             if err != nil {
                 //need logging here instead of print
-                http.Error(w, err.Error(), http.StatusServiceUnavailable)
+                http.Error(w, err.Error(), http.StatusInternalServerError)
                 //w.WriteHeader(http.StatusServiceUnavailable)
                 return
             } else {
@@ -187,7 +181,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 				return
     		}
     		photoInfo.ID =  photo_id
-    		photoInfo.Uuid = generateUuid()
+    		photoInfo.Uuid = GenerateUuid()
     		fmt.Println("uuid = ", photoInfo.Uuid)
     		if photoInfo.Uuid == "" {
     			w.WriteHeader(http.StatusServiceUnavailable)
@@ -207,7 +201,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusServiceUnavailable)
 				return
 			}
-		
+
 			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 			w.Header().Set("UUID", photoInfo.Uuid)
 			w.WriteHeader(http.StatusNoContent)
@@ -249,7 +243,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func generateUuid() string {
+func GenerateUuid() string {
 	myUuid := uuid.NewRandom()
 	return myUuid.String()
 }

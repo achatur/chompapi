@@ -24,7 +24,7 @@ type RegisterInput struct {
 }
 
 type Photo struct {
-	ID 	string
+	ID 	int
 }
 
 type Photos struct {
@@ -142,7 +142,8 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
 
-	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", 
+		userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
@@ -157,6 +158,18 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	}
 	return nil
 }
+
+// func (userInfo RegisterInput) UpdateUserPhoto() error {
+// 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer db.Close()
+// 	_, err = db.Query("UPDATE chomp_users set photo_id=? WHERE chomp_username=?", 
+// 					userInfo.Photo.ID, userInfo.Username)
+
+// 	return err
+// }
 
 // func (photos *PhotoTable) SetPhoto() error {
 // 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp", "parseTime=true")
@@ -212,7 +225,7 @@ func (photo Photos) UpdatePhotoIDUserTable() error {
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
-	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
 	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
 	query := fmt.Sprintf("UPDATE chomp_users SET photo_id='%d' WHERE chomp_username='%s'", 
