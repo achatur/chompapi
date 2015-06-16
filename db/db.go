@@ -159,34 +159,6 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	return nil
 }
 
-// func (userInfo RegisterInput) UpdateUserPhoto() error {
-// 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer db.Close()
-// 	_, err = db.Query("UPDATE chomp_users set photo_id=? WHERE chomp_username=?", 
-// 					userInfo.Photo.ID, userInfo.Username)
-
-// 	return err
-// }
-
-// func (photos *PhotoTable) SetPhoto() error {
-// 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp", "parseTime=true")
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer db.Close()
-
-// 	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.MySQLDialect{"InnoDB", "UTF8"}}
-// 	err := dbmap.Insert(photos)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
 func (photo Photos) SetMePhoto() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
