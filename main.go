@@ -13,6 +13,7 @@ import (
 	"github.com/astaxie/beego/session"
 	"chompapi/me"
 	"github.com/gorilla/mux"
+	"reflect"
 )
 
 func main() {
@@ -41,7 +42,10 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 	var err error
 	fmt.Println("Session init")
-	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"EnableSetCookie":true, "Secure":true, "CookieLifetime":604800, "CookieName":"chomp_sessionid","Gclifetime":604800,"Maxlifetime":604800,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"EnableSetCookie":true, "Secure":true, "cookieLifeTime":604800, "CookieName":"chomp_sessionid","Gclifetime":604800,"Maxlifetime":604800,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	fmt.Printf("started session, manager = %v\n", globalsessionkeeper.GlobalSessions)
+	fmt.Printf("Type = %v\n", reflect.TypeOf(globalsessionkeeper.GlobalSessions))
+	// fmt.Printf("Config = %v\n",globalsessionkeeper.GlobalSessions.provider)
 	if err != nil {
 		fmt.Printf("Error")
 	}

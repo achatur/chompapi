@@ -60,6 +60,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		if validated == true {
 			//create session using the request data which includes the cookie/sessionid
+			// fmt.Printf("Manager Config = %v", globalsessionkeeper.GlobalSessions.config)
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				//need logging here instead of print
