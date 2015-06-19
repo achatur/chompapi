@@ -38,6 +38,37 @@ type Photos struct {
 	Username 	string
 }
 
+type Reviews struct {
+	ID 				int
+	DishID			int
+	UserID 			int
+	Username 		string
+	RestaurantID	int
+	PhotoID 		int
+	Price			float64
+	Like			bool
+	Descr			string
+	Complete		bool
+}
+
+type Dishs struct {
+	ID 				int
+	DishName 		string
+	RestaurantID	int
+	PhotoID 		int
+}
+
+type Restaurants struct {
+	ID				int
+	Name 			string
+	Latt			float64
+	Long			float64
+	LocationNum		int
+	Source			string
+	SourceLocID		int
+	RestDetailID	int
+}
+
 func GetUserInfo(username string) (map[string]string, error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
@@ -231,7 +262,7 @@ func (photo *Photos) GetPhotoInfoByUuid() error {
 	fmt.Println("Row =", row)
 	fmt.Println("Row Type = ", reflect.TypeOf(photo))
 	if row != nil {
-		err = errors.New("Could not return photo info")
+		err = errors.New("Could noterrors return photo info")
 	}
 	return err
 }
@@ -303,6 +334,79 @@ func (photo *Photos) DeleteMePhoto() error {
 	_, err = db.Query("DELETE FROM photos WHERE id=?", photo.ID)
 
 	return err
+}
+
+func (review *Reviews) SetReview() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", review)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
+
+	_, err = db.Query("INSERT INTO reviews SET ", review.ID)
+
+	return err
+}
+
+func (review *Reviews) UpdateReview() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", review)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
+
+	_, err = db.Query("DELETE FROM photos WHERE id=?", review.ID)
+
+	return err
+}
+
+func (review *Reviews) DeleteReview() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", review)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
+
+	_, err = db.Query("DELETE FROM photos WHERE id=?", review.ID)
+
+	return err
+}
+
+func (restaurant *Restaurants) GetRestaurantInfoByName() int {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return -1
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", restaurant)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(restaurant))
+
+	err2 := db.QueryRow(`SELECT id, name, latt, long, location_num, source, source_location_id
+						FROM restaurants
+						WHERE name='?'`,restaurant.Name).Scan(&restaurant.ID, &restaurant.Name,
+															  &restaurant.Latt, &restaurant.Long,
+															  &restaurant.LocationNum, &restaurant.Source,
+															  &restaurant.SourceLocID)
+	if err2 != sql.ErrNoRows {
+		return 1
+	} else if err2 != nil {
+		return -1
+	}
+	return 0
 }
 
 

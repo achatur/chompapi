@@ -22,6 +22,7 @@ func main() {
 	router.HandleFunc("/me", me.GetMe)
 	router.HandleFunc("/me/photos", me.PostPhotoId)
 	router.HandleFunc("/me/photos/{photo_id}", me.PostPhotoId)
+	router.HandleFunc("/me/review", me.Reviews)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {
