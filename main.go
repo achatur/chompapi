@@ -12,6 +12,7 @@ import (
 	"chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
 	"chompapi/me"
+	"chompapi/review"
 	"github.com/gorilla/mux"
 )
 
@@ -22,7 +23,9 @@ func main() {
 	router.HandleFunc("/me", me.GetMe)
 	router.HandleFunc("/me/photos", me.PostPhotoId)
 	router.HandleFunc("/me/photos/{photo_id}", me.PostPhotoId)
-	router.HandleFunc("/me/review", me.Reviews)
+	//router.HandleFunc("/me/reviews", me.Reviews)
+	router.HandleFunc("/reviews", review.Reviews)
+	router.HandleFunc("/reviews/{review_id}", review.Reviews)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

@@ -23,9 +23,9 @@ type RegisterInput struct {
 	Photo		 Photo
 }
 
-type Photo struct {
-	ID 	int
-}
+// Plurals are names of tables in DB
+// while the singular form of the structs
+// are the inputs from json
 
 type Photos struct {
 	ID			int
@@ -36,6 +36,9 @@ type Photos struct {
 	TimeStamp	string
 	Uuid		string
 	Username 	string
+}
+type Photo struct {
+	ID 	int
 }
 
 type Reviews struct {
@@ -50,12 +53,21 @@ type Reviews struct {
 	Descr			string
 	Complete		bool
 }
+type Review struct {
+	id 				int
+	Username 		string
+	UserID 			int
+	Restaurant 		Restaurants
+	Dish 			Dish
+	Photo 			Photo
+	Price 			float32
+	Liked 			bool
+	Description 	string
+}
 
-type Dishs struct {
+type Dish struct {
 	ID 				int
-	DishName 		string
-	RestaurantID	int
-	PhotoID 		int
+	Name 			string
 }
 
 type Restaurants struct {
@@ -65,9 +77,15 @@ type Restaurants struct {
 	Long			float64
 	LocationNum		int
 	Source			string
-	SourceLocID		int
-	RestDetailID	int
+	SourceLocID		string
 }
+// type Restaurant struct {
+//   	Name			string
+//   	Latt			float64
+//   	Long			float64
+//   	Source			string
+//   	SourceLocID 	string
+// }
 
 func GetUserInfo(username string) (map[string]string, error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
@@ -384,7 +402,111 @@ func (review *Reviews) DeleteReview() error {
 	return err
 }
 
-func (restaurant *Restaurants) GetRestaurantInfoByName() int {
+func (dish *Dish) GetDishInfoByName() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("inside call: restaurants = %v\n", dish)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(dish))
+	fmt.Println("")
+
+	err2 := db.QueryRow(`SELECT id, name
+						FROM dish
+						WHERE BINARY name=?`,dish.Name).Scan(&dish.ID, &dish.Name)
+
+	fmt.Println("Inside DB: dish now: ", dish)
+ 	fmt.Println("Error: ", err2)
+
+	return err2
+}
+
+func (dish *Dish) CreateDish() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("Creating dish = %v\n", dish)
+	fmt.Printf("Type of dish = %v\n", reflect.TypeOf(dish))
+	fmt.Println("")
+	fmt.Printf("INSERT INTO dish SET name='%s'\n", dish.Name)
+
+	// err2 := db.QueryRow(`INSERT INTO dish
+	// 					 SET name=?`,dish.Name).Scan(&dish.ID, dish.Name)
+
+	results, err2 := db.Exec(`INSERT INTO dish SET name=?`, dish.Name)
+
+	id, err2 := results.LastInsertId()
+	dish.ID = int(id)
+
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+
+	return err2
+
+
+	fmt.Println("Inside DB: dish now: ", dish)
+ 	fmt.Println("Error: ", err2)
+
+	return err2
+}
+
+func (restaurant *Restaurants) GetRestaurantInfoByName() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("inside call: restaurants = %v\n", restaurant)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(restaurant))
+	fmt.Println("")
+
+	err2 := db.QueryRow(`SELECT id, name, latitude, longitude, location_num, source, source_location_id
+						FROM restaurants
+						WHERE name=?`,restaurant.Name).Scan(&restaurant.ID, &restaurant.Name,
+															  &restaurant.Latt, &restaurant.Long,
+															  &restaurant.LocationNum, &restaurant.Source,
+															  &restaurant.SourceLocID)
+	fmt.Println("Inside DB: restaurant now: ", restaurant)
+ 	fmt.Println("Error: ", err2)
+
+	return err2
+}
+
+func (restaurant *Restaurants) CreateRestaurant() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("Type of userInfo = %v\n\n", reflect.TypeOf(restaurant))
+
+	results, err2 := db.Exec(`INSERT INTO restaurants
+						 SET id = ?, name = ?, latitude = ?, longitude = ?,
+						 location_num = ?, source = ?,
+						 source_location_id = ?`, restaurant.ID, restaurant.Name,
+						 					      restaurant.Latt, restaurant.Long,
+						 	  					  restaurant.LocationNum, restaurant.Source,
+						 	  					  restaurant.SourceLocID)
+	id, err2 := results.LastInsertId()
+	restaurant.ID = int(id)
+
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+
+	return err2
+}
+
+func (review *Review) CreateReview() int {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return -1
@@ -392,22 +514,25 @@ func (restaurant *Restaurants) GetRestaurantInfoByName() int {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", restaurant)
-	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(restaurant))
+	fmt.Println("map = %v\n", review)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
 
-	err2 := db.QueryRow(`SELECT id, name, latt, long, location_num, source, source_location_id
-						FROM restaurants
-						WHERE name='?'`,restaurant.Name).Scan(&restaurant.ID, &restaurant.Name,
-															  &restaurant.Latt, &restaurant.Long,
-															  &restaurant.LocationNum, &restaurant.Source,
-															  &restaurant.SourceLocID)
-	if err2 != sql.ErrNoRows {
-		return 1
-	} else if err2 != nil {
-		return -1
-	}
+	// err2 := db.QueryRow(`INSERT into review SET (user_id = ?, username = ?, dish_id ? =, 
+	// 											 photo_id =?, restaurant_id = ?, 
+	// 											 price = ?, like = ?, complete = ?, description = ?)
+	// 					FROM restaurants
+	// 					WHERE name='?'`,restaurant.Name).Scan(&review.ID, &restaurant.ID, &restaurant.Name,
+	// 														  &restaurant.Latt, &restaurant.Long,
+	// 														  &restaurant.LocationNum, &restaurant.Source,
+	// 														  &restaurant.SourceLocID)
+	// if err2 != sql.ErrNoRows {
+	// 	return 1
+	// } else if err2 != nil {
+	// 	return -1
+	// }
 	return 0
 }
+
 
 
 func IsValid(s sql.NullString) string {
