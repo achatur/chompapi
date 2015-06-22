@@ -435,13 +435,36 @@ func (restaurant *Restaurants) GetRestaurantInfoByName() error {
 	fmt.Println("inside call: restaurants = %v\n", restaurant)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(restaurant))
 	fmt.Println("")
+	fmt.Printf("locaiton num = %v\n", restaurant.LocationNum)
 
-	err2 := db.QueryRow(`SELECT id, name, latitude, longitude, location_num, source, source_location_id
+	rows, err2 := db.Query(`SELECT id, name, latitude, longitude, location_num, source, source_location_id
 						FROM restaurants
-						WHERE name=?`,restaurant.Name).Scan(&restaurant.ID, &restaurant.Name,
-															  &restaurant.Latt, &restaurant.Long,
-															  &restaurant.LocationNum, &restaurant.Source,
-															  &restaurant.SourceLocID)
+						WHERE name=?`,restaurant.Name)
+
+	for rows.Next() {
+    	var id int
+    	var name string
+    	var latt float64
+    	var long float64
+    	var locationNum int
+    	var source string
+    	var sourceLocID string
+    	err = rows.Scan(&id, &name, &latt, &long, &locationNum, 
+    					&source, &sourceLocID)
+    	fmt.Printf("locaiton num = %v", restaurant.LocationNum)
+    	fmt.Printf("db Location num = %v\n", locationNum)
+    	fmt.Printf("db restaurant id num = %v\n", id)
+    	if locationNum >= restaurant.LocationNum {
+    		restaurant.Latt = latt
+    		restaurant.Long = long
+    		restaurant.LocationNum = locationNum
+    	}
+    	restaurant.ID = id
+    	restaurant.Name = name
+    	restaurant.Source = source
+    	restaurant.SourceLocID = sourceLocID
+
+	}
 	fmt.Println("Inside DB: restaurant now: ", restaurant)
  	fmt.Println("Error: ", err2)
 
