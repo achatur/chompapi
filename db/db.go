@@ -23,6 +23,17 @@ type RegisterInput struct {
 	Photo		 Photo
 }
 
+type UserInfo struct {
+	ChompUserID   int
+	ChompUsername string
+	Email         string
+	PhoneNumber   string
+	PasswordHash  string
+	DOB           string
+	Gender        string
+	PhotoID 	  int
+}
+
 // Plurals are names of tables in DB
 // while the singular form of the structs
 // are the inputs from json
@@ -87,50 +98,55 @@ type Restaurants struct {
 //   	SourceLocID 	string
 // }
 
-func GetUserInfo(username string) (map[string]string, error) {
+func (userInfo *UserInfo) GetUserInfo(username string) error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return make(map[string]string), err
+		return err
 	}
 	defer db.Close()
-	m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	rows, err := db.Query("SELECT * FROM chomp_users WHERE chomp_username=?", username)
+	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.ChompUsername)
+	err = db.QueryRow("SELECT * FROM chomp_users WHERE chomp_username=?", 
+					   userInfo.ChompUsername).Scan(&userInfo.ChompUserID, &userInfo.Email,
+					   							    &userInfo.ChompUsername, &userInfo.PhoneNumber,
+					   							    &userInfo.PasswordHash,&userInfo.DOB,
+					   							    &userInfo.Gender, &userInfo.PhotoID)
 	if err != nil {
-		return make(map[string]string), err
+		fmt.Printf("err = %v", err)
+		return err
 	}
-	columns, err := rows.Columns()
-	if err != nil {
-		return make(map[string]string), err
-	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-	fmt.Println("scanArgs = %v\n", scanArgs)
-	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		if err != nil {
-			return make(map[string]string), err
-		}
-		var value string
-		for i, col := range values {
-			if col == nil {
-				value = "null"
-			} else {
-				value = string(col)
-			}
-			m[columns[i]] = value
-			fmt.Println(columns[i], ": ", value)
-		}
-		fmt.Println("--------------------------------")
-	}
-	if err = rows.Err(); err != nil {
-		return make(map[string]string), err
-	}
-	return m, err
+	// columns, err := rows.Columns()
+	// if err != nil {
+	// 	return err
+	// }
+	// values := make([]sql.RawBytes, len(columns))
+	// scanArgs := make([]interface{}, len(values))
+	// for i := range values {
+	// 	scanArgs[i] = &values[i]
+	// }
+	// fmt.Println("scanArgs = %v\n", scanArgs)
+	// for rows.Next() {
+	// 	err = rows.Scan(scanArgs...)
+	// 	if err != nil {
+	// 		return make(map[string]string), err
+	// 	}
+	// 	var value string
+	// 	for i, col := range values {
+	// 		if col == nil {
+	// 			value = "null"
+	// 		} else {
+	// 			value = string(col)
+	// 		}
+	// 		m[columns[i]] = value
+	// 		fmt.Println(columns[i], ": ", value)
+	// 	}
+	// 	fmt.Println("--------------------------------")
+	// }
+	// if err = rows.Err(); err != nil {
+	// 	return make(map[string]string), err
+	// }
+	return err
 }
 
 func GetMeInfo(username string) (map[string]string, error) {

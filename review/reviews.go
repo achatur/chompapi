@@ -36,6 +36,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	} else {
+		defer sessionStore.SessionRelease(w)
 		username := reflect.ValueOf(sessionUser).String()
 		switch r.Method {
 

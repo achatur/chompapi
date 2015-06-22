@@ -15,15 +15,15 @@ type LoginInput struct {
 	Password string
 }
 
-type UserInfo struct {
-	ChompUserID   int
-	ChompUsername string
-	Email         string
-	PhoneNumber   string
-	PasswordHash  string
-	DOB           string
-	Gender        string
-}
+// type UserInfo struct {
+// 	ChompUserID   int
+// 	ChompUsername string
+// 	Email         string
+// 	PhoneNumber   string
+// 	PasswordHash  string
+// 	DOB           string
+// 	Gender        string
+// }
 
 var globalSessions *session.Manager
 
@@ -32,6 +32,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		var input LoginInput
+		userInfo := new(db.UserInfo)
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
 			//need logging here instead of print
@@ -41,8 +42,8 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
-
-		userInfo, err := db.GetUserInfo(input.Username)
+		userInfo.ChompUsername = input.Username
+		err := userInfo.GetUserInfo(input.Username)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
@@ -52,7 +53,8 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		fmt.Println("return from db = %v", userInfo)
 
-		dbPassword := userInfo["password_hash"]
+		// dbPassword := userInfo["password_hash"]
+		dbPassword := userInfo.PasswordHash
 
 		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
 		//need logging here instead of print or get rid of this statement in full once final
@@ -61,6 +63,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		if validated == true {
 			//create session using the request data which includes the cookie/sessionid
 			// fmt.Printf("Manager Config = %v", globalsessionkeeper.GlobalSessions.config)
+			fmt.Printf("about to start session\n")
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				//need logging here instead of print
@@ -74,6 +77,11 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore)
 				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore.Get("usernamestring"))
 				err = sessionStore.Set("username", input.Username)
+				if err != nil {
+					//need logging here instead of print
+					fmt.Printf("Error while writing to DB, %v\n", err)
+				}
+				err = sessionStore.Set("userID", userInfo.ChompUserID)
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)

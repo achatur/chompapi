@@ -57,6 +57,8 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 			return
 	} else {
 			//need logging here instead of print
+		//extend session time by GC time
+		defer sessionStore.SessionRelease(w)
 		fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 		fmt.Printf("Found Session! Session username values = %v\n", reflect.TypeOf(sessionUser))
 		input.Username = reflect.ValueOf(sessionUser).String()
@@ -108,6 +110,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	} else {
+		defer sessionStore.SessionRelease(w)
 		username := reflect.ValueOf(sessionUser).String()
 		switch r.Method {
 
