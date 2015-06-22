@@ -8,6 +8,8 @@ import (
 	"chompapi/globalsessionkeeper"
 	"reflect"
 	"database/sql"
+	"github.com/gorilla/mux"
+	"strconv"
 )
 
 
@@ -28,6 +30,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	}
 	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
+	sessionUserID := sessionStore.Get("userID")
 	fmt.Println("SessionUser = %v", sessionUser)
 
 	if sessionUser == nil {
@@ -36,15 +39,23 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	} else {
+		//reset time to time.now() + maxlifetime
 		defer sessionStore.SessionRelease(w)
-		username := reflect.ValueOf(sessionUser).String()
+
+		//create variables
+		username 	 := reflect.ValueOf(sessionUser).String()
+		userID 	 	 := reflect.ValueOf(sessionUserID).Int()
+		review 	 	 := new(db.Review)
+		dbRestaurant := new(db.Restaurants)
+		dbDish 		 := new(db.Dish)
+
+		review.Username = username
+		review.UserID = int(userID)
+
 		switch r.Method {
 
-		case "POST":
-			var review db.Review
-			dbRestaurant := new(db.Restaurants)
-			dbDish := new(db.Dish)
-			review.Username = username
+		case "PUT", "POST":
+			
 			decoder := json.NewDecoder(r.Body)
 			if err := decoder.Decode(&review); err != nil {
 				//need logging here instead of print
@@ -52,16 +63,9 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.Code = http.StatusBadRequest
 				myErrorResponse.CustomMessage = "Malformed Json: " + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
+				return
 			}
 
-			// if isValidInput(&sentRestaurant, &myErrorResponse) == false {
-			// 	fmt.Println("Something not valid")
-			// 	myErrorResponse.Code = http.StatusBadRequest
-			// 	myErrorResponse.HttpErrorResponder(w)
-	
-			// 	return
-			// }
-			
 			dbRestaurant.Name = review.Restaurant.Name
 			err2 := dbRestaurant.GetRestaurantInfoByName()
 			if err2 != nil && err2 != sql.ErrNoRows{
@@ -70,6 +74,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.Code = http.StatusInternalServerError
 				myErrorResponse.CustomMessage = "something went while retrieving data"
 				myErrorResponse.HttpErrorResponder(w)
+				return
 			} else if err2 == sql.ErrNoRows {
 				// not found in DB
 				fmt.Println("Restaurant Not found in DB, creating new entry")
@@ -80,6 +85,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					myErrorResponse.Code = http.StatusInternalServerError
 					myErrorResponse.CustomMessage = "something went while retrieving data"
 					myErrorResponse.HttpErrorResponder(w)	
+					return
 				}
 			} else {
 				// entry found in db
@@ -98,7 +104,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 							fmt.Printf("something went while retrieving data %v", err)
 							myErrorResponse.Code = http.StatusInternalServerError
 							myErrorResponse.CustomMessage = "something went while retrieving data"
-							myErrorResponse.HttpErrorResponder(w)	
+							myErrorResponse.HttpErrorResponder(w)
+							return	
 						}
 					} else {
 						//use existing DB values
@@ -122,6 +129,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.Code = http.StatusInternalServerError
 				myErrorResponse.CustomMessage = "something went while retrieving data"
 				myErrorResponse.HttpErrorResponder(w)
+				return
 			} else if err3 == sql.ErrNoRows {
 				// not found in DB
 				fmt.Println("Not found in DB, creating new entry")
@@ -131,7 +139,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusInternalServerError
 					myErrorResponse.CustomMessage = "something went while retrieving data"
-					myErrorResponse.HttpErrorResponder(w)	
+					myErrorResponse.HttpErrorResponder(w)
+					return
 				}
 			} else {
 				fmt.Println("Found Dish ", dbDish)
@@ -139,30 +148,80 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			}
 			fmt.Println("writing to db!")
 
-			review.CreateReview()
-			
-
+			if r.Method == "PUT" {
+				vars := mux.Vars(r)
+    			review_id, thisErr := strconv.Atoi(vars["review_id"])
+    			if thisErr != nil {
+    				fmt.Println("Not An Integer")
+    				myErrorResponse.Code = http.StatusBadRequest
+					myErrorResponse.CustomMessage = "Invalid Review ID"
+					myErrorResponse.HttpErrorResponder(w)
+				return
+    			}
+    			review.ID = review_id
+				err = review.UpdateReview()
+				if err != nil {
+					//something bad happened
+					if err.Error() == "0 rows updated" {
+						fmt.Printf("something went while retrieving data %v", err)
+						myErrorResponse.Code = http.StatusBadRequest
+						myErrorResponse.CustomMessage = "Error: " + err.Error()
+						myErrorResponse.HttpErrorResponder(w)
+					} else {
+						fmt.Printf("something went while retrieving data %v", err)
+						myErrorResponse.Code = http.StatusInternalServerError
+						myErrorResponse.CustomMessage = "could not update review"
+						myErrorResponse.HttpErrorResponder(w)
+					}
+				}
+			} else {
+				err = review.CreateReview()
+				if err != nil {
+					//something bad happened
+					fmt.Printf("something went while retrieving data %v", err)
+					myErrorResponse.Code = http.StatusInternalServerError
+					myErrorResponse.CustomMessage = "could not create review"
+					myErrorResponse.HttpErrorResponder(w)
+					return
+				}
+			}
+			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%v",  review.ID))
 			w.WriteHeader(http.StatusCreated)
 			return
 
 		case "GET":
 
 			fmt.Println("Working Skel ")
-			// w.Header().Set("Content-Type", "application/json")
-			// json.NewEncoder(w).Encode(photoInfo)
-			// if err != nil {
-			//     http.Error(w, err.Error(), http.StatusInternalServerError)
-			//     return
-			// }
 			return
 
-		case "PUT":
-
-			w.WriteHeader(http.StatusNoContent)
-            return
-
 		case "DELETE":
-
+			vars := mux.Vars(r)
+    		review_id, thisErr := strconv.Atoi(vars["review_id"])
+    		if thisErr != nil {
+    			fmt.Println("Not An Integer")
+    			myErrorResponse.Code = http.StatusBadRequest
+				myErrorResponse.CustomMessage = "Invalid Review ID"
+				myErrorResponse.HttpErrorResponder(w)
+			return
+    		}
+    		review.ID = review_id
+			err = review.DeleteReview()
+			if err != nil {
+				//something bad happened
+				if err.Error() == "0 rows deleted" {
+					fmt.Printf("something went while retrieving data %v", err)
+					myErrorResponse.Code = http.StatusBadRequest
+					myErrorResponse.CustomMessage = "Error: " + err.Error()
+					myErrorResponse.HttpErrorResponder(w)
+				} else {
+					fmt.Printf("something went while retrieving data %v", err)
+					myErrorResponse.Code = http.StatusInternalServerError
+					myErrorResponse.CustomMessage = "could not create review"
+					myErrorResponse.HttpErrorResponder(w)
+				}
+				
+				return
+			}
             w.WriteHeader(http.StatusNoContent)
             return
 
@@ -170,38 +229,5 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-	}
-}
-
-func isValidInput(review *db.Review, errorResponse *globalsessionkeeper.ErrorResponse) bool {
-	// if isValidString(userInfo.Email) == false {
-	// 	fmt.Println("not valid email = ", userInfo.Email)
-	// 	errorResponse.CustomMessage = "Invalid Email " + userInfo.Email
-	// 	return false
-	// }
-	// if isValidString(userInfo.Username) == false {
-	// 	fmt.Println("not valid username", userInfo.Username)
-	// 	errorResponse.CustomMessage = "Invalid Username " + userInfo.Username
-	// 	return false
-	// }
-	// if isValidString(userInfo.Password) == false {
-	// 	fmt.Println("not valid password", userInfo.Password)
-	// 	errorResponse.CustomMessage = "Invalid Password " + userInfo.Password
-	// 	return false
-	// }
-	// if userInfo.Dob == 0 || age(time.Unix(int64(userInfo.Dob), 0)) < 18 {
-	// 	errorResponse.CustomMessage = "Invalid Age " + string(age(time.Unix(int64(userInfo.Dob), 0)))
-	// 	return false
-	// }
-	
-	return true
-}
-
-func isValidString(s string) bool {
-	fmt.Println("inside isValidString func")
-	if s == "" {
-		return false
-	} else {
-		return true
 	}
 }

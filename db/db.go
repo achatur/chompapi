@@ -60,12 +60,12 @@ type Reviews struct {
 	RestaurantID	int
 	PhotoID 		int
 	Price			float64
-	Like			bool
+	Liked			bool
 	Descr			string
 	Complete		bool
 }
 type Review struct {
-	id 				int
+	ID 				int
 	Username 		string
 	UserID 			int
 	Restaurant 		Restaurants
@@ -370,54 +370,6 @@ func (photo *Photos) DeleteMePhoto() error {
 	return err
 }
 
-func (review *Reviews) SetReview() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", review)
-	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
-
-	_, err = db.Query("INSERT INTO reviews SET ", review.ID)
-
-	return err
-}
-
-func (review *Reviews) UpdateReview() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", review)
-	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
-
-	_, err = db.Query("DELETE FROM photos WHERE id=?", review.ID)
-
-	return err
-}
-
-func (review *Reviews) DeleteReview() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", review)
-	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
-
-	_, err = db.Query("DELETE FROM photos WHERE id=?", review.ID)
-
-	return err
-}
-
 func (dish *Dish) GetDishInfoByName() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
@@ -522,10 +474,46 @@ func (restaurant *Restaurants) CreateRestaurant() error {
 	return err2
 }
 
-func (review *Review) CreateReview() int {
+func (review *Review) CreateReview() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return -1
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Printf("REVIEW = %v\n", review)
+	fmt.Printf("Type of review = %v\n", reflect.TypeOf(review))
+
+	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, description = %v", 
+												  review.UserID, review.Username,
+						 					      review.Dish.ID, review.Photo.ID,
+						 	  					  review.Restaurant.ID, review.Price,
+						 	  					  review.Liked, review.Description)
+
+	results, err2 := db.Exec(`INSERT INTO reviews
+						 SET user_id = ?, username = ?, dish_id = ?,
+						 photo_id = ?, restaurant_id = ?, price = ?,
+						 liked = ?, description = ?`, review.UserID, review.Username,
+						 					      review.Dish.ID, review.Photo.ID,
+						 	  					  review.Restaurant.ID, review.Price,
+						 	  					  review.Liked, review.Description)
+
+	if err2 != nil {
+		fmt.Printf("Error = %v", err2)
+		return err2
+	}
+	id, err2 := results.LastInsertId()
+	review.ID = int(id)	
+
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+	return err2
+}
+
+func (review *Review) UpdateReview() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
 	}
 	defer db.Close()
 
@@ -533,23 +521,50 @@ func (review *Review) CreateReview() int {
 	fmt.Println("map = %v\n", review)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
 
-	// err2 := db.QueryRow(`INSERT into review SET (user_id = ?, username = ?, dish_id ? =, 
-	// 											 photo_id =?, restaurant_id = ?, 
-	// 											 price = ?, like = ?, complete = ?, description = ?)
-	// 					FROM restaurants
-	// 					WHERE name='?'`,restaurant.Name).Scan(&review.ID, &restaurant.ID, &restaurant.Name,
-	// 														  &restaurant.Latt, &restaurant.Long,
-	// 														  &restaurant.LocationNum, &restaurant.Source,
-	// 														  &restaurant.SourceLocID)
-	// if err2 != sql.ErrNoRows {
-	// 	return 1
-	// } else if err2 != nil {
-	// 	return -1
-	// }
-	return 0
+	results, err2 := db.Exec(`UPDATE reviews
+						 SET user_id = ?, username = ?, dish_id = ?,
+						 photo_id = ?, restaurant_id = ?, price = ?,
+						 liked = ?, description = ? WHERE id = ?`, review.UserID, review.Username,
+						 					      review.Dish.ID, review.Photo.ID,
+						 	  					  review.Restaurant.ID, review.Price,
+						 	  					  review.Liked, review.Description, review.ID)
+	if err2 != nil {
+		fmt.Printf("Error = %v", err2)
+		return err2
+	}
+	rows, err2 := results.RowsAffected()
+	if rows < 1 {
+		fmt.Printf("Nothing updated\n")
+		err2 = errors.New("0 rows updated")
+	}
+
+	return err2
 }
 
+func (review *Review) DeleteReview() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", review)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
+
+	results, err2 := db.Exec("DELETE FROM reviews WHERE id=?", review.ID)
+	if err2 != nil {
+		fmt.Printf("Error = %v", err2)
+		return err2
+	}
+	rows, err2 := results.RowsAffected()
+	if rows < 1 {
+		fmt.Printf("Nothing updated\n")
+		err2 = errors.New("0 rows deleted")
+	}
+
+	return err2
+}
 
 func IsValid(s sql.NullString) string {
 
