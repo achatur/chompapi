@@ -497,6 +497,35 @@ func (restaurant *Restaurants) CreateRestaurant() error {
 	return err2
 }
 
+func GetReviewsByUserID(userID int) (reviews []Review) {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return reviews
+	}
+	defer db.Close()
+	fmt.Printf("id = %v", userID)
+	rows, err := db.Query(`SELECT id, user_id, username, dish_id, photo_id,
+							restaurant_id, price, liked, description
+							FROM reviews
+							WHERE user_id=?`,userID)
+	if err != nil {
+		return reviews
+	}
+	var review Review
+	// reviews := []Review{}
+	for rows.Next() {
+		if err := rows.Scan(&review.ID, &review.UserID, &review.Username, &review.Dish.ID,
+				  &review.Photo.ID, &review.Restaurant.ID, &review.Price, &review.Liked, &review.Description); err != nil {
+			fmt.Printf("Err= %v\n", err.Error())
+			return reviews
+		}
+		fmt.Printf("in for, review = %v\n", review)
+		reviews = append(reviews, review)
+	}
+	fmt.Printf("\nReturning = %v\n", reviews)
+	return reviews
+}
+
 func (review *Review) CreateReview() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
