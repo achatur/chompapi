@@ -7,6 +7,9 @@ import (
 	"chompapi/globalsessionkeeper"
 	"reflect"
 )
+type ReturnJson struct {
+	Reviews []db.Review
+}
 func Reviews(w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
@@ -46,14 +49,17 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			if reviews == nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v\n", err)
-				fmt.Printf("Reviews list = %v", reviews)
+				fmt.Printf("Reviews list = %v\n", reviews)
 				w.Header().Set("Content-Type", "application/json")
             	json.NewEncoder(w).Encode("[]")
 				return
 			}
-			fmt.Printf("Reviews list = %v", reviews)
+			fmt.Printf("Reviews list = %v\n", reviews)
 			w.Header().Set("Content-Type", "application/json")
-            json.NewEncoder(w).Encode(reviews)
+			returnJson :=  new(ReturnJson)
+			returnJson.Reviews = reviews
+			fmt.Printf("\n\nReview: reviews = %v\n", returnJson)
+            json.NewEncoder(w).Encode(returnJson)
             if err != nil {
                 fmt.Printf("something went while retrieving data %v\n", err)
 				myErrorResponse.Code = http.StatusInternalServerError
