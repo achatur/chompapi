@@ -8,7 +8,7 @@ import (
 	"reflect"
 )
 type ReturnJson struct {
-	Reviews []db.Review
+	Reviews []db.Review `json:"reviews"`
 }
 func Reviews(w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse

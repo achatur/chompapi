@@ -75,7 +75,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.CustomMessage = "something went while retrieving data"
 				myErrorResponse.HttpErrorResponder(w)
 				return
-			} else if err2 == sql.ErrNoRows {
+			} else if err2 == sql.ErrNoRows || dbRestaurant.ID == 0 {
 				// not found in DB
 				fmt.Println("Restaurant Not found in DB, creating new entry")
 				err = review.Restaurant.CreateRestaurant()

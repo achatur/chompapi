@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"chompapi/db"
 	"chompapi/globalsessionkeeper"
-	"chompapi/login"
+	// "chompapi/login"
 	"strings"
 	"reflect"
 	"github.com/pborman/uuid"
@@ -30,8 +30,9 @@ type Photo struct {
 
 func GetMe(w http.ResponseWriter, r *http.Request) {
 
-	var input login.LoginInput
-	var returnUser UserInfo
+	// var input login.LoginInput
+	// var returnUser UserInfo
+	userInfo := new(db.UserInfo)
 	fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
 	cookie := getCookie(r)
 	if cookie == "" {
@@ -61,21 +62,24 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 		defer sessionStore.SessionRelease(w)
 		fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 		fmt.Printf("Found Session! Session username values = %v\n", reflect.TypeOf(sessionUser))
-		input.Username = reflect.ValueOf(sessionUser).String()
-		userInfo, err := db.GetMeInfo(input.Username)
+		userInfo.Username = reflect.ValueOf(sessionUser).String()
+		//userInfo, err := db.GetMeInfo(input.Username)
+		err := userInfo.GetUserInfo()
 		if err != nil {
 			//need logging here instead of print
-			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Println("Username not found..", userInfo.Username)
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		} else {
 			fmt.Println("type for userInfo = ", userInfo)
 			w.Header().Set("Content-Type", "application/json")
-			returnUser.ID = userInfo["chomp_user_id"]
-			returnUser.Username = userInfo["chomp_username"]
-			returnUser.DOB = userInfo["dob"]
-			returnUser.Email = userInfo["email"]
-			returnUser.Photo.ID = userInfo["photo_id"]
-			json.NewEncoder(w).Encode(returnUser)
+			userInfo.PasswordHash = ""
+			// returnUser.ID = userInfo["chomp_user_id"]
+			// returnUser.Username = userInfo["chomp_username"]
+			// returnUser.DOB = userInfo["dob"]
+			// returnUser.Email = userInfo["email"]
+			// returnUser.Photo.ID = userInfo["photo_id"]
+			json.NewEncoder(w).Encode(userInfo)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return

@@ -24,14 +24,14 @@ type RegisterInput struct {
 }
 
 type UserInfo struct {
-	ChompUserID   int
-	ChompUsername string
-	Email         string
-	PhoneNumber   string
-	PasswordHash  string
-	DOB           string
-	Gender        string
-	PhotoID 	  int
+	UserID   		int 	`json:"userID"`
+	Username 		string 	`json:"username"`
+	Email         	string 	`json:"email"`
+	PhoneNumber   	string 	`json:"phoneNumber,omitempty"`
+	PasswordHash  	string 	`json:"passwordHash,omitempty"`
+	DOB           	string 	`json:"dob"`
+	Gender        	string 	`json:"gender"`
+	Photo 	  	  	Photo 	`json:"photo"`
 }
 
 // Plurals are names of tables in DB
@@ -49,7 +49,7 @@ type Photos struct {
 	Username 	string
 }
 type Photo struct {
-	ID 	int
+	ID 	int 	`json:"id"`
 }
 
 type Reviews struct {
@@ -65,40 +65,35 @@ type Reviews struct {
 	Complete		bool
 }
 type Review struct {
-	ID 				int
-	Username 		string
-	UserID 			int
-	Restaurant 		Restaurants
-	Dish 			Dish
-	Photo 			Photo
-	Price 			float32
-	Liked 			bool
-	Description 	string
+	ID 				int 			`json:"id"`
+	Username 		string			`json:"username"`
+	UserID 			int				`json:"userId"`
+	Restaurant 		Restaurants		`json:"restaurant"`
+	Dish 			Dish			`json:"dish"`
+	Photo 			Photo			`json:"photo"`
+	Price 			float32			`json:"price"`
+	Liked 			sql.NullBool		`json:"liked,omitempty"`
+	Description 	string			`json:"description"`
+	Finished		sql.NullBool		`json:"finished,omitempty"`
+	DishTags		string 			`json:"dishTags"`
 }
 
 type Dish struct {
-	ID 				int
-	Name 			string
+	ID 				int				`json:"id"`
+	Name 			string			`json:"name"`
 }
 
 type Restaurants struct {
-	ID				int
-	Name 			string
-	Latt			float64
-	Long			float64
-	LocationNum		int
-	Source			string
-	SourceLocID		string
+	ID				int				`json:"id"`
+	Name 			string			`json:"name"`
+	Latt			float64			`json:"latt"`
+	Long			float64			`json:"long"`
+	LocationNum		int				`json:"locationNum"`
+	Source			string			`json:"source"`
+	SourceLocID		string			`json:"sourceLocID"`
 }
-// type Restaurant struct {
-//   	Name			string
-//   	Latt			float64
-//   	Long			float64
-//   	Source			string
-//   	SourceLocID 	string
-// }
 
-func (userInfo *UserInfo) GetUserInfo(username string) error {
+func (userInfo *UserInfo) GetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return err
@@ -106,46 +101,19 @@ func (userInfo *UserInfo) GetUserInfo(username string) error {
 	defer db.Close()
 
 	// Prepare statement for reading chomp_users table data
-	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.ChompUsername)
-	err = db.QueryRow("SELECT * FROM chomp_users WHERE chomp_username=?", 
-					   userInfo.ChompUsername).Scan(&userInfo.ChompUserID, &userInfo.Email,
-					   							    &userInfo.ChompUsername, &userInfo.PhoneNumber,
+	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
+						phone_number, password_hash, dob, gender, photo_id
+					   FROM chomp_users
+					   WHERE chomp_username=?`, 
+					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
+					   							    &userInfo.Username, &userInfo.PhoneNumber,
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
-					   							    &userInfo.Gender, &userInfo.PhotoID)
+					   							    &userInfo.Gender, &userInfo.Photo.ID)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
 	}
-	// columns, err := rows.Columns()
-	// if err != nil {
-	// 	return err
-	// }
-	// values := make([]sql.RawBytes, len(columns))
-	// scanArgs := make([]interface{}, len(values))
-	// for i := range values {
-	// 	scanArgs[i] = &values[i]
-	// }
-	// fmt.Println("scanArgs = %v\n", scanArgs)
-	// for rows.Next() {
-	// 	err = rows.Scan(scanArgs...)
-	// 	if err != nil {
-	// 		return make(map[string]string), err
-	// 	}
-	// 	var value string
-	// 	for i, col := range values {
-	// 		if col == nil {
-	// 			value = "null"
-	// 		} else {
-	// 			value = string(col)
-	// 		}
-	// 		m[columns[i]] = value
-	// 		fmt.Println(columns[i], ": ", value)
-	// 	}
-	// 	fmt.Println("--------------------------------")
-	// }
-	// if err = rows.Err(); err != nil {
-	// 	return make(map[string]string), err
-	// }
 	return err
 }
 
@@ -205,7 +173,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
-	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(userInfo))
+	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
 
 	query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", 
 		userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
@@ -233,12 +201,12 @@ func (photo Photos) SetMePhoto() error {
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
-	fmt.Println("Type of userInfo = %w\n", reflect.TypeOf(photo))
+	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
 	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
 	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid) SELECT chomp_user_id, '%s', '%s', '%s' from chomp_users WHERE chomp_username='%s'", 
 						photo.FilePath, photo.FileHash, photo.Uuid, photo.Username)
-	fmt.Println("Query = %v\n", query)
+	fmt.Printf("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -441,29 +409,32 @@ func (restaurant *Restaurants) GetRestaurantInfoByName() error {
 						FROM restaurants
 						WHERE name=?`,restaurant.Name)
 
-	for rows.Next() {
-    	var id int
-    	var name string
-    	var latt float64
-    	var long float64
-    	var locationNum int
-    	var source string
-    	var sourceLocID string
-    	err = rows.Scan(&id, &name, &latt, &long, &locationNum, 
-    					&source, &sourceLocID)
-    	fmt.Printf("locaiton num = %v", restaurant.LocationNum)
-    	fmt.Printf("db Location num = %v\n", locationNum)
-    	fmt.Printf("db restaurant id num = %v\n", id)
-    	if locationNum >= restaurant.LocationNum {
-    		restaurant.Latt = latt
-    		restaurant.Long = long
-    		restaurant.LocationNum = locationNum
-    	}
-    	restaurant.ID = id
-    	restaurant.Name = name
-    	restaurant.Source = source
-    	restaurant.SourceLocID = sourceLocID
+	if err2 == nil  {
 
+		for rows.Next() {
+    		var id int
+    		var name string
+    		var latt float64
+    		var long float64
+    		var locationNum int
+    		var source string
+    		var sourceLocID string
+    		err = rows.Scan(&id, &name, &latt, &long, &locationNum, 
+    						&source, &sourceLocID)
+    		fmt.Printf("locaiton num = %v", restaurant.LocationNum)
+    		fmt.Printf("db Location num = %v\n", locationNum)
+    		fmt.Printf("db restaurant id num = %v\n", id)
+    		if locationNum >= restaurant.LocationNum {
+    			restaurant.Latt = latt
+    			restaurant.Long = long
+    			restaurant.LocationNum = locationNum
+    		}
+    		restaurant.ID = id
+    		restaurant.Name = name
+    		restaurant.Source = source
+    		restaurant.SourceLocID = sourceLocID
+	
+		}
 	}
 	fmt.Println("Inside DB: restaurant now: ", restaurant)
  	fmt.Println("Error: ", err2)
@@ -480,7 +451,14 @@ func (restaurant *Restaurants) CreateRestaurant() error {
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("inside call: restaurants = %v\n", restaurant)
-	fmt.Printf("Type of userInfo = %v\n\n", reflect.TypeOf(restaurant))
+	fmt.Printf("Type of Restaurant = %v\n\n", reflect.TypeOf(restaurant))
+	fmt.Printf(`INSERT INTO restaurants
+						 SET id = %v, name = %v, latitude = %v, longitude = %v,
+						 location_num = %v, source = %v,
+						 source_location_id = %v`, restaurant.ID, restaurant.Name,
+						 					      restaurant.Latt, restaurant.Long,
+						 	  					  restaurant.LocationNum, restaurant.Source,
+						 	  					  restaurant.SourceLocID)
 
 	results, err2 := db.Exec(`INSERT INTO restaurants
 						 SET id = ?, name = ?, latitude = ?, longitude = ?,
@@ -544,12 +522,12 @@ func (review *Review) CreateReview() error {
 						 	  					  review.Liked, review.Description)
 
 	results, err2 := db.Exec(`INSERT INTO reviews
-						 SET user_id = ?, username = ?, dish_id = ?,
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
 						 liked = ?, description = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, review.Photo.ID,
-						 	  					  review.Restaurant.ID, review.Price,
-						 	  					  review.Liked, review.Description)
+						 					      review.Dish.ID, review.DishTags,
+						 	  					  review.Photo.ID, review.Restaurant.ID, 
+						 	  					  review.Price,review.Liked, review.Description)
 
 	if err2 != nil {
 		fmt.Printf("Error = %v", err2)
@@ -574,10 +552,10 @@ func (review *Review) UpdateReview() error {
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
 
 	results, err2 := db.Exec(`UPDATE reviews
-						 SET user_id = ?, username = ?, dish_id = ?,
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
 						 liked = ?, description = ? WHERE id = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, review.Photo.ID,
+						 					      review.Dish.ID, review.DishTags, review.Photo.ID,
 						 	  					  review.Restaurant.ID, review.Price,
 						 	  					  review.Liked, review.Description, review.ID)
 	if err2 != nil {

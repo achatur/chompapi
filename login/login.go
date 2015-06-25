@@ -16,8 +16,8 @@ type LoginInput struct {
 }
 
 // type UserInfo struct {
-// 	ChompUserID   int
-// 	ChompUsername string
+// 	UserID   int
+// 	Username string
 // 	Email         string
 // 	PhoneNumber   string
 // 	PasswordHash  string
@@ -42,8 +42,8 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
-		userInfo.ChompUsername = input.Username
-		err := userInfo.GetUserInfo(input.Username)
+		userInfo.Username = input.Username
+		err := userInfo.GetUserInfo()
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
@@ -81,7 +81,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
 				}
-				err = sessionStore.Set("userID", userInfo.ChompUserID)
+				err = sessionStore.Set("userID", userInfo.UserID)
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
