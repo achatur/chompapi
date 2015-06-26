@@ -262,7 +262,7 @@ func (photo *Photos) GetPhotoInfoByUuid() error {
 	// m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, time_stamp, uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, last_updated, uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
 	fmt.Println("Row =", row)
 	fmt.Println("Row Type = ", reflect.TypeOf(photo))
 	if row != nil {
