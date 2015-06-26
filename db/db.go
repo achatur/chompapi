@@ -72,10 +72,12 @@ type Review struct {
 	Dish 			Dish			`json:"dish"`
 	Photo 			Photo			`json:"photo"`
 	Price 			float32			`json:"price"`
-	Liked 			sql.NullBool		`json:"liked,omitempty"`
+	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
-	Finished		sql.NullBool		`json:"finished,omitempty"`
-	DishTags		string 			`json:"dishTags"`
+	Finished		sql.NullBool	`json:"finished,omitempty"`
+	DishTags		[]string 		`json:"dishTags"`
+	CreatedDate		string 			`json:"createdDate,omitempty"`
+	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
 }
 
 type Dish struct {
@@ -483,7 +485,8 @@ func GetReviewsByUserID(userID int) (reviews []Review) {
 	defer db.Close()
 	fmt.Printf("id = %v", userID)
 	rows, err := db.Query(`SELECT id, user_id, username, dish_id, photo_id,
-							restaurant_id, price, liked, description
+							restaurant_id, price, liked, description,
+							created_date, last_updated
 							FROM reviews
 							WHERE user_id=?`,userID)
 	if err != nil {
@@ -492,8 +495,10 @@ func GetReviewsByUserID(userID int) (reviews []Review) {
 	var review Review
 	// reviews := []Review{}
 	for rows.Next() {
-		if err := rows.Scan(&review.ID, &review.UserID, &review.Username, &review.Dish.ID,
-				  &review.Photo.ID, &review.Restaurant.ID, &review.Price, &review.Liked, &review.Description); err != nil {
+		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
+			&review.Dish.ID, &review.Photo.ID, &review.Restaurant.ID,
+			&review.Price, &review.Liked, &review.Description,
+			&review.CreatedDate, &review.LastUpdated); err != nil {
 			fmt.Printf("Err= %v\n", err.Error())
 			return reviews
 		}
@@ -515,19 +520,21 @@ func (review *Review) CreateReview() error {
 	fmt.Printf("REVIEW = %v\n", review)
 	fmt.Printf("Type of review = %v\n", reflect.TypeOf(review))
 
-	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, description = %v", 
+	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, description = %v\n\n", 
 												  review.UserID, review.Username,
 						 					      review.Dish.ID, review.Photo.ID,
 						 	  					  review.Restaurant.ID, review.Price,
 						 	  					  review.Liked, review.Description)
+	fmt.Printf("Distags = %v\n", review.DishTags)
 
 	results, err2 := db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, description = ?`, review.UserID, review.Username,
+						 liked = ?, dish_tags=? description = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID, review.DishTags,
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
-						 	  					  review.Price,review.Liked, review.Description)
+						 	  					  review.Price,review.Liked, review.DishTags,
+						 	  					  review.Description)
 
 	if err2 != nil {
 		fmt.Printf("Error = %v", err2)

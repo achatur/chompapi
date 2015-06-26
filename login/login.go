@@ -15,19 +15,10 @@ type LoginInput struct {
 	Password string
 }
 
-// type UserInfo struct {
-// 	UserID   int
-// 	Username string
-// 	Email         string
-// 	PhoneNumber   string
-// 	PasswordHash  string
-// 	DOB           string
-// 	Gender        string
-// }
-
 var globalSessions *session.Manager
 
 func DoLogin(w http.ResponseWriter, r *http.Request) {
+	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
 	case "POST":
@@ -37,7 +28,10 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in login %v", err)
-			break
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
 		}
 
 		fmt.Printf("input = %v\n", input)
@@ -48,7 +42,10 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			w.WriteHeader(http.StatusUnauthorized)
+			// w.WriteHeader(http.StatusUnauthorized)
+			myErrorResponse.Code = http.StatusUnauthorized
+			myErrorResponse.Error = "Invalid Username"
+			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
 		fmt.Println("return from db = %v", userInfo)
@@ -62,7 +59,6 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		if validated == true {
 			//create session using the request data which includes the cookie/sessionid
-			// fmt.Printf("Manager Config = %v", globalsessionkeeper.GlobalSessions.config)
 			fmt.Printf("about to start session\n")
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
 			if err != nil {
@@ -94,15 +90,22 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		} else {
 			fmt.Printf("Login Failed")
 			w.WriteHeader(http.StatusUnauthorized)
+			myErrorResponse.Code = http.StatusUnauthorized
+			myErrorResponse.Error = "Invalid Password"
+			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
 		//Send back 204 no content (with cookie)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	default:
-		w.WriteHeader(http.StatusUnauthorized)
+		// w.WriteHeader(http.StatusUnauthorized)
+		myErrorResponse.Code = http.StatusUnauthorized
+		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-	w.WriteHeader(http.StatusUnauthorized)
+	// w.WriteHeader(http.StatusUnauthorized)
+	myErrorResponse.Code = http.StatusUnauthorized
+	myErrorResponse.HttpErrorResponder(w)
 	return
 }

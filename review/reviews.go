@@ -57,22 +57,24 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		case "PUT", "POST":
 			
 			decoder := json.NewDecoder(r.Body)
+			fmt.Printf("r.Body = %v\n", reflect.ValueOf(r.Body.Value()).String())
 			if err := decoder.Decode(&review); err != nil {
 				//need logging here instead of print
 				fmt.Printf("something went wrong in login %v", err)
 				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.CustomMessage = "Malformed Json: " + err.Error()
+				myErrorResponse.Error = "Malformed JSON: " + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
 
+			fmt.Printf("Distags = %v\n", review.DishTags)
 			dbRestaurant.Name = review.Restaurant.Name
 			err2 := dbRestaurant.GetRestaurantInfoByName()
 			if err2 != nil && err2 != sql.ErrNoRows{
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.CustomMessage = "something went while retrieving data"
+				myErrorResponse.Error = "something went while retrieving data:-:" + err2.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			} else if err2 == sql.ErrNoRows || dbRestaurant.ID == 0 {
@@ -83,7 +85,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.CustomMessage = "something went while retrieving data"
+					myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
 					myErrorResponse.HttpErrorResponder(w)	
 					return
 				}
@@ -103,7 +105,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 							//something bad happened
 							fmt.Printf("something went while retrieving data %v", err)
 							myErrorResponse.Code = http.StatusInternalServerError
-							myErrorResponse.CustomMessage = "something went while retrieving data"
+							myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
 							myErrorResponse.HttpErrorResponder(w)
 							return	
 						}
@@ -127,7 +129,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.CustomMessage = "something went while retrieving data"
+				myErrorResponse.Error = "something went while retrieving data:-:" + err3.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			} else if err3 == sql.ErrNoRows {
@@ -138,7 +140,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.CustomMessage = "something went while retrieving data"
+					myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
 					myErrorResponse.HttpErrorResponder(w)
 					return
 				}
@@ -150,11 +152,11 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 
 			if r.Method == "PUT" {
 				vars := mux.Vars(r)
-    			review_id, thisErr := strconv.Atoi(vars["review_id"])
+    			review_id, thisErr := strconv.Atoi(vars["reviewID"])
     			if thisErr != nil {
     				fmt.Println("Not An Integer")
     				myErrorResponse.Code = http.StatusBadRequest
-					myErrorResponse.CustomMessage = "Invalid Review ID"
+					myErrorResponse.Error = "Invalid Review ID"
 					myErrorResponse.HttpErrorResponder(w)
 				return
     			}
@@ -165,14 +167,16 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					if err.Error() == "0 rows updated" {
 						fmt.Printf("something went while retrieving data %v", err)
 						myErrorResponse.Code = http.StatusBadRequest
-						myErrorResponse.CustomMessage = "Error: " + err.Error()
+						myErrorResponse.Error = err.Error()
 						myErrorResponse.HttpErrorResponder(w)
 					} else {
 						fmt.Printf("something went while retrieving data %v", err)
 						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.CustomMessage = "could not update review"
+						myErrorResponse.Error = "could not update review:-:" + err.Error()
 						myErrorResponse.HttpErrorResponder(w)
 					}
+				} else {
+					w.WriteHeader(http.StatusNoContent)
 				}
 			} else {
 				err = review.CreateReview()
@@ -180,13 +184,14 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.CustomMessage = "could not create review"
+					myErrorResponse.Error = "could not create review:-:" + err.Error()
 					myErrorResponse.HttpErrorResponder(w)
 					return
+				} else {
+					w.WriteHeader(http.StatusCreated)
 				}
 			}
 			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%v",  review.ID))
-			w.WriteHeader(http.StatusCreated)
 			return
 
 		case "GET":
@@ -196,11 +201,11 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 
 		case "DELETE":
 			vars := mux.Vars(r)
-    		review_id, thisErr := strconv.Atoi(vars["review_id"])
+    		review_id, thisErr := strconv.Atoi(vars["reviewID"])
     		if thisErr != nil {
     			fmt.Println("Not An Integer")
     			myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.CustomMessage = "Invalid Review ID"
+				myErrorResponse.Error = "Invalid Review ID"
 				myErrorResponse.HttpErrorResponder(w)
 			return
     		}
@@ -211,12 +216,12 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				if err.Error() == "0 rows deleted" {
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusBadRequest
-					myErrorResponse.CustomMessage = "Error: " + err.Error()
+					myErrorResponse.Error = "Error: " + err.Error()
 					myErrorResponse.HttpErrorResponder(w)
 				} else {
 					fmt.Printf("something went while retrieving data %v", err)
 					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.CustomMessage = "could not create review"
+					myErrorResponse.Error = "could not create review"
 					myErrorResponse.HttpErrorResponder(w)
 				}
 				

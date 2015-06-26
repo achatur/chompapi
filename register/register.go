@@ -42,13 +42,13 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error! = %v\n", err)
 			if strings.Contains(err.Error(), "Error 1062") {
 				myErrorResponse.Code = http.StatusConflict
-				myErrorResponse.CustomMessage = "Duplicate Not Allowed::ErrorMessage::" + err.Error()
+				myErrorResponse.Error = "Duplicate Not Allowed:-:" + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
 
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.CustomMessage = err.Error()
+			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -60,7 +60,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				//need logging here instead of print
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+				myErrorResponse.Error = err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			} 
@@ -69,7 +69,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -78,7 +78,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.CustomMessage = "ErrorMessage::" + err.Error()
+			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -90,7 +90,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.CustomMessage = "Invalid Method"
+		myErrorResponse.Error = "Invalid Method"
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -99,21 +99,21 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 func isValidInput(userInfo *db.RegisterInput, errorResponse *globalsessionkeeper.ErrorResponse) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
-		errorResponse.CustomMessage = "Invalid Email " + userInfo.Email
+		errorResponse.Error = "Invalid Email " + userInfo.Email
 		return false
 	}
 	if isValidString(userInfo.Username) == false {
 		fmt.Println("not valid username", userInfo.Username)
-		errorResponse.CustomMessage = "Invalid Username " + userInfo.Username
+		errorResponse.Error = "Invalid Username " + userInfo.Username
 		return false
 	}
 	if isValidString(userInfo.Password) == false {
 		fmt.Println("not valid password", userInfo.Password)
-		errorResponse.CustomMessage = "Invalid Password " + userInfo.Password
+		errorResponse.Error = "Invalid Password " + userInfo.Password
 		return false
 	}
 	if userInfo.Dob == 0 || age(time.Unix(int64(userInfo.Dob), 0)) < 18 {
-		errorResponse.CustomMessage = "Invalid Age " + string(age(time.Unix(int64(userInfo.Dob), 0)))
+		errorResponse.Error = "Invalid Age " + string(age(time.Unix(int64(userInfo.Dob), 0)))
 		return false
 	}
 	

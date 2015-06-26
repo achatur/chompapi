@@ -63,7 +63,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
             if err != nil {
                 fmt.Printf("something went while retrieving data %v\n", err)
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.CustomMessage = err.Error()
+				myErrorResponse.Error = err.Error()
 				myErrorResponse.HttpErrorResponder(w)
                 return
             }

@@ -23,10 +23,10 @@ func main() {
 	router.HandleFunc("/login", login.DoLogin)
 	router.HandleFunc("/me", me.GetMe)
 	router.HandleFunc("/me/photos", me.PostPhotoId)
-	router.HandleFunc("/me/photos/{photo_id}", me.PostPhotoId)
+	router.HandleFunc("/me/photos/{photoID}", me.PostPhotoId)
 	router.HandleFunc("/me/reviews", me.Reviews)
 	router.HandleFunc("/reviews", review.Reviews)
-	router.HandleFunc("/reviews/{review_id}", review.Reviews)
+	router.HandleFunc("/reviews/{reviewID}", review.Reviews)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

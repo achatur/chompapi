@@ -25,8 +25,8 @@ type managerConfig struct {
 }
 
 type ErrorResponse struct {
-	Code				int
-	CustomMessage		string
+	Code				int `json:"code"`
+	Error 				string `json:"error"`
 }
 
 func (errorResponse ErrorResponse) HttpErrorResponder(w http.ResponseWriter) {
