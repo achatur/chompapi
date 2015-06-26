@@ -57,7 +57,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		case "PUT", "POST":
 			
 			decoder := json.NewDecoder(r.Body)
-			fmt.Printf("r.Body = %v\n", reflect.ValueOf(r.Body.Value()).String())
+			// fmt.Printf("r.Body = %v\n", reflect.ValueOf(r.Body.Value()).String())
 			if err := decoder.Decode(&review); err != nil {
 				//need logging here instead of print
 				fmt.Printf("something went wrong in login %v", err)
@@ -67,7 +67,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			fmt.Printf("Distags = %v\n", review.DishTags)
+			fmt.Printf("Dishtags = %v\n", review.DishTags)
 			dbRestaurant.Name = review.Restaurant.Name
 			err2 := dbRestaurant.GetRestaurantInfoByName()
 			if err2 != nil && err2 != sql.ErrNoRows{

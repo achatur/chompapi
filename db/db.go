@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
 	"errors"
+	// "encoding/json"
 	//"github.com/pborman/uuid"
 	 //"gopkg.in/gorp.v1"
 )
@@ -64,6 +65,9 @@ type Reviews struct {
 	Descr			string
 	Complete		bool
 }
+// type DishTags struct {
+// 	Tags 	[]string
+// }
 type Review struct {
 	ID 				int 			`json:"id"`
 	Username 		string			`json:"username"`
@@ -75,7 +79,7 @@ type Review struct {
 	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
-	DishTags		[]string 		`json:"dishTags"`
+	DishTags		string 	 		`json:"dishTags"`
 	CreatedDate		string 			`json:"createdDate,omitempty"`
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
 }
@@ -94,6 +98,24 @@ type Restaurants struct {
 	Source			string			`json:"source"`
 	SourceLocID		string			`json:"sourceLocID"`
 }
+
+// type dishTags DishTags
+// func (d DishTags) UnmarshalJSON(b []byte) (err error) {
+// 	t := dishTags{}
+// 	fmt.Printf("Did I make it here? %v\n", b)
+// 	if err = json.Unmarshal(b, &t); err == nil {
+// 		*d = DishTags(t)
+// 		return
+// 	}
+// 	return err
+// }
+// func (d DishTags) MarshalJSON() ([]byte error) {
+// 	if err = json.Marshal(d); err == nil {
+// 		return
+// 	}
+// 	return err
+// }
+
 
 func (userInfo *UserInfo) GetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
@@ -520,20 +542,20 @@ func (review *Review) CreateReview() error {
 	fmt.Printf("REVIEW = %v\n", review)
 	fmt.Printf("Type of review = %v\n", reflect.TypeOf(review))
 
-	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, description = %v\n\n", 
+	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, dish_tags = %v, description = %v\n\n", 
 												  review.UserID, review.Username,
 						 					      review.Dish.ID, review.Photo.ID,
 						 	  					  review.Restaurant.ID, review.Price,
-						 	  					  review.Liked, review.Description)
+						 	  					  review.Liked,review.DishTags, review.Description)
 	fmt.Printf("Distags = %v\n", review.DishTags)
 
 	results, err2 := db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, dish_tags=? description = ?`, review.UserID, review.Username,
+						 liked = ?, description = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID, review.DishTags,
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
-						 	  					  review.Price,review.Liked, review.DishTags,
+						 	  					  review.Price,review.Liked,
 						 	  					  review.Description)
 
 	if err2 != nil {
