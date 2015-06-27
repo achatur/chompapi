@@ -22,7 +22,7 @@ type UserInfo struct {
 }
 
 type Photo struct {
-	ID			string
+	ID			string 		`json:"id"`
 }
 
 

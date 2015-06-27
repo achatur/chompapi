@@ -15,7 +15,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
 			//need logging here instead of print
-		fmt.Println("Cookie = %v", cookie)
+		fmt.Printf("Cookie = %v\n", cookie)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -29,6 +29,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
+	fmt.Println("This SessionId = %v", sessionUserID)
+
 
 	if sessionUser == nil {
 			//need logging here instead of print
@@ -40,7 +42,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		defer sessionStore.SessionRelease(w)
 
 		//create variables
-		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
+		userId := reflect.ValueOf(sessionUserID).Int()
 
 		switch r.Method {
 
@@ -51,7 +53,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("something went while retrieving data %v\n", err)
 				fmt.Printf("Reviews list = %v\n", reviews)
 				w.Header().Set("Content-Type", "application/json")
-            	json.NewEncoder(w).Encode("[]")
+				emptyString := make([]string, 0)
+            	json.NewEncoder(w).Encode(emptyString)
 				return
 			}
 			fmt.Printf("Reviews list = %v\n", reviews)
