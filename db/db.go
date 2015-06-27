@@ -540,7 +540,7 @@ func GetReviewsByUserID(userID int) (reviews []Review) {
 	defer db.Close()
 	fmt.Printf("id = %v", userID)
 	rows, err := db.Query(`SELECT id, user_id, username, dish_id, photo_id,
-							restaurant_id, price, liked, description,
+							restaurant_id, price, liked, finished, description,
 							created_date, last_updated
 							FROM reviews
 							WHERE user_id=?`,userID)
@@ -552,7 +552,7 @@ func GetReviewsByUserID(userID int) (reviews []Review) {
 	for rows.Next() {
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
 			&review.Dish.ID, &review.Photo.ID, &review.Restaurant.ID,
-			&review.Price, &review.Liked, &review.Description,
+			&review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated); err != nil {
 			fmt.Printf("Err= %v\n", err.Error())
 			return reviews
@@ -585,10 +585,10 @@ func (review *Review) CreateReview() error {
 	results, err2 := db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, description = ?`, review.UserID, review.Username,
+						 liked = ?, finished = ?, description = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID, review.DishTags,
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
-						 	  					  review.Price,review.Liked,
+						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description)
 
 	if err2 != nil {
@@ -616,10 +616,10 @@ func (review *Review) UpdateReview() error {
 	results, err2 := db.Exec(`UPDATE reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, description = ? WHERE id = ?`, review.UserID, review.Username,
+						 liked = ?, finished = ?, description = ? WHERE id = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID, review.DishTags, review.Photo.ID,
-						 	  					  review.Restaurant.ID, review.Price,
-						 	  					  review.Liked, review.Description, review.ID)
+						 	  					  review.Restaurant.ID, review.Price, review.Liked,
+						 	  					  review.Finished, review.Description, review.ID)
 	if err2 != nil {
 		fmt.Printf("Error = %v", err2)
 		return err2
