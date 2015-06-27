@@ -539,11 +539,15 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	}
 	defer db.Close()
 	fmt.Printf("id = %v", userId)
-	rows, err := db.Query(`SELECT id, user_id, username, dish_id, photo_id,
-							restaurant_id, price, liked, finished, description,
-							created_date, last_updated
-							FROM reviews
-							WHERE user_id=?`,userId)
+	rows, err := db.Query(`SELECT reviews.id, reviews.user_id, reviews.username,
+						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
+						latitude, longitude, location_num, source, source_location_id,
+						price, liked, finished, description,
+						reviews.created_date, reviews.last_updated
+					   FROM reviews
+					   JOIN restaurants on reviews.restaurant_id = restaurants.id
+					   JOIN dish on reviews.dish_id = dish.id
+					   WHERE user_id =?`,userId)
 	if err != nil {
 		return reviews
 	}
@@ -551,8 +555,9 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	// reviews := []Review{}
 	for rows.Next() {
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
-			&review.Dish.ID, &review.Photo.ID, &review.Restaurant.ID,
-			&review.Price, &review.Liked, &review.Finished, &review.Description,
+			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID,
+			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
+			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated); err != nil {
 			fmt.Printf("Err= %v\n", err.Error())
 			return reviews
