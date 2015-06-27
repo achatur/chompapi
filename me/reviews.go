@@ -27,7 +27,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	}
 	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userID")
+	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
 
 	if sessionUser == nil {
@@ -40,12 +40,12 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		defer sessionStore.SessionRelease(w)
 
 		//create variables
-		userID 	 	 := reflect.ValueOf(sessionUserID).Int()
+		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
 
 		switch r.Method {
 
 		case "GET":
-			reviews := db.GetReviewsByUserID(int(userID))
+			reviews := db.GetReviewsByUserID(int(userId))
 			if reviews == nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v\n", err)

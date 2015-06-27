@@ -77,7 +77,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
 				}
-				err = sessionStore.Set("userID", userInfo.UserID)
+				err = sessionStore.Set("userId", userInfo.UserID)
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
