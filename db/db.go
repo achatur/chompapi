@@ -25,7 +25,7 @@ type RegisterInput struct {
 }
 
 type UserInfo struct {
-	UserID   		int 	`json:"userID"`
+	UserID   		int 	`json:"userId"`
 	Username 		string 	`json:"username"`
 	Email         	string 	`json:"email"`
 	PhoneNumber   	string 	`json:"phoneNumber,omitempty"`
@@ -40,14 +40,14 @@ type UserInfo struct {
 // are the inputs from json
 
 type Photos struct {
-	ID			int
-	DishID		int
-	UserID		int
-	FilePath	string
-	FileHash	string
-	TimeStamp	string
-	Uuid		string
-	Username 	string
+	ID			int				`json:"id"`
+	DishID		int				`json:"dishId"`
+	UserID		int				`json:"userId"`
+	FilePath	string			`json:"filePath"`
+	FileHash	string			`json:"fileHash"`
+	TimeStamp	string			`json:"timeStamp"`
+	Uuid		string			`json:"uuid"`
+	Username 	string			`json:"username"`
 }
 type Photo struct {
 	ID 	int 	`json:"id"`
@@ -304,7 +304,7 @@ func (photo *Photos) GetMePhotoByUsername() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, time_stamp, uuid
+	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, last_updated, uuid
 						FROM photos
 						JOIN chomp_users on photos.id = chomp_users.photo_id
 						WHERE chomp_users.chomp_username=?`,photo.Username).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
@@ -322,7 +322,7 @@ func (photo *Photos) GetMePhotoByPhotoID() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, time_stamp, uuid
+	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, last_updated, uuid
 						FROM photos
 						WHERE id=?`,photo.ID).Scan(&photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
 	return err
@@ -532,18 +532,18 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 }
 
 
-func GetReviewsByUserID(userID int) (reviews []Review) {
+func GetReviewsByUserID(userId int) (reviews []Review) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return reviews
 	}
 	defer db.Close()
-	fmt.Printf("id = %v", userID)
+	fmt.Printf("id = %v", userId)
 	rows, err := db.Query(`SELECT id, user_id, username, dish_id, photo_id,
 							restaurant_id, price, liked, finished, description,
 							created_date, last_updated
 							FROM reviews
-							WHERE user_id=?`,userID)
+							WHERE user_id=?`,userId)
 	if err != nil {
 		return reviews
 	}

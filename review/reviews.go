@@ -30,7 +30,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	}
 	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userID")
+	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
 
 	if sessionUser == nil {
@@ -44,13 +44,13 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 
 		//create variables
 		username 	 := reflect.ValueOf(sessionUser).String()
-		userID 	 	 := reflect.ValueOf(sessionUserID).Int()
+		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
 		review 	 	 := new(db.Review)
 		dbRestaurant := new(db.Restaurants)
 		dbDish 		 := new(db.Dish)
 
 		review.Username = username
-		review.UserID = int(userID)
+		review.UserID = int(userId)
 
 		switch r.Method {
 
