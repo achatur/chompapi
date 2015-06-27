@@ -79,15 +79,23 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				return
 			} else if err2 == sql.ErrNoRows || dbRestaurant.ID == 0 {
 				// not found in DB
-				fmt.Println("Restaurant Not found in DB, creating new entry")
-				err = review.Restaurant.CreateRestaurant()
-				if err != nil {
-					//something bad happened
-					fmt.Printf("something went while retrieving data %v", err)
-					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
-					myErrorResponse.HttpErrorResponder(w)	
-					return
+				if review.Restaurant.Name != "" {
+					fmt.Println("Restaurant Not found in DB, creating new entry")
+					err = review.Restaurant.CreateRestaurant()
+					if err != nil {
+						//something bad happened
+						fmt.Printf("something went while retrieving data %v", err)
+						myErrorResponse.Code = http.StatusInternalServerError
+						myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
+						myErrorResponse.HttpErrorResponder(w)	
+						return
+					}
+				} else {
+					// Restaurant Value Blank
+					fmt.Println("Blank Restaurant found in db")
+					fmt.Println("Blank Restaurant In DB", dbRestaurant)
+					review.Restaurant = *dbRestaurant
+				
 				}
 			} else {
 				// entry found in db
@@ -119,6 +127,31 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					fmt.Println("Source not same, DB == insta")
 					review.Restaurant = *dbRestaurant
 					//review.CreateReview()
+				} else if review.Restaurant.Source == "instagram" {
+					fmt.Println("New restaurant instagram, updating db")
+					if dbRestaurant.LocationNum == 0 {
+						review.Restaurant.UpdateRestaurant()
+						if err != nil {
+							//something bad happened
+							fmt.Printf("something went while retrieving data %v", err)
+							myErrorResponse.Code = http.StatusInternalServerError
+							myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
+							myErrorResponse.HttpErrorResponder(w)
+							return	
+						}
+					} else {
+						fmt.Println("location id !=")
+						review.Restaurant.LocationNum = dbRestaurant.LocationNum + 1
+						err = review.Restaurant.CreateRestaurant()
+						if err != nil {
+							//something bad happened
+							fmt.Printf("something went while retrieving data %v", err)
+							myErrorResponse.Code = http.StatusInternalServerError
+							myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
+							myErrorResponse.HttpErrorResponder(w)
+							return	
+						}
+					}
 				} 
 			}  
 			// all other cases

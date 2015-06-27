@@ -445,7 +445,7 @@ func (restaurant *Restaurants) GetRestaurantInfoByName() error {
     		var sourceLocID string
     		err = rows.Scan(&id, &name, &latt, &long, &locationNum, 
     						&source, &sourceLocID)
-    		fmt.Printf("locaiton num = %v", restaurant.LocationNum)
+    		fmt.Printf("locaiton num = %v\n", restaurant.LocationNum)
     		fmt.Printf("db Location num = %v\n", locationNum)
     		fmt.Printf("db restaurant id num = %v\n", id)
     		if locationNum >= restaurant.LocationNum {
@@ -485,9 +485,9 @@ func (restaurant *Restaurants) CreateRestaurant() error {
 						 	  					  restaurant.SourceLocID)
 
 	results, err2 := db.Exec(`INSERT INTO restaurants
-						 SET id = ?, name = ?, latitude = ?, longitude = ?,
+						 SET name = ?, latitude = ?, longitude = ?,
 						 location_num = ?, source = ?,
-						 source_location_id = ?`, restaurant.ID, restaurant.Name,
+						 source_location_id = ?`, restaurant.Name,
 						 					      restaurant.Latt, restaurant.Long,
 						 	  					  restaurant.LocationNum, restaurant.Source,
 						 	  					  restaurant.SourceLocID)
@@ -498,6 +498,39 @@ func (restaurant *Restaurants) CreateRestaurant() error {
 
 	return err2
 }
+
+func (restaurant *Restaurants) UpdateRestaurant() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("Type of Restaurant = %v\n\n", reflect.TypeOf(restaurant))
+	fmt.Printf(`UPDATE restaurants
+				SET latitude = %v, longitude = %v,
+				location_num = %v, source = %v,
+				source_location_id = %v
+				WHERE id = %v`, restaurant.Latt, restaurant.Long,
+						 	  					  restaurant.Source,
+						 	  					  restaurant.SourceLocID, restaurant.ID)
+
+	results, err2 := db.Exec(`UPDATE restaurants
+						 SET latitude = ?, longitude = ?,
+						 location_num = ?, source = ?,
+						 source_location_id = ?`, restaurant.Latt, restaurant.Long,
+						 	  					  restaurant.LocationNum, restaurant.Source,
+						 	  					  restaurant.SourceLocID)
+	id, err2 := results.LastInsertId()
+	restaurant.ID = int(id)
+
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+
+	return err2
+}
+
 
 func GetReviewsByUserID(userID int) (reviews []Review) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
