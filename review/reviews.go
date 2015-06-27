@@ -221,10 +221,10 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					myErrorResponse.HttpErrorResponder(w)
 					return
 				} else {
+					w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%d", review.ID))
 					w.WriteHeader(http.StatusCreated)
 				}
 			}
-			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%v",  review.ID))
 			return
 
 		case "GET":
