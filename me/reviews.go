@@ -53,8 +53,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("something went while retrieving data %v\n", err)
 				fmt.Printf("Reviews list = %v\n", reviews)
 				w.Header().Set("Content-Type", "application/json")
-				emptyString := make([]string, 0)
-            	json.NewEncoder(w).Encode(emptyString)
+            	json.NewEncoder(w).Encode(`{"reviews" : []}`)
 				return
 			}
 			fmt.Printf("Reviews list = %v\n", reviews)
