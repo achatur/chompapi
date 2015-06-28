@@ -84,6 +84,14 @@ type Review struct {
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
 }
 
+type Crawl struct {
+	Username 		string			`json:"username"`
+	UserID 			int				`json:"userId"`
+	InstaId 		string 			`json:"instaId"`
+	InstaTok 		string 			`json:"instaTok"`
+}
+
+
 type Dish struct {
 	ID 				int				`json:"id"`
 	Name 			string			`json:"name"`

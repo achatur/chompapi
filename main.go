@@ -27,6 +27,7 @@ func main() {
 	router.HandleFunc("/me/reviews", me.Reviews)
 	router.HandleFunc("/reviews", review.Reviews)
 	router.HandleFunc("/reviews/{reviewID}", review.Reviews)
+	router.HandleFunc("/insta/crawl", review.Crawl)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {
