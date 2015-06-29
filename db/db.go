@@ -24,13 +24,6 @@ type RegisterInput struct {
 	Photo		 Photo
 }
 
-type Crawl struct {
-	Username 	string `json:"username"`
-	UserID 		int    `json:"userId"`
-	InstaTok 	string `json:"instaTok"`
-	Tags 		[]string `json:"tags"`
-}
-
 type UserInfo struct {
 	UserID   		int 	`json:"userId"`
 	Username 		string 	`json:"username"`
@@ -96,6 +89,7 @@ type Crawl struct {
 	UserID 			int				`json:"userId"`
 	InstaId 		string 			`json:"instaId"`
 	InstaTok 		string 			`json:"instaTok"`
+	Tags 			[]string 		`json:"tags"`
 }
 
 

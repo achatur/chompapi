@@ -28,7 +28,7 @@ func main() {
 	router.HandleFunc("/register", register.DoRegister)
 	router.HandleFunc("/login", login.DoLogin)
 	router.HandleFunc("/me", me.GetMe)
-	router.HandleFunc("/jwt", BasicAuth(crypto.GetJwt)
+	router.HandleFunc("/jwt", BasicAuth(crypto.GetJwt))
 	router.HandleFunc("/me/photos", me.PostPhotoId)
 	router.HandleFunc("/me/photos/{photoID}", me.PostPhotoId)
 	router.HandleFunc("/me/reviews", me.Reviews)
