@@ -14,9 +14,13 @@ import (
 	"chompapi/me"
 	"chompapi/review"
 	"github.com/gorilla/mux"
-	"reflect"
 	"chompapi/crypto"
+	"encoding/base64"
+	"io/ioutil"
+	"encoding/json"
 )
+
+type handler func(w http.ResponseWriter, r *http.Request)
 
 func main() {
 
@@ -24,7 +28,7 @@ func main() {
 	router.HandleFunc("/register", register.DoRegister)
 	router.HandleFunc("/login", login.DoLogin)
 	router.HandleFunc("/me", me.GetMe)
-	router.HandleFunc("/jwt", BasicAuth(crypto.GetJwt)
+	router.HandleFunc("/jwt", BasicAuth(crypto.GetJwt))
 	router.HandleFunc("/me/photos", me.PostPhotoId)
 	router.HandleFunc("/me/photos/{photoID}", me.PostPhotoId)
 	router.HandleFunc("/me/reviews", me.Reviews)
@@ -50,6 +54,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func init() {
 
 	var err error
+	GetConfig()
 
 	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"EnableSetCookie":true, "Secure":true, "cookieLifeTime":604800, "CookieName":"chomp_sessionid","Gclifetime":300,"Maxlifetime":604800,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
 
@@ -64,13 +69,24 @@ func init() {
 func BasicAuth(pass handler) handler {
  
     return func(w http.ResponseWriter, r *http.Request) {
- 
+    	fmt.Println("made it to basic auth")
+    	fmt.Printf("Headers = %v\n", r.Header)
+ 		fmt.Printf("Len = %v\n", len(r.Header))
+
+ 		if len(r.Header["Authorization"]) <= 0 {
+ 			http.Error(w, "bad syntax", http.StatusBadRequest)
+			return
+ 		}
         auth := strings.SplitN(r.Header["Authorization"][0], " ", 2)
- 
-        if len(auth) != 2 || auth[0] != "Basic" {
+ 		fmt.Printf("auth = %v", auth)
+        if len(auth) != 2 { 
+
             http.Error(w, "bad syntax", http.StatusBadRequest)
-            return
-        }
+			return
+        } else if auth[0] != "Basic" {
+            	http.Error(w, "bad syntax", http.StatusBadRequest)
+				return
+		}
  
         payload, _ := base64.StdEncoding.DecodeString(auth[1])
         pair := strings.SplitN(string(payload), ":", 2)
@@ -84,9 +100,26 @@ func BasicAuth(pass handler) handler {
     }
 }
  
+ func GetConfig() error {
+	configFile, err := ioutil.ReadFile("./chomp_private/config.json")
+	if err != nil {
+	    return err
+	}
+	err = json.Unmarshal(configFile, &globalsessionkeeper.ChompConfig)
+	if err != nil {
+	    fmt.Printf("Err = %v", err)
+	    return err
+	}
+	return nil
+}
+
 func Validate(username, password string) bool {
-    if username == "username" && password == "password" {
-        return true
+    fmt.Println("Made it to validate..")
+    for _, e := range globalsessionkeeper.ChompConfig.Authorized  {
+    	if e.User == username && e.Pass == password {
+    		return true
+    	}
     }
+
     return false
 }
