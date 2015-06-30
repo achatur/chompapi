@@ -9,8 +9,29 @@ import (
 	"strings"
 )
 
-//Global Variable
-var GlobalSessions *session.Manager
+type Config struct {
+	Authorized 		[]Authorized 	`json:"authorized"`
+	PrivateKey 		PrivateKey 		`json:"privateKey"`
+	DbConfig 		DbConfig 		`json:"dbConfig"`
+}
+type Authorized struct {
+	User 		string 		`json:"user"`
+	Pass 		string 		`json:"pass"`
+}
+
+type PrivateKey struct {
+	Cert		string `json:"cert"`
+	Key 		string `json:"key"`
+}
+
+type DbConfig struct {
+	Type 		string `json:"type"`
+	User 		string `json:"user"`
+	Pass	 	string `json:"pass"` 
+	Host 		string `json:"host"`
+	Port 		string `json:"port"`
+	Db 			string `json:"db"`
+}
 
 type managerConfig struct {
 	CookieName      string `json:"cookieName"`
@@ -23,6 +44,10 @@ type managerConfig struct {
 	Domain          string `json:"domain"`
 	SessionIdLength int64  `json:"sessionIdLength"`
 }
+
+//Global Variable
+var GlobalSessions *session.Manager
+var ChompConfig Config
 
 type ErrorResponse struct {
 	Code				int `json:"code"`
