@@ -70,15 +70,7 @@ func init() {
 func BasicAuth(pass handler) handler {
  
     return func(w http.ResponseWriter, r *http.Request) {
-<<<<<<< HEAD
- 
-        auth := strings.SplitN(r.Header["Authorization"][0], " ", 2)
- 
-        if len(auth) != 2 || auth[0] != "Basic" {
-            http.Error(w, "bad syntax", http.StatusBadRequest)
-            return
-        }
-=======
+
     	fmt.Println("made it to basic auth")
     	fmt.Printf("Headers = %v\n", r.Header)
  		fmt.Printf("Len = %v\n", len(r.Header))
@@ -97,7 +89,6 @@ func BasicAuth(pass handler) handler {
             	http.Error(w, "bad syntax", http.StatusBadRequest)
 				return
 		}
->>>>>>> me_reviews_resource_updated_with_jwt
  
         payload, _ := base64.StdEncoding.DecodeString(auth[1])
         pair := strings.SplitN(string(payload), ":", 2)
@@ -111,12 +102,6 @@ func BasicAuth(pass handler) handler {
     }
 }
  
-<<<<<<< HEAD
-func Validate(username, password string) bool {
-    if username == "username" && password == "password" {
-        return true
-    }
-=======
  func GetConfig() error {
 	configFile, err := ioutil.ReadFile("./chomp_private/config.json")
 	if err != nil {
@@ -138,6 +123,5 @@ func Validate(username, password string) bool {
     	}
     }
 
->>>>>>> me_reviews_resource_updated_with_jwt
     return false
 }

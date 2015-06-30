@@ -42,8 +42,8 @@ type Location struct {
 }
 
 type Images struct {
-	Low_Resolution 		Res
-	Thumbnail			Res
+	Low_Resolution 			Res
+	Thumbnail				Res
 	Standard_Resolution 	Res
 }
 
