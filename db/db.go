@@ -6,6 +6,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
 	"errors"
+	"time"
 	// "encoding/json"
 	//"github.com/pborman/uuid"
 	 //"gopkg.in/gorp.v1"
@@ -106,6 +107,14 @@ type Restaurants struct {
 	LocationNum		int				`json:"locationNum"`
 	Source			string			`json:"source"`
 	SourceLocID		string			`json:"sourceLocID"`
+}
+
+type IgStore struct {
+	UserID 			int
+	IgMediaID 		string
+	Epoch 			int
+	LastUpdated 	string
+	IgCreatedTime 	int
 }
 
 // type dishTags DishTags
@@ -615,6 +624,72 @@ func (review *Review) CreateReview() error {
 	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
 	return err2
 }
+
+func (igStore *IgStore) UpdateLastPull() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Printf("UserId = %v\n", igStore.UserID)
+	fmt.Printf("media ID %v\n", igStore.IgMediaID)
+	fmt.Printf("All = %v\n", igStore)
+
+	fmt.Printf(`\nINSERT INTO ig_last_crawl
+				SET user_id = %v, ig_media_id = %v, epoch_now = %v, ig_created_timestamp = %v
+				ON DUPLICATE KEY UPDATE ig_media_id = %v, epoch_now = %v, ig_created_timestamp = %v\n`,
+				igStore.UserID, igStore.IgMediaID, time.Now().Unix(), 
+				igStore.IgCreatedTime, igStore.IgMediaID, time.Now().Unix(), 
+				igStore.IgCreatedTime)
+
+	results, err2 := db.Exec(`INSERT INTO ig_last_crawl
+						 SET user_id = ?, ig_media_id = ?, epoch_now = ?, ig_created_timestamp = ?
+						 ON DUPLICATE KEY UPDATE ig_media_id = ?, epoch_now = ?, ig_created_timestamp = ?`,
+						 igStore.UserID, igStore.IgMediaID, time.Now().Unix(), 
+						 igStore.IgCreatedTime, igStore.IgMediaID, time.Now().Unix(), 
+						 igStore.IgCreatedTime)
+
+	if err2 != nil {
+		fmt.Printf("Error = %v", err2)
+		return err2
+	}
+	id, err2 := results.LastInsertId()
+
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+	return err2
+}
+
+func (igStore *IgStore) GetLastPull() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Printf("UserId = %v\n", igStore.UserID)
+	fmt.Printf("media ID %v\n", igStore.IgMediaID)
+
+
+	err2 := db.QueryRow(`SELECT user_id, ig_media_id, epoch_now, ig_created_timestamp
+						 FROM ig_last_crawl
+						 WHERE user_id = ?`, igStore.UserID).Scan(&igStore.UserID,
+						 									&igStore.IgMediaID, 
+						 									&igStore.Epoch, 
+						 									&igStore.IgCreatedTime)
+
+	if err2 != nil {
+		fmt.Printf("Error = %v\n", err2)
+		return err2
+	}
+
+	fmt.Println("Inside DB: pull now: ", igStore)
+	return err2
+}
+
+
 
 func (review *Review) UpdateReview() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")

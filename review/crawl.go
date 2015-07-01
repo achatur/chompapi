@@ -24,12 +24,12 @@ type InstaData struct {
 	Location 		Location
 	Comments 		Comments
 	filter 			string
-	Created_Time 	string
+	CreatedTime 	string 	`json:"created_time"`
 	Link			string
 	Likes 			Likes
 	Images 			Images
 	Caption 		Caption
-	User_Has_Liked	bool
+	UserHasLiked	bool 	`json:"user_has_liked"`
 	ID 				string
 	User 			User
 }
@@ -84,21 +84,24 @@ type User struct {
 }
 
 func Crawl(w http.ResponseWriter, r *http.Request) {
+
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
+
 	if cookie == "" {
 			//need logging here instead of print
 		fmt.Println("Cookie = %v", cookie)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 			//need logging here instead of print
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	}
-	//input.Username = sessionStore.Get("username")
+
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
@@ -117,18 +120,18 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
 		crawl 	 	 := new(db.Crawl)
 		instaData 	 := new(ParentData)
-		// token 		 := "1695698585.a60a4c1.e82730bfc557441e937d84ccc2aa1d99"
-		// instaAuthUrl := "https://instagram.com/oauth/authorize/?client_id=a60a4c1bc76f45108e75a9d09b566832&redirect_uri=http://www.thechompapp.com/&response_type=token"
-		instaRMediaUrl := "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v"
+		igStore 	 := new(db.IgStore)
+		instaRMediaUrl := "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
 
 		crawl.Username = username
 		crawl.UserID = int(userId)
+		igStore.UserID = int(userId)
 
 		switch r.Method {
 
 		case "POST":
+
 			decoder := json.NewDecoder(r.Body)
-			// fmt.Printf("r.Body = %v\n", reflect.ValueOf(r.Body.Value()).String())
 			if err := decoder.Decode(&crawl); err != nil {
 				//need logging here instead of print
 				fmt.Printf("something went wrong in login %v", err)
@@ -137,9 +140,18 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-			url :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok)
+			fmt.Println("=======================================")
+			igStore.GetLastPull()
+			if err != nil {
+				fmt.Printf("Error = %v\n")
+			}
+			fmt.Printf("\nigStore Pull = %v\n", igStore)
+			fmt.Println("=======================================")
+
+			url :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
 			request := gorequest.New()
 			resp, body, errs := request.Get(url).End()
+
 			if errs != nil {
 				fmt.Printf("something went wrong in get %v", err)
 				myErrorResponse.Code = http.StatusBadRequest
@@ -147,52 +159,102 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-			fmt.Printf("Type of body = %v\n", reflect.TypeOf(body))
 
-			// var objmap map[string]*json.RawMessage
-			//instaData,err := json.Marshal(body)
-
-			//emptyString := make([]string, 0)
-			//var newW io.Writer
-            //err := json.NewEncoder(newW).Encode(&body)
             err := json.Unmarshal([]byte(body), &instaData)
 
 			if err != nil {
 				fmt.Printf("Err = %v", err)
+				myErrorResponse.Code = http.StatusServiceUnavailable
+				myErrorResponse.Error = "IG Communication Issues: " + err.Error()
+				myErrorResponse.HttpErrorResponder(w)
 			}
-			// fmt.Printf("Obj = %v\n", objmap["data"])
+
+			if len(instaData.Data) == 0 {
+				fmt.Println("No New Photos")
+				myErrorResponse.Code = http.StatusOK
+				myErrorResponse.Error = "Nothing to update"
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+
 			fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
 			fmt.Printf("instaData = %v\n", instaData.Data[0])
 			fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
 			fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
 			fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
-			//review = new(db.Review)
-			for index, each := range instaData.Data {
-				fmt.Printf("Index = %v\neach = %v\n", index, each)
-				for i, e := range each.Tags {
-					fmt.Printf("Tag %v: %s\n", i,e)
-					if strings.Contains(strings.ToLower(e), "chomp") {
-						fmt.Println("Contains chomp")
-						//generate and store UUID for photo
-						photoInfo := CreatePhoto(username)
-						if photoInfo.ID == 0 {
-							fmt.Println("Something went wrong to create photo")
-						}
-						//upload file to google storeage
 
-						//update database
-						err := each.CreateReview(photoInfo)
-						if err == nil {
-							break
-						} else {
-							fmt.Println("No Review Created")
+			var reviewsToWrite []int
+
+			for _, tag_word := range crawl.Tags {
+
+				fmt.Printf("-----Tag----- = %v\n", tag_word)
+				for index, each := range instaData.Data {
+
+					fmt.Printf("Index = %v\neach = %v\n", index, each)
+					for i, e := range each.Tags {
+
+						fmt.Printf("Tag %v: %s\n", i,e)
+						if strings.Contains(strings.ToLower(e), tag_word) {
+
+							fmt.Printf("\n\nContains %v\n", tag_word)
+							fmt.Printf("Adding %v\n\n", index)
+							// add to unique slice
+							reviewsToWrite = AppendIfMissing(reviewsToWrite, index)
 						}
 					}
 				}
 			}
 
+			fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
+			for i := range reviewsToWrite {
+
+				photoInfo := CreatePhoto(username)
+				if photoInfo.ID == 0 {
+					fmt.Println("Something went wrong to create photo")
+				}
+				/*====================================//
+				// generate and store UUID for photo  //
+				// upload file to google storeage     //
+				// update database                    //
+				//====================================*/
+
+				err := instaData.Data[i].CreateReview(photoInfo)
+				if err == nil {
+
+					fmt.Printf("Review %v added\n", i)
+				} else {
+
+					fmt.Printf("No Review Created for %v\n", i)
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				}
+
+				if i == 0 {
+
+					igStore.IgMediaID = instaData.Data[i].ID
+					igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
+
+					if err != nil {
+
+						fmt.Printf("Cound't convert string%v\n", err)
+						myErrorResponse.Code = http.StatusServiceUnavailable
+						myErrorResponse.Error = "IG Communication Issues: " + err.Error()
+						myErrorResponse.HttpErrorResponder(w)
+					}
+
+					err = igStore.UpdateLastPull()
+
+					if err != nil {
+						fmt.Printf("Could not update table\n")
+						myErrorResponse.Code = http.StatusInternalServerError
+						myErrorResponse.Error = "Not all reviews added: " + err.Error()
+						return
+					}
+				}
+			}
 
 		default:
+
 			myErrorResponse.Code = http.StatusMethodNotAllowed
 			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
@@ -201,12 +263,13 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreatePhoto(username string) db.Photos {
+
 	var photoInfo db.Photos
 
 	photoInfo.Uuid = me.GenerateUuid()
 	photoInfo.Username = username
-	
 	err := photoInfo.SetMePhoto()
+
 	if err != nil {
 		//need logging here instead of print
 		// myErrorResponse.Code = http.StatusInternalServerError
@@ -242,10 +305,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	err := dbRestaurant.GetRestaurantInfoByName()
 	if err != nil && err != sql.ErrNoRows{
 		//something bad happened
-		fmt.Printf("something went while retrieving data %v", err)
-		// myErrorResponse.Code = http.StatusInternalServerError
-		// myErrorResponse.Error = "something went while retrieving data:-:" + err2.Error()
-		// myErrorResponse.HttpErrorResponder(w)
+		fmt.Printf("something went while retrieving data %v\n", err)
 		return err
 	} else if err == sql.ErrNoRows || dbRestaurant.ID == 0 {
 		// not found in DB
@@ -256,9 +316,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
-				// myErrorResponse.Code = http.StatusInternalServerError
-				// myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
-				// myErrorResponse.HttpErrorResponder(w)	
 				return err
 			}
 		} else {
@@ -266,7 +323,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			fmt.Println("Blank Restaurant found in db")
 			fmt.Println("Blank Restaurant In DB", dbRestaurant)
 			review.Restaurant = *dbRestaurant
-		
 		}
 	} else {
 		// entry found in db
@@ -283,9 +339,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					// myErrorResponse.Code = http.StatusInternalServerError
-					// myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
-					// myErrorResponse.HttpErrorResponder(w)
 					return err
 				}
 			} else {
@@ -297,7 +350,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			//trust DB over New
 			fmt.Println("Source not same, DB == insta")
 			review.Restaurant = *dbRestaurant
-			//review.CreateReview()
+
 		} else if review.Restaurant.Source == "instagram" {
 			fmt.Println("New restaurant instagram, updating db")
 			if dbRestaurant.LocationNum == 0 {
@@ -305,9 +358,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					// myErrorResponse.Code = http.StatusInternalServerError
-					// myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
-					// myErrorResponse.HttpErrorResponder(w)
 					return err
 				}
 			} else {
@@ -317,9 +367,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					// myErrorResponse.Code = http.StatusInternalServerError
-					// myErrorResponse.Error = "something went while retrieving data:-:" + err.Error()
-					// myErrorResponse.HttpErrorResponder(w)
 					return err
 				}
 			}
@@ -347,10 +394,16 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	if err != nil {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v", err)
-		// myErrorResponse.Code = http.StatusInternalServerError
-		// myErrorResponse.Error = "could not create review:-:" + err.Error()
-		// myErrorResponse.HttpErrorResponder(w)
 		return err
 	}
 	return nil
+}
+
+func AppendIfMissing(slice []int, i int) []int {
+    for _, ele := range slice {
+        if ele == i {
+            return slice
+        }
+    }
+    return append(slice, i)
 }
