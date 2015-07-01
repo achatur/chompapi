@@ -208,15 +208,18 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
 			for i := range reviewsToWrite {
 
-				photoInfo := CreatePhoto(username)
-				if photoInfo.ID == 0 {
-					fmt.Println("Something went wrong to create photo")
-				}
 				/*====================================//
 				// generate and store UUID for photo  //
 				// upload file to google storeage     //
 				// update database                    //
 				//====================================*/
+
+				photoInfo := CreatePhoto(username)
+				if photoInfo.ID == 0 {
+					fmt.Println("Something went wrong to create photo")
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				}
 
 				err := instaData.Data[i].CreateReview(photoInfo)
 				if err == nil {
@@ -295,6 +298,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	//fill in restaurant info
 	review.UserID = photoInfo.UserID
 	review.Username = photoInfo.Username
+	review.Photo.ID = photoInfo.ID
 	review.Restaurant.Name = instaData.Location.Name
 	review.Restaurant.Latt = instaData.Location.Latitude
 	review.Restaurant.Long = instaData.Location.Longitude
