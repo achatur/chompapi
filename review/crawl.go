@@ -12,6 +12,13 @@ import (
 	"chompapi/me"
 	"strconv"
 	"database/sql"
+	// "chompapi/crypto"
+	"golang.org/x/net/context"
+    _ "golang.org/x/oauth2"
+    "golang.org/x/oauth2/jwt"
+    "google.golang.org/api/storage/v1"
+    "io/ioutil"
+    "os"
 )
 
 type ParentData struct {
@@ -83,6 +90,18 @@ type User struct {
 	FullName 		string
 }
 
+type GoogToken struct {
+  AccessToken 		string `json:"access_token"`
+  TokenType 		string `json:"token_type"`
+  ExpiresIn 		int    `json:"expires_in"`
+}
+
+type StorageReq struct {
+	GoogToken 		GoogToken
+	Bucket 			string
+	FileName 		string
+}
+
 func Crawl(w http.ResponseWriter, r *http.Request) {
 
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -118,10 +137,12 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		//create variables
 		username 	 := reflect.ValueOf(sessionUser).String()
 		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
+
 		crawl 	 	 := new(db.Crawl)
 		instaData 	 := new(ParentData)
 		igStore 	 := new(db.IgStore)
-		instaRMediaUrl := "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+
+		instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
 
 		crawl.Username = username
 		crawl.UserID = int(userId)
@@ -165,7 +186,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				fmt.Printf("Err = %v", err)
 				myErrorResponse.Code = http.StatusServiceUnavailable
-				myErrorResponse.Error = "IG Communication Issues: " + err.Error()
+				myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 			}
 
@@ -206,6 +227,45 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			}
 
 			fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
+			if len(reviewsToWrite) == 0 {
+				fmt.Println("No New Photos")
+				myErrorResponse.Code = http.StatusOK
+				myErrorResponse.Error = "Nothing to update"
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+
+			// googToken := new(GoogToken)
+			// err = googToken.GetToken()
+
+			// if err != nil {
+			// 	myErrorResponse.Code = http.StatusServiceUnavailable
+			// 	myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
+			// 	myErrorResponse.HttpErrorResponder(w)
+			// }
+			privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
+			if err != nil {
+    		    myErrorResponse.Code = http.StatusInternalServerError
+    		    myErrorResponse.Error = err.Error()
+    		    myErrorResponse.HttpErrorResponder(w)
+    		    return
+    		}
+			googConfig := new(jwt.Config)
+			googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
+			googConfig.PrivateKey = privateKey
+			googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
+			googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
+
+
+			storageReq := new(StorageReq)
+			ctx := context.TODO()
+			client := googConfig.Client(ctx) 
+
+			tokenSource := googConfig.TokenSource(ctx)
+			fmt.Printf("TokenSource = %v\n", tokenSource)
+			token, err := tokenSource.Token()
+			fmt.Printf("Token = %v, err = %v\n", token, err)
+
 			for i := range reviewsToWrite {
 
 				/*====================================//
@@ -231,6 +291,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 					myErrorResponse.Code = http.StatusPartialContent
 					myErrorResponse.Error = "Not all reviews added: " + err.Error()
 				}
+				storageReq.Bucket = "chomp_photos"
+				storageReq.FileName = "/home/amir.chatur/game_chair_box.jpg"
+				err = storageReq.StorePhoto(client)
+				if err != nil {
+					fmt.Println("Something went wrong storing photo")
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all photos added: " + err.Error()
+				}
 
 				if i == 0 {
 
@@ -241,7 +309,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 						fmt.Printf("Cound't convert string%v\n", err)
 						myErrorResponse.Code = http.StatusServiceUnavailable
-						myErrorResponse.Error = "IG Communication Issues: " + err.Error()
+						myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
 						myErrorResponse.HttpErrorResponder(w)
 					}
 
@@ -410,4 +478,65 @@ func AppendIfMissing(slice []int, i int) []int {
         }
     }
     return append(slice, i)
+}
+
+// func (googToken *GoogToken) GetToken() error {
+
+// 	googTokUrl 	 	:= "https://www.googleapis.com/oauth2/v3/token"
+// 	googGT 	 	 	:= `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=`
+// 	assert := crypto.CreateJwt(w)
+
+// 	if assert.Jwt == ""
+// 	{
+// 		fmt.Println("Couldn't create jwt")
+// 		return errors.New("Could not create JWT")
+// 	}
+
+// 	url :=  fmt.Sprintf(googTokUrl, googGT + assert)
+// 	resp, body, errs := request.Post(url).End()
+
+// 	if errs != nil {
+// 		fmt.Printf("something went wrong in get %v", err)
+// 		// myErrorResponse.Code = http.StatusServiceUnavailable
+// 		// myErrorResponse.Error = "Communication Issues:Google: " + errs.Error()
+// 		// myErrorResponse.HttpErrorResponder(w)
+// 		return errs
+// 	}
+
+// 	err := json.Unmarshal([]byte(body), &googToken)
+
+// 	if err != nil {
+// 		fmt.Printf("Err = %v", err)
+// 		return err
+// 	}
+// }
+
+func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
+	
+	// if len(argv) != 2 {
+	// 	fmt.Fprintln(os.Stderr, "Usage: storage filename bucket (to upload an object)")
+	// 	return
+	// }
+	fmt.Printf("Client = %v\n", client.Transport)
+
+	service, err := storage.New(client)
+	if err != nil {
+		// log.Fatalf("Unable to create Storage service: %v", err)
+		fmt.Printf("Unable to create Storage service: %v\n", err)
+		return err
+	}
+
+	filename := storageReq.FileName
+	bucket := storageReq.Bucket
+
+	fmt.Printf("Bucket = %v, file = %v\n", bucket, filename)
+
+	goFile, err := os.Open(filename)
+	if err != nil {
+		// log.Fatalf("error opening %q: %v", filename, err)
+		fmt.Printf("Error opening %v: %v\n", filename, err)
+	}
+	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: filename}).Media(goFile).Do()
+	fmt.Printf("Got storage.Object, err: %#v, %v", storageObject, err)
+	return nil
 }

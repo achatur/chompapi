@@ -159,6 +159,31 @@ func (userInfo *UserInfo) GetUserInfo() error {
 	return err
 }
 
+func (userInfo *UserInfo) GetUserInfoByEmail() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for reading chomp_users table data
+	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
+						phone_number, password_hash, dob, gender, photo_id
+					   FROM chomp_users
+					   WHERE chomp_username=?`, 
+					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
+					   							    &userInfo.Username, &userInfo.PhoneNumber,
+					   							    &userInfo.PasswordHash,&userInfo.DOB,
+					   							    &userInfo.Gender, &userInfo.Photo.ID)
+	if err != nil {
+		fmt.Printf("err = %v", err)
+		return err
+	}
+	return err
+}
+
+
 func GetMeInfo(username string) (map[string]string, error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
