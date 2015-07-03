@@ -26,6 +26,7 @@ func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/register", register.DoRegister)
+	router.HandleFunc("/fp", BasicAuth(register.ForgotPassword))
 	router.HandleFunc("/login", login.DoLogin)
 	router.HandleFunc("/me", me.GetMe)
 	router.HandleFunc("/jwt", BasicAuth(crypto.GetJwt))
