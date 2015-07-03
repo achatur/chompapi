@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	// "strings"
 	"strconv"
 	"chompapi/db"
 	"chompapi/crypto"
 	"time"
 	"chompapi/globalsessionkeeper"
 	"math/rand"
+	"chompapi/messenger"
 )
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		randomPass := GeneratePassword(8)
+		randomPass := GeneratePassword(13)
 		fmt.Printf("RandomPass = %v\n", randomPass)
 
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(dbUserInfo.Username, []byte(randomPass)))
@@ -72,8 +72,24 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
-		// set user photo now
+		// Send email
 		fmt.Println("Sending Email...")
+		body := fmt.Sprintf("Your password has been reset, here's your nnew password\n\n%v\n\nRegards,\n\nThe Chomp Team", randomPass)
+		context := new(messenger.SmtpTemplateData)
+	    context.From = "Chomp"
+	    context.To = input.Email
+	    context.Subject = "Password Reset"
+	    context.Body = body
+	    context.Pass = randomPass
+	    err := context.SendGmail()
+	    if err != nil {
+	    	fmt.Printf("Something ewnt wrong %v\n", err)
+	    	myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = "Could not send mail" + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+	    }
+	    fmt.Printf("Mail sent")
+
 		w.WriteHeader(http.StatusNoContent)
 		return
 
@@ -98,19 +114,8 @@ func isValidInputUser(userInfo *db.UserInfo, errorResponse *globalsessionkeeper.
 	return true
 }
 
-// func isValidString(s string) bool {
-// 	fmt.Println("inside isValidString func")
-// 	if s == "" {
-// 		return false
-// 	} 
-// 	return true
-// }
-
 func GeneratePassword(n int) string {
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789~!@#$%^^&*()_+`-=")
-	// var numbers = []rune("0123456789")
-	// var special = []rune("~!@#$%^^&*()_+`-=")
-	// password := letters + numbers + special
     b := make([]rune, n)
     for i := range b {
         b[i] = letters[rand.Intn(len(letters))]
