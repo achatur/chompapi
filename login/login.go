@@ -8,6 +8,7 @@ import (
 	"chompapi/crypto"
 	"github.com/astaxie/beego/session"
 	"chompapi/globalsessionkeeper"
+	"strconv"
 )
 
 type LoginInput struct {
@@ -42,7 +43,6 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			// w.WriteHeader(http.StatusUnauthorized)
 			myErrorResponse.Code = http.StatusUnauthorized
 			myErrorResponse.Error = "Invalid Username"
 			myErrorResponse.HttpErrorResponder(w)
@@ -50,7 +50,6 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		fmt.Println("return from db = %v", userInfo)
 
-		// dbPassword := userInfo["password_hash"]
 		dbPassword := userInfo.PasswordHash
 
 		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
@@ -95,7 +94,11 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
-		//Send back 204 no content (with cookie)
+		//Send back 204 no content (with cookie) + temp password header
+		if userInfo.PasswordExpiry > 0 && userInfo.IsPasswordTemp == true {
+			w.Header().Set("PasswordExpiry", strconv.Itoa(userInfo.PasswordExpiry))
+			w.Header().Set("Location", "https://chompapi.com/me/update/up")
+		}
 		w.WriteHeader(http.StatusNoContent)
 		return
 	default:

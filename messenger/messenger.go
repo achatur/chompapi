@@ -126,8 +126,8 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	err = smtp.SendMail(emailUser.EmailServer+":"+strconv.Itoa(emailUser.Port), // in our case, "smtp.google.com:587"
     auth,
     emailUser.Username,
-    []string{"amir.chatur@gmail.com"},
-    //[]string{smtpTemplateData.To},
+    //[]string{"amir.chatur@gmail.com"},
+    []string{smtpTemplateData.To},
     doc.Bytes())
 	if err != nil {
     	fmt.Print("ERROR: attempting to send a mail ", err)

@@ -7,9 +7,6 @@ import (
 	"reflect"
 	"errors"
 	"time"
-	// "encoding/json"
-	//"github.com/pborman/uuid"
-	 //"gopkg.in/gorp.v1"
 )
 
 type RegisterInput struct {
@@ -35,8 +32,10 @@ type UserInfo struct {
 	DOB           	int 			`json:"dob"`
 	Gender        	string 			`json:"gender"`
 	Photo 	  	  	Photo 			`json:"photo"`
-	Fname 			sql.NullString 	`json:"fname"`
-	Lname 			sql.NullString 	`json:"lname"`
+	Fname 			string 		 	`json:"fname"`
+	Lname 			string 		 	`json:"lname"`
+	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
+	PasswordExpiry 	int 			`josn:"passwordExpiry"`
 }
 
 // Plurals are names of tables in DB
@@ -148,13 +147,16 @@ func (userInfo *UserInfo) GetUserInfo() error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
-						phone_number, password_hash, dob, gender, photo_id
+						phone_number, password_hash, dob, gender, photo_id,
+						is_password_temp, password_expiry, fname, lname
 					   FROM chomp_users
 					   WHERE chomp_username=?`, 
 					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.PhoneNumber,
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
-					   							    &userInfo.Gender, &userInfo.Photo.ID)
+					   							    &userInfo.Gender, &userInfo.Photo.ID,
+					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
+					   							    &userInfo.Fname, &userInfo.Lname)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
@@ -173,13 +175,14 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
-						dob, gender, photo_id,
+						dob, gender, photo_id, is_password_temp, password_expiry,
 						fname, lname
 					   FROM chomp_users
 					   WHERE email=?`, 
 					   userInfo.Email).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.DOB,
 					   							    &userInfo.Gender, &userInfo.Photo.ID,
+					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
 					   							    &userInfo.Fname, &userInfo.Lname)
 	if err != nil {
 		fmt.Printf("err = %v\n", err)
