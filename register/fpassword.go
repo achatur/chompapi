@@ -65,7 +65,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(dbUserInfo.Username, []byte(randomPass)))
 		fmt.Printf("Hash = %s\n", input.PasswordHash)
 		input.UserID = dbUserInfo.UserID
-		if err := input.UpdatePassword(); err != nil {
+		if err := input.UpdatePassword(true); err != nil {
 			fmt.Println("Error! = %v\n", err)
 			myErrorResponse.Code = http.StatusInternalServerError
 			myErrorResponse.Error = "Could not Update Password: " + err.Error()

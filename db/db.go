@@ -262,7 +262,7 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	return nil
 }
 
-func (userInfo UserInfo) UpdatePassword() error {
+func (userInfo UserInfo) UpdatePassword(temp bool) error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return err
@@ -272,29 +272,22 @@ func (userInfo UserInfo) UpdatePassword() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+	var results sql.Result
+	var err2 error
 
-	// query := fmt.Sprintf("UPDATE chomp_users SET password_hash='%s'", 
-	// 	userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
-	// fmt.Println("Query = %v\n", query)
+	if temp == true {
 
-	// stmt, err := db.Prepare(query)
-	// if err != nil {
-	// 	fmt.Println("Error occurd")
-	// 	return err
-	// }
-	// defer stmt.Close()
-	// _, err = stmt.Exec()
-	// if err != nil {
-	// 	return err
-	// }
-	// return nil
-	// ///////////////////////
-	results, err2 := db.Exec(`UPDATE chomp_users SET password_hash=?
-							  WHERE chomp_user_id=?`, userInfo.PasswordHash, userInfo.UserID)
+		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
+							  WHERE chomp_user_id=?`, userInfo.PasswordHash, true, 
+							  time.Now().Unix() + 86400, userInfo.UserID)
+	} else {
+
+		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
+							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0)
+	}
+	
 	id, err2 := results.LastInsertId()
-	//userInfo.UserID= int(id)
 	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
-
 	return err2
 }
 
