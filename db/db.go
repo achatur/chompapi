@@ -31,6 +31,7 @@ type UserInfo struct {
 	Email         	string 			`json:"email"`
 	PhoneNumber   	string 			`json:"phoneNumber,omitempty"`
 	PasswordHash  	string 			`json:"passwordHash,omitempty"`
+	Password 	  	string 			`json:"password,omitempty"`
 	DOB           	int 			`json:"dob"`
 	Gender        	string 			`json:"gender"`
 	Photo 	  	  	Photo 			`json:"photo"`
@@ -187,53 +188,6 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	return err
 }
 
-// func GetMeInfo(username string) (map[string]string, error) {
-// 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-// 	if err != nil {
-// 		return make(map[string]string), err
-// 	}
-// 	defer db.Close()
-// 	m := map[string]string{}
-
-// 	// Prepare statement for reading chomp_users table data
-// 	rows, err := db.Query("select chomp_user_id, chomp_username, email, dob, gender, photo_id from chomp_users where chomp_username=?", username)
-// 	if err != nil {
-// 		return make(map[string]string), err
-// 	}
-// 	columns, err := rows.Columns()
-// 	if err != nil {
-// 		return make(map[string]string), err
-// 	}
-// 	values := make([]sql.RawBytes, len(columns))
-// 	scanArgs := make([]interface{}, len(values))
-// 	for i := range values {
-// 		scanArgs[i] = &values[i]
-// 	}
-// 	fmt.Println("scanArgs = %v\n", scanArgs)
-// 	for rows.Next() {
-// 		err = rows.Scan(scanArgs...)
-// 		if err != nil {
-// 			return make(map[string]string), err
-// 		}
-// 		var value string
-// 		for i, col := range values {
-// 			if col == nil {
-// 				value = "null"
-// 			} else {
-// 				value = string(col)
-// 			}
-// 			m[columns[i]] = value
-// 			fmt.Println(columns[i], ": ", value)
-// 		}
-// 		fmt.Println("--------------------------------")
-// 	}
-// 	if err = rows.Err(); err != nil {
-// 		return make(map[string]string), err
-// 	}
-// 	return m, err
-// }
-
-
 func (userInfo RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
@@ -283,7 +237,7 @@ func (userInfo UserInfo) UpdatePassword(temp bool) error {
 	} else {
 
 		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
-							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0)
+							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0, userInfo.UserID)
 	}
 	
 	id, err2 := results.LastInsertId()

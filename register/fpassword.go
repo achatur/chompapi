@@ -46,7 +46,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		if err := dbUserInfo.GetUserInfoByEmail(); err != nil {
 			fmt.Printf("Could not find user")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "User Not Found" + err.Error()
+			myErrorResponse.Error = "User Not Found " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -65,6 +65,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(dbUserInfo.Username, []byte(randomPass)))
 		fmt.Printf("Hash = %s\n", input.PasswordHash)
 		input.UserID = dbUserInfo.UserID
+
 		if err := input.UpdatePassword(true); err != nil {
 			fmt.Println("Error! = %v\n", err)
 			myErrorResponse.Code = http.StatusInternalServerError
@@ -81,6 +82,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	    context.Subject = "Password Reset"
 	    context.Body = body
 	    context.Pass = randomPass
+
 	    err := context.SendGmail()
 	    if err != nil {
 	    	fmt.Printf("Something ewnt wrong %v\n", err)
@@ -88,11 +90,11 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.Error = "Could not send mail" + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 	    }
-	    fmt.Printf("Mail sent")
 
+	    fmt.Printf("Mail sent")
 		w.WriteHeader(http.StatusNoContent)
 		return
-
+		
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
