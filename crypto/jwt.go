@@ -55,7 +55,6 @@ func CreateJwt(w http.ResponseWriter) JWT {
         return JWT{}
     }
     fmt.Printf("Json = %v\n", gApiInfo)
-    //mySigningKey, _ := ioutil.ReadFile(gApiInfo.PrivateKey)
     // Set some claims
     token.Claims["scope"] = `https://www.googleapis.com/auth/devstorage.full_control`
     token.Claims["iss"] = gApiInfo.ClientId
@@ -64,8 +63,6 @@ func CreateJwt(w http.ResponseWriter) JWT {
     token.Claims["aud"] = `https://www.googleapis.com/oauth2/v3/token`
     fmt.Printf("Token Claims: %v\n", token.Claims)
     // Sign and get the complete encoded token as a string
-    //tokenString, err := token.SignedString(mySigningKey)
-    //tokenString, err := token.SignedString(gApiInfo.PrivateKey)
     tokenString, err := token.SignedString(privateKey)
     if err != nil {
         fmt.Printf("Err = %v\n", err)

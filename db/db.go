@@ -7,9 +7,6 @@ import (
 	"reflect"
 	"errors"
 	"time"
-	// "encoding/json"
-	//"github.com/pborman/uuid"
-	 //"gopkg.in/gorp.v1"
 )
 
 type RegisterInput struct {
@@ -26,14 +23,19 @@ type RegisterInput struct {
 }
 
 type UserInfo struct {
-	UserID   		int 	`json:"userId"`
-	Username 		string 	`json:"username"`
-	Email         	string 	`json:"email"`
-	PhoneNumber   	string 	`json:"phoneNumber,omitempty"`
-	PasswordHash  	string 	`json:"passwordHash,omitempty"`
-	DOB           	string 	`json:"dob"`
-	Gender        	string 	`json:"gender"`
-	Photo 	  	  	Photo 	`json:"photo"`
+	UserID   		int 			`json:"userId"`
+	Username 		string 			`json:"username"`
+	Email         	string 			`json:"email"`
+	PhoneNumber   	string 			`json:"phoneNumber,omitempty"`
+	PasswordHash  	string 			`json:"passwordHash,omitempty"`
+	Password 	  	string 			`json:"password,omitempty"`
+	DOB           	int 			`json:"dob"`
+	Gender        	string 			`json:"gender"`
+	Photo 	  	  	Photo 			`json:"photo"`
+	Fname 			string 		 	`json:"fname"`
+	Lname 			string 		 	`json:"lname"`
+	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
+	PasswordExpiry 	int 			`josn:"passwordExpiry"`
 }
 
 // Plurals are names of tables in DB
@@ -117,24 +119,6 @@ type IgStore struct {
 	IgCreatedTime 	int
 }
 
-// type dishTags DishTags
-// func (d DishTags) UnmarshalJSON(b []byte) (err error) {
-// 	t := dishTags{}
-// 	fmt.Printf("Did I make it here? %v\n", b)
-// 	if err = json.Unmarshal(b, &t); err == nil {
-// 		*d = DishTags(t)
-// 		return
-// 	}
-// 	return err
-// }
-// func (d DishTags) MarshalJSON() ([]byte error) {
-// 	if err = json.Marshal(d); err == nil {
-// 		return
-// 	}
-// 	return err
-// }
-
-
 func (userInfo *UserInfo) GetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
@@ -145,13 +129,16 @@ func (userInfo *UserInfo) GetUserInfo() error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
-						phone_number, password_hash, dob, gender, photo_id
+						phone_number, password_hash, dob, gender, photo_id,
+						is_password_temp, password_expiry, fname, lname
 					   FROM chomp_users
 					   WHERE chomp_username=?`, 
 					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.PhoneNumber,
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
-					   							    &userInfo.Gender, &userInfo.Photo.ID)
+					   							    &userInfo.Gender, &userInfo.Photo.ID,
+					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
+					   							    &userInfo.Fname, &userInfo.Lname)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
@@ -167,69 +154,24 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	defer db.Close()
 
 	// Prepare statement for reading chomp_users table data
-	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
-						phone_number, password_hash, dob, gender, photo_id
+						dob, gender, photo_id, is_password_temp, password_expiry,
+						fname, lname
 					   FROM chomp_users
-					   WHERE chomp_username=?`, 
-					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
-					   							    &userInfo.Username, &userInfo.PhoneNumber,
-					   							    &userInfo.PasswordHash,&userInfo.DOB,
-					   							    &userInfo.Gender, &userInfo.Photo.ID)
+					   WHERE email=?`, 
+					   userInfo.Email).Scan(&userInfo.UserID, &userInfo.Email,
+					   							    &userInfo.Username, &userInfo.DOB,
+					   							    &userInfo.Gender, &userInfo.Photo.ID,
+					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
+					   							    &userInfo.Fname, &userInfo.Lname)
 	if err != nil {
-		fmt.Printf("err = %v", err)
+		fmt.Printf("err = %v\n", err)
 		return err
 	}
 	return err
 }
-
-
-func GetMeInfo(username string) (map[string]string, error) {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return make(map[string]string), err
-	}
-	defer db.Close()
-	m := map[string]string{}
-
-	// Prepare statement for reading chomp_users table data
-	rows, err := db.Query("select chomp_user_id, chomp_username, email, dob, gender, photo_id from chomp_users where chomp_username=?", username)
-	if err != nil {
-		return make(map[string]string), err
-	}
-	columns, err := rows.Columns()
-	if err != nil {
-		return make(map[string]string), err
-	}
-	values := make([]sql.RawBytes, len(columns))
-	scanArgs := make([]interface{}, len(values))
-	for i := range values {
-		scanArgs[i] = &values[i]
-	}
-	fmt.Println("scanArgs = %v\n", scanArgs)
-	for rows.Next() {
-		err = rows.Scan(scanArgs...)
-		if err != nil {
-			return make(map[string]string), err
-		}
-		var value string
-		for i, col := range values {
-			if col == nil {
-				value = "null"
-			} else {
-				value = string(col)
-			}
-			m[columns[i]] = value
-			fmt.Println(columns[i], ": ", value)
-		}
-		fmt.Println("--------------------------------")
-	}
-	if err = rows.Err(); err != nil {
-		return make(map[string]string), err
-	}
-	return m, err
-}
-
 
 func (userInfo RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
@@ -257,6 +199,35 @@ func (userInfo RegisterInput) SetUserInfo() error {
 		return err
 	}
 	return nil
+}
+
+func (userInfo UserInfo) UpdatePassword(temp bool) error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+	var results sql.Result
+	var err2 error
+
+	if temp == true {
+
+		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
+							  WHERE chomp_user_id=?`, userInfo.PasswordHash, true, 
+							  time.Now().Unix() + 86400, userInfo.UserID)
+	} else {
+
+		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
+							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0, userInfo.UserID)
+	}
+	
+	id, err2 := results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+	return err2
 }
 
 func (photo Photos) SetMePhoto() error {
