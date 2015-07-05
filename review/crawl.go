@@ -55,9 +55,9 @@ type Location struct {
 }
 
 type Images struct {
-	Low_Resolution 			Res
-	Thumbnail				Res
-	Standard_Resolution 	Res
+	LowRes		 	Res `json:"low_resolution"`
+	Thumbnail		Res `json:"thumbnail"`
+	StandardRes 	Res `json:"standard_resolution"`
 }
 
 type Res struct {
@@ -113,7 +113,15 @@ type StorageReq struct {
 	Token 			*oauth2.Token
 	Bucket 			string
 	FileName 		string
+	FileUuid 		string
+	FileLoc 		string
 }
+
+type ConfigFile struct {
+    FileLoc		    string `json:"file_loc"`
+}
+
+var FileDownload ConfigFile
 
 func Crawl(w http.ResponseWriter, r *http.Request) {
 
@@ -174,6 +182,21 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
+			fileContent, err := ioutil.ReadFile("./chomp_private/file_download.json")
+			if err != nil {
+    		    myErrorResponse.Code = http.StatusInternalServerError
+    		    myErrorResponse.Error = err.Error()
+    		    myErrorResponse.HttpErrorResponder(w)
+    		    return
+    		}
+    		err = json.Unmarshal(fileContent, &FileDownload)
+    		if err != nil {
+    		    fmt.Printf("Err = %v", err)
+    		    myErrorResponse.Code = http.StatusBadRequest
+    		    myErrorResponse.Error = "Could not decode"
+    		    myErrorResponse.HttpErrorResponder(w)
+    		    return
+    		}
 			fmt.Println("=======================================")
 			// igStore.GetLastPull()
 			// if err != nil {
@@ -182,9 +205,9 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			// fmt.Printf("\nigStore Pull = %v\n", igStore)
 			fmt.Println("=======================================")
 
-			url :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
+			iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
 			request := gorequest.New()
-			resp, body, errs := request.Get(url).End()
+			resp, body, errs := request.Get(iurl).End()
 
 			if errs != nil {
 				fmt.Printf("something went wrong in get %v", err)
@@ -194,7 +217,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-            err := json.Unmarshal([]byte(body), &instaData)
+            err = json.Unmarshal([]byte(body), &instaData)
 
 			if err != nil {
 				fmt.Printf("Err = %v", err)
@@ -260,6 +283,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			}
 			// fmt.Printf("\n\n========\nNewTS = %v\n=======\n", token)
 			privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
+			//privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.p12")
 			if err != nil {
     		    myErrorResponse.Code = http.StatusInternalServerError
     		    myErrorResponse.Error = err.Error()
@@ -268,9 +292,11 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		}
 			googConfig := new(jwt.Config)
 			googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
-			googConfig.Subject = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
+			//googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
+			//googConfig.Subject = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
 			googConfig.PrivateKey = privateKey
-			googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
+			// googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
+			googConfig.Scopes =  []string{"https://www.googleapis.com/auth/devstorage.full_control"}
 			googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
 
 
@@ -321,8 +347,25 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 					myErrorResponse.Code = http.StatusPartialContent
 					myErrorResponse.Error = "Not all reviews added: " + err.Error()
 				}
+				/* //////////////////////////////////////// */
+				/*                FILE DOWNLOAD 			*/
+				/* //////////////////////////////////////// */
+
+				fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
+				if err != nil {
+					fmt.Printf("No Review Created for %v\n", i)
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				}
+
+				/* //////////////////////////////////////// */
+				/*                FILE DOWNLOAD END			*/
+				/* //////////////////////////////////////// */
+
 				storageReq.Bucket = "chomp_photos"
-				storageReq.FileName = "/home/amir.chatur/game_chair_box.jpg"
+				//storageReq.FileName = "/home/amir.chatur/file_serve/game_chair_box.jpg"
+				storageReq.FileName = FileDownload.FileLoc + fileName
+				storageReq.FileUuid = photoInfo.Uuid
 				err = storageReq.StorePhoto(client)
 				if err != nil {
 					fmt.Println("Something went wrong storing photo")
@@ -524,12 +567,16 @@ func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, erro
 		//return token, errors.New("Could not create JWT")
 		return &oauth2.Token{}, errors.New("Could not create JWT")
 	}
-
+	fmt.Printf("====\n")
+	fmt.Printf("Assert = %v\n", assert.JWT)
+	fmt.Printf("====\n")
 	//url :=  fmt.Sprintf(googTokUrl, googGT + assert.JWT)
 	// resp, body, errs := request.Post(url).End()
 	v := url.Values{}
 	v.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
 	v.Set("assertion", assert.JWT)
+	//v.Set("assertion", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI0ODY1NDMxNTUzODMtb281Z2xkYm41cTlqbTNtZWkzZGUzcDVwOTVmZm44ZmlAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzY29wZSI6Imh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2F1dGgvZGV2c3RvcmFnZS5mdWxsX2NvbnRyb2wiLCJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjMvdG9rZW4iLCJleHAiOjE0MzYxMTgxMzAsImlhdCI6MTQzNjExNDUzMH0.H689BC46sOoGm3Nu_OC5EcQq3Fr9iRG3wlCORlsc5k0HZl_gqbyE3t5HRw2uDkyah_uAjs-nOFj_feUuDyF_dtzx_4AcqKbBP2xn45f5OZlRMHgfDnLZeZoJY0_WK0G6rixPSl6SP6FFdlQ7lRVJPtH_-zZzCxMRHoD5YJAW7_wnWfs3jgCvYMzwuwSwZxe7gDeFoeZlpB7aNAAQqwZJlEdXutZmWQUV6wGOSMoa__ngYBc0JaPDIzLoi8AiEgZY9bBZONs9OhcDLOVf5CvRH-9nnhaBprEHzkfqjTWK3x51taNyODithiSpR6ENheafikFFHWUd2DijYQFWzQqvfg")
+	//v.Set("assertion", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjMvdG9rZW4iLCJleHAiOjE0MzYxMjA0NjAsImlhdCI6MTQzNjExNjg2MCwiaXNzIjoiNDg2NTQzMTU1MzgzLTR2cXVhcW81bTBpYms1Y24ybm8xaTk4azVsdjA5ZHBzQGRldmVsb3Blci5nc2VydmljZWFjY291bnQuY29tIiwic2NvcGUiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL2RldnN0b3JhZ2UuZnVsbF9jb250cm9sIn0.cG3U8peemtCzPOBFraa7Q9DlP1H-XecocQmxY0XEnTDIt8UnGQnUpMU4HTdAob_9X569oBMwY8ZAlsyy2tGBuwIT9UlRt6N2DJ4jc7PcggtGGblfngczSw6j5-4af-T9CDZscNBHoNsrVm_WV_0D2D1--YC2A0eikQGOutSVJQv4Na-EOB0Orf-sSGbxxlCq0UrdBtVa3fKnVnnlwrGwnPw1S-Vndxfb8UYadG8fu1pxWW9Jbx8knkXXr86ZZSri3CjZuSVpbHY4iVIjn35GmqZKai7uoeNpUqOauaImnHLglgrBsmOMkLwmTQkOxCpMGvZsxsINoURyj9Z3wUavZg")
 	resp, err := hc.PostForm(googTokUrl, v)
 	if err != nil {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
@@ -620,7 +667,52 @@ func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
 		// log.Fatalf("error opening %q: %v", filename, err)
 		fmt.Printf("Error opening %v: %v\n", filename, err)
 	}
-	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: filename}).Media(goFile).Do()
+	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: storageReq.FileUuid}).Media(goFile).Do()
 	fmt.Printf("Got storage.Object, err: %#v, %v", storageObject, err)
 	return nil
 }
+
+func downloadFile(rawUrl string) (string, error) {
+
+	fmt.Printf("/* //////////////////////////////////////// */\n")
+	fmt.Printf("/*                FILE DOWNLOAD 			*/\n")
+	fmt.Printf("/* //////////////////////////////////////// */\n")
+	//fileURL, err := url.Parse(instaData.Data[i].Images.StandardRes.Url)
+	fileURL, err := url.Parse(rawUrl)
+	if err != nil {
+		fmt.Printf("Error = %v\n", err)
+		return "", err
+	}
+	path := fileURL.Path
+	segments := strings.Split(path, "/")
+	fileName := segments[4]
+	fmt.Printf("Filename = %v\n", fileName)
+	file, err := os.Create(FileDownload.FileLoc + fileName)
+	if err != nil {
+		fmt.Printf("Error = %v\n", err)
+		return "", err
+	}
+	defer file.Close()
+	check := http.Client{
+		CheckRedirect: func(r *http.Request, via []*http.Request) error {
+			r.URL.Opaque = r.URL.Path
+			return nil
+		},
+	}
+	resp, err := check.Get(rawUrl)
+	if err != nil {
+		fmt.Printf("Error = %v\n", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+	fmt.Printf("Status = %v\n", resp.Status)
+	size, err := io.Copy(file, resp.Body)
+	if err != nil {
+		fmt.Printf("Error = %v\n", err)
+		return "", err
+	}
+	fmt.Printf("%s with %v bytes downloaded", fileName, size)
+	return fileName, nil
+}
+
+
