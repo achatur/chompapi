@@ -91,8 +91,6 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
         fmt.Printf("Err = %v", err)
         return err
     }
-    
-    fmt.Printf("email user = %v\n", emailUser)
 
 	auth := smtp.PlainAuth(
 

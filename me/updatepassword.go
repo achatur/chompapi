@@ -21,13 +21,15 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+
 	if err != nil {
 			//need logging here instead of print
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	}
-	//input.Username = sessionStore.Get("username")
+
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Printf("SessionUser = %v\n", sessionUser)
@@ -44,7 +46,6 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		defer sessionStore.SessionRelease(w)
 
 		//create variables
-		// userId := reflect.ValueOf(sessionUserID).Int()
 		username := reflect.ValueOf(sessionUser).String()
 
 		switch r.Method {
@@ -71,8 +72,6 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 	
-			//dbUserInfo.Email = input.Email
-			// input.UserID = int(userId)
 			input.Username = username
 	
 			if err := input.GetUserInfo(); err != nil {
@@ -82,9 +81,6 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-	
-			//randomPass := GeneratePassword(13)
-			//fmt.Printf("RandomPass = %v\n", randomPass)
 	
 			input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(input.Username, []byte(input.Password)))
 			fmt.Printf("Hash = %s\n", input.PasswordHash)

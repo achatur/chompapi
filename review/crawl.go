@@ -12,13 +12,18 @@ import (
 	"chompapi/me"
 	"strconv"
 	"database/sql"
-	// "chompapi/crypto"
+	"chompapi/crypto"
 	"golang.org/x/net/context"
-    _ "golang.org/x/oauth2"
+    "golang.org/x/oauth2"
     "golang.org/x/oauth2/jwt"
     "google.golang.org/api/storage/v1"
     "io/ioutil"
     "os"
+    "errors"
+    "net/url"
+    "io"
+    "time"
+    "golang.org/x/oauth2/jws"
 )
 
 type ParentData struct {
@@ -90,14 +95,21 @@ type User struct {
 	FullName 		string
 }
 
+// type GoogToken struct {
+//   AccessToken 		string `json:"access_token"`
+//   TokenType 		string `json:"token_type"`
+//   ExpiresIn 		int    `json:"expires_in"`
+// }
 type GoogToken struct {
-  AccessToken 		string `json:"access_token"`
-  TokenType 		string `json:"token_type"`
-  ExpiresIn 		int    `json:"expires_in"`
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"`
+	IDToken     string `json:"id_token"`
+	ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
 }
 
 type StorageReq struct {
-	GoogToken 		GoogToken
+	//GoogToken 		GoogToken
+	Token 			*oauth2.Token
 	Bucket 			string
 	FileName 		string
 }
@@ -162,11 +174,11 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			fmt.Println("=======================================")
-			igStore.GetLastPull()
-			if err != nil {
-				fmt.Printf("Error = %v\n")
-			}
-			fmt.Printf("\nigStore Pull = %v\n", igStore)
+			// igStore.GetLastPull()
+			// if err != nil {
+			// 	fmt.Printf("Error = %v\n")
+			// }
+			// fmt.Printf("\nigStore Pull = %v\n", igStore)
 			fmt.Println("=======================================")
 
 			url :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
@@ -234,15 +246,18 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-
-			// googToken := new(GoogToken)
-			// err = googToken.GetToken()
-
-			// if err != nil {
-			// 	myErrorResponse.Code = http.StatusServiceUnavailable
-			// 	myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
-			// 	myErrorResponse.HttpErrorResponder(w)
-			// }
+			//newTS := new(oauth2.TokenSource)
+			googToken := new(GoogToken)
+			//var tokenSource oauth2.TokenSource
+			//token, err := googToken.GetToken(w)
+			//tokenSource = googToken.GetToken(w)
+			if err != nil {
+				myErrorResponse.Code = http.StatusServiceUnavailable
+				myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+			// fmt.Printf("\n\n========\nNewTS = %v\n=======\n", token)
 			privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
 			if err != nil {
     		    myErrorResponse.Code = http.StatusInternalServerError
@@ -252,19 +267,30 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		}
 			googConfig := new(jwt.Config)
 			googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
+			// googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
 			googConfig.PrivateKey = privateKey
 			googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
 			googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
 
 
 			storageReq := new(StorageReq)
-			ctx := context.TODO()
-			client := googConfig.Client(ctx) 
+			// storageReq.Token = *token
+			// ctx := context.TODO()
+			// client := googConfig.Client(ctx) 
+			//client := oauth2.NewClient(context.TODO(), nil)
+			token, err := googToken.GetToken(w)
+			storageReq.Token = token
+			fmt.Printf("Token = %v\n", token)
+			client := oauth2.NewClient(context.Background(), googConfig.TokenSource(context.TODO()))
 
-			tokenSource := googConfig.TokenSource(ctx)
-			fmt.Printf("TokenSource = %v\n", tokenSource)
-			token, err := tokenSource.Token()
-			fmt.Printf("Token = %v, err = %v\n", token, err)
+			// tokenSource := googConfig.TokenSource(ctx)
+			// //fmt.Printf("TokenSource = %v\n", tokenSource)
+			// client = oauth2.NewClient(ctx, tokenSource)
+			// token2, err := tokenSource.Token()
+			// fmt.Printf("Token = %v, err = %v\n", token2, err)
+
+			// newTS := new oauth2.TokenSource
+
 
 			for i := range reviewsToWrite {
 
@@ -313,21 +339,21 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 						myErrorResponse.HttpErrorResponder(w)
 					}
 
-					err = igStore.UpdateLastPull()
+					// err = igStore.UpdateLastPull()
 
-					if err != nil {
-						fmt.Printf("Could not update table\n")
-						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.Error = "Not all reviews added: " + err.Error()
-						return
-					}
+					// if err != nil {
+					// 	fmt.Printf("Could not update table\n")
+					// 	myErrorResponse.Code = http.StatusInternalServerError
+					// 	myErrorResponse.Error = "Not all reviews added: " + err.Error()
+					// 	return
+					// }
 				}
 			}
 
 		default:
 
 			myErrorResponse.Code = http.StatusMethodNotAllowed
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Error = "Method Not Allowed"
 			myErrorResponse.HttpErrorResponder(w)
 		}
 	}
@@ -480,36 +506,89 @@ func AppendIfMissing(slice []int, i int) []int {
     return append(slice, i)
 }
 
-// func (googToken *GoogToken) GetToken() error {
+func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, error) {
 
-// 	googTokUrl 	 	:= "https://www.googleapis.com/oauth2/v3/token"
-// 	googGT 	 	 	:= `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=`
-// 	assert := crypto.CreateJwt(w)
+	googTokUrl 	 	:= "https://www.googleapis.com/oauth2/v3/token"
+	// googGT 	 	 	:= "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion="
+	assert := crypto.CreateJwt(w)
+	// request := gorequest.New()
+	//token := new(oauth2.Token)
+	hc := oauth2.NewClient(context.TODO(), nil)
 
-// 	if assert.Jwt == ""
-// 	{
-// 		fmt.Println("Couldn't create jwt")
-// 		return errors.New("Could not create JWT")
-// 	}
+	if assert.JWT == "" {
+		fmt.Println("Couldn't create jwt")
+		//return token, errors.New("Could not create JWT")
+		return &oauth2.Token{}, errors.New("Could not create JWT")
+	}
 
-// 	url :=  fmt.Sprintf(googTokUrl, googGT + assert)
-// 	resp, body, errs := request.Post(url).End()
+	//url :=  fmt.Sprintf(googTokUrl, googGT + assert.JWT)
+	// resp, body, errs := request.Post(url).End()
+	v := url.Values{}
+	v.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
+	v.Set("assertion", assert.JWT)
+	resp, err := hc.PostForm(googTokUrl, v)
+	if err != nil {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
+	}
+	if c := resp.StatusCode; c < 200 || c > 299 {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %v\nResponse: %s", resp.Status, body)
+	}
+	// // tokenRes is the JSON response body.
+	// var tokenRes struct {
+	// 	AccessToken string `json:"access_token"`
+	// 	TokenType   string `json:"token_type"`
+	// 	IDToken     string `json:"id_token"`
+	// 	ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
+	// }
+	var tokenRes GoogToken
+	if err := json.Unmarshal(body, &tokenRes); err != nil {
+		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
+	}
+	token := &oauth2.Token{
+		AccessToken: tokenRes.AccessToken,
+		TokenType:   tokenRes.TokenType,
+	}
+	raw := make(map[string]interface{})
+	json.Unmarshal(body, &raw) // no error checks for optional fields
+	token = token.WithExtra(raw)
 
-// 	if errs != nil {
-// 		fmt.Printf("something went wrong in get %v", err)
-// 		// myErrorResponse.Code = http.StatusServiceUnavailable
-// 		// myErrorResponse.Error = "Communication Issues:Google: " + errs.Error()
-// 		// myErrorResponse.HttpErrorResponder(w)
-// 		return errs
-// 	}
+	if secs := tokenRes.ExpiresIn; secs > 0 {
+		token.Expiry = time.Now().Add(time.Duration(secs) * time.Second)
+	}
+	if v := tokenRes.IDToken; v != "" {
+		// decode returned id token to get expiry
+		claimSet, err := jws.Decode(v)
+		if err != nil {
+			return nil, fmt.Errorf("oauth2: error decoding JWT token: %v", err)
+		}
+		token.Expiry = time.Unix(claimSet.Exp, 0)
+	}
 
-// 	err := json.Unmarshal([]byte(body), &googToken)
+	// if errs != nil {
+	// 	fmt.Printf("something went wrong in get %v", errs)
+	// 	// myErrorResponse.Code = http.StatusServiceUnavailable
+	// 	// myErrorResponse.Error = "Communication Issues:Google: " + errs.Error()
+	// 	// myErrorResponse.HttpErrorResponder(w)
+	// 	return token, errs[0]
+	// }
+	// fmt.Printf("\n\ninside getToken\nResp:%v \nbody: %v\n, errs: %v\n\n\n", resp, body, errs)
 
-// 	if err != nil {
-// 		fmt.Printf("Err = %v", err)
-// 		return err
-// 	}
-// }
+	// err := json.Unmarshal([]byte(body), &googToken)
+	// //err := json.Unmarshal([]byte(body), &token)
+
+
+	// if err != nil {
+	// 	fmt.Printf("Err = %v", err)
+	// 	return token, err
+	// }
+	// fmt.Printf("GetToken jwt = %v\n", token)
+	return token, nil
+}
 
 func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
 	
@@ -518,6 +597,7 @@ func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
 	// 	return
 	// }
 	fmt.Printf("Client = %v\n", client.Transport)
+	// client.Set("Authorization", storageReq.Token.AccessToken)
 
 	service, err := storage.New(client)
 	if err != nil {
@@ -525,7 +605,7 @@ func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
 		fmt.Printf("Unable to create Storage service: %v\n", err)
 		return err
 	}
-
+	service.Channel.Token = storageReq.Token
 	filename := storageReq.FileName
 	bucket := storageReq.Bucket
 

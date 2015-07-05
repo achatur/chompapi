@@ -154,13 +154,13 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	defer db.Close()
 
 	// Prepare statement for reading chomp_users table data
-	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE email=%s\n", userInfo.Email)
 
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
 						dob, gender, photo_id, is_password_temp, password_expiry,
 						fname, lname
 					   FROM chomp_users
-					   WHERE email=?`, 
+					   WHERE email= ?`, 
 					   userInfo.Email).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.DOB,
 					   							    &userInfo.Gender, &userInfo.Photo.ID,

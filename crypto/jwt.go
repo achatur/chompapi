@@ -57,7 +57,8 @@ func CreateJwt(w http.ResponseWriter) JWT {
     fmt.Printf("Json = %v\n", gApiInfo)
     // Set some claims
     token.Claims["scope"] = `https://www.googleapis.com/auth/devstorage.full_control`
-    token.Claims["iss"] = gApiInfo.ClientId
+    //token.Claims["iss"] = gApiInfo.ClientId
+    token.Claims["iss"] = gApiInfo.ClientEmail
     token.Claims["iat"] = time.Now().Unix()
     token.Claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
     token.Claims["aud"] = `https://www.googleapis.com/oauth2/v3/token`
