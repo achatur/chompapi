@@ -24,6 +24,7 @@ import (
     "io"
     "time"
     "golang.org/x/oauth2/jws"
+    // "google.golang.org/api/googleapi/transport"
 )
 
 type ParentData struct {
@@ -275,13 +276,16 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 			storageReq := new(StorageReq)
 			// storageReq.Token = *token
-			// ctx := context.TODO()
+			ctx := context.Background()
 			// client := googConfig.Client(ctx) 
 			//client := oauth2.NewClient(context.TODO(), nil)
 			token, err := googToken.GetToken(w)
 			storageReq.Token = token
 			fmt.Printf("Token = %v\n", token)
-			client := oauth2.NewClient(context.Background(), googConfig.TokenSource(context.TODO()))
+			//ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{ Transport: &transport.APIKey{ Key: token.AccessToken } })
+			//client := oauth2.NewClient(context.Background(), googConfig.TokenSource(context.TODO()))
+			fmt.Printf("creating client with %v\n", googConfig)
+			client := googConfig.Client(ctx)
 
 			// tokenSource := googConfig.TokenSource(ctx)
 			// //fmt.Printf("TokenSource = %v\n", tokenSource)
@@ -605,7 +609,7 @@ func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
 		fmt.Printf("Unable to create Storage service: %v\n", err)
 		return err
 	}
-	service.Channel.Token = storageReq.Token
+	// service.Channel.Token = storageReq.Token
 	filename := storageReq.FileName
 	bucket := storageReq.Bucket
 
