@@ -196,14 +196,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			/*                Check Last Crawl 			*/
 			/* //////////////////////////////////////// */
 			fmt.Println("=======================================")
-			// igStore.GetLastPull()
-			// if err != nil {
-			// 	fmt.Printf("Error = %v\n")
-			//	myErrorResponse.Code = http.StatusBadRequest
-			//	myErrorResponse.Error = "Could not decode"
-			//	myErrorResponse.HttpErrorResponder(w)
-			// }
-			// fmt.Printf("\nigStore Pull = %v\n", igStore)
+			igStore.GetLastPull()
+			if err != nil {
+				fmt.Printf("Error = %v\n")
+				myErrorResponse.Code = http.StatusBadRequest
+				myErrorResponse.Error = "Could not set last crawl: " + err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+			}
+			fmt.Printf("\nigStore Pull = %v\n", igStore)
 			fmt.Println("=======================================")
 
 			iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
@@ -297,7 +297,6 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		    myErrorResponse.HttpErrorResponder(w)
     		    return
     		}
-    		fmt.Printf("Json = %v\n", gApiInfo)
 
     		googConfig.Email = gApiInfo.ClientEmail
     		googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
@@ -306,7 +305,6 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 			storageReq := new(StorageReq)
 			ctx := context.Background()
-			fmt.Printf("creating client with %v\n", googConfig)
 			client := googConfig.Client(ctx)
 
 			for i := range reviewsToWrite {
@@ -386,14 +384,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				/*               Set Last Crawl 			*/
 				/* //////////////////////////////////////// */
 
-					// err = igStore.UpdateLastPull()
+					err = igStore.UpdateLastPull()
 
-					// if err != nil {
-					// 	fmt.Printf("Could not update table\n")
-					// 	myErrorResponse.Code = http.StatusInternalServerError
-					// 	myErrorResponse.Error = "Not all reviews added: " + err.Error()
-					// 	return
-					// }
+					if err != nil {
+						fmt.Printf("Could not update table\n")
+						myErrorResponse.Code = http.StatusInternalServerError
+						myErrorResponse.Error = "Not all reviews added: " + err.Error()
+						return
+					}
 				}
 			}
 
