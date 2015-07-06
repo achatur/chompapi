@@ -29,6 +29,7 @@ func main() {
 	router.HandleFunc("/login", login.DoLogin)
 
 	router.HandleFunc("/admin/fp", BasicAuth(register.ForgotPassword))
+	router.HandleFunc("/admin/fu", BasicAuth(register.ForgotUsername))
 	router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
 	router.HandleFunc("/me", me.GetMe)

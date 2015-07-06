@@ -56,6 +56,23 @@ All the best,
 
 The Chomp Team` 
 
+const emailTemplateUser = `From: &amp;#123;&amp;#123;.From&amp;#125;&amp;#125;
+To: &amp;#123;&amp;#123;.To&amp;#125;&amp;#125;
+Subject: &amp;#123;&amp;#123;.Subject&amp;#125;&amp;#125;
+
+Hello!
+
+We recently recieved word that you forgot your username.  Here's your username:
+
+%v
+
+Feel free to delete this email and carry on enjoying your food!
+
+All the best,
+
+The Chomp Team` 
+
+
 type EmailUser struct {
     Username    string
     Password    string
@@ -69,11 +86,13 @@ type SmtpTemplateData struct {
     Subject string
     Body    string
     Pass 	string
+    Username string
 }
 
 func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 
 	// var myErrorResponse globalsessionkeeper.ErrorResponse
+	fmt.Printf("smtp data = %v\n", smtpTemplateData)
 	emailUser := new(EmailUser)
 	// err := errors.New("")
 	 fileContent, err := ioutil.ReadFile("./chomp_private/email.json")
@@ -103,7 +122,10 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	var message string
 	if smtpTemplateData.Pass != "" {
 		message = fmt.Sprintf(emailTemplate, smtpTemplateData.Pass)
+	} else if smtpTemplateData.Username != "" {
+		message = fmt.Sprintf(emailTemplateUser, smtpTemplateData.Username)
 	} else {
+		fmt.Printf("User = %v\n, pass = %v\n", smtpTemplateData.Username, smtpTemplateData.Pass)
 		message = fmt.Sprintf(emailTemplateNopass)
 	}
 	
