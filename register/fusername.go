@@ -63,7 +63,7 @@ func ForgotUsername(w http.ResponseWriter, r *http.Request) {
 	    context.To = input.Email
 	    context.Subject = "Forgot Login Information"
 	    context.Body = body
-	    context.Username = input.Username
+	    context.Username = dbUserInfo.Username
 
 	    fmt.Printf("Context = %v\n", context)
 

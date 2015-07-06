@@ -125,7 +125,7 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	} else if smtpTemplateData.Username != "" {
 		message = fmt.Sprintf(emailTemplateUser, smtpTemplateData.Username)
 	} else {
-		fmt.Printf("User = %v\n, pass = %v\n", smtpTemplateData.Username, smtpTemplateData.Pass)
+		fmt.Printf("Blanks: User = %v\n, pass = %v\n", smtpTemplateData.Username, smtpTemplateData.Pass)
 		message = fmt.Sprintf(emailTemplateNopass)
 	}
 	
