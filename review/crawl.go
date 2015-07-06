@@ -192,9 +192,11 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		    myErrorResponse.HttpErrorResponder(w)
     		    return
     		}
+
     		/* //////////////////////////////////////// */
 			/*                Check Last Crawl 			*/
 			/* //////////////////////////////////////// */
+
 			fmt.Println("=======================================")
 			igStore.GetLastPull()
 			if err != nil {
@@ -525,12 +527,14 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	review.DishTags = tags
 	if instaData.Likes.Count > 0 {
 		review.Liked.Bool = true
-		// review.Liked.Value = true
+		review.Liked.Valid = true
 	}
 	review.Finished.Bool = false
+	review.Finished.Valid = true
 	review.Description = instaData.Caption.Text
 
 	// create review
+	fmt.Printf("Creating reviews.. liked = %v\n", review.Liked)
 	err = review.CreateReview()
 	if err != nil {
 		//something bad happened

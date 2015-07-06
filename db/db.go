@@ -600,7 +600,7 @@ func (review *Review) CreateReview() error {
 						 	  					  review.Restaurant.ID, review.Price,
 						 	  					  review.Liked,review.DishTags, review.Description)
 	fmt.Printf("Distags = %v\n", review.DishTags)
-
+	fmt.Printf("Liked = %v\n", review.Liked)
 	results, err2 := db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
