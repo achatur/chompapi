@@ -24,7 +24,6 @@ import (
     "io"
     "time"
     "golang.org/x/oauth2/jws"
-    // "google.golang.org/api/googleapi/transport"
 )
 
 type ParentData struct {
@@ -114,6 +113,7 @@ type StorageReq struct {
 
 type ConfigFile struct {
     FileLoc		    string `json:"file_loc"`
+    Bucket 			string `json:"bucket"`
 }
 
 var FileDownload ConfigFile
@@ -192,10 +192,16 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		    myErrorResponse.HttpErrorResponder(w)
     		    return
     		}
+    		/* //////////////////////////////////////// */
+			/*                Check Last Crawl 			*/
+			/* //////////////////////////////////////// */
 			fmt.Println("=======================================")
 			// igStore.GetLastPull()
 			// if err != nil {
 			// 	fmt.Printf("Error = %v\n")
+			//	myErrorResponse.Code = http.StatusBadRequest
+			//	myErrorResponse.Error = "Could not decode"
+			//	myErrorResponse.HttpErrorResponder(w)
 			// }
 			// fmt.Printf("\nigStore Pull = %v\n", igStore)
 			fmt.Println("=======================================")
@@ -265,38 +271,18 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-			//newTS := new(oauth2.TokenSource)
-			googToken := new(GoogToken)
-			//var tokenSource oauth2.TokenSource
-			//token, err := googToken.GetToken(w)
-			//tokenSource = googToken.GetToken(w)
+
 			if err != nil {
 				myErrorResponse.Code = http.StatusServiceUnavailable
 				myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
-			// fmt.Printf("\n\n========\nNewTS = %v\n=======\n", token)
-			// privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
-			// //privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.p12")
-			// if err != nil {
-   //  		    myErrorResponse.Code = http.StatusInternalServerError
-   //  		    myErrorResponse.Error = err.Error()
-   //  		    myErrorResponse.HttpErrorResponder(w)
-   //  		    return
-   //  		}
+
 			googConfig := new(jwt.Config)
 			gApiInfo := new(crypto.GApiInfo)
-			// googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
-			// //googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
-			// //googConfig.Subject = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
-			// googConfig.PrivateKey = privateKey
-			// // googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
-			// googConfig.Scopes =  []string{"https://www.googleapis.com/auth/devstorage.full_control"}
-			// googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
-    		//gApiInfo := new(GApiInfo)
     		fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
-    		//privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
+
     		if err != nil {
     		    myErrorResponse.Code = http.StatusInternalServerError
     		    myErrorResponse.Error = err.Error()
@@ -312,57 +298,66 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     		    return
     		}
     		fmt.Printf("Json = %v\n", gApiInfo)
-    		// Set some claims
-    		// token.Claims["scope"] = `https://www.googleapis.com/auth/devstorage.full_control`
-    		// // token.Claims["iss"] = gApiInfo.ClientId
-    		// token.Claims["iss"] = gApiInfo.ClientEmail
-    		// token.Claims["iat"] = time.Now().Unix()
-    		// token.Claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
-    		// token.Claims["aud"] = `https://www.googleapis.com/oauth2/v3/token`
-    		// fmt.Printf("Token Claims: %v\n", token.Claims)
+
     		googConfig.Email = gApiInfo.ClientEmail
     		googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
     		googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
     		googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
 
 			storageReq := new(StorageReq)
-			// storageReq.Token = *token
 			ctx := context.Background()
-			// client := googConfig.Client(ctx) 
-			//client := oauth2.NewClient(context.TODO(), nil)
-			token, err := googToken.GetToken(w)
-			storageReq.Token = token
-			fmt.Printf("Token = %v\n", token)
-			//ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &http.Client{ Transport: &transport.APIKey{ Key: token.AccessToken } })
-			//client := oauth2.NewClient(context.Background(), googConfig.TokenSource(context.TODO()))
 			fmt.Printf("creating client with %v\n", googConfig)
 			client := googConfig.Client(ctx)
 
-			// tokenSource := googConfig.TokenSource(ctx)
-			// //fmt.Printf("TokenSource = %v\n", tokenSource)
-			// client = oauth2.NewClient(ctx, tokenSource)
-			// token2, err := tokenSource.Token()
-			// fmt.Printf("Token = %v, err = %v\n", token2, err)
-
-			// newTS := new oauth2.TokenSource
-
-
 			for i := range reviewsToWrite {
 
-				/*====================================//
-				// generate and store UUID for photo  //
-				// upload file to google storeage     //
-				// update database                    //
-				//====================================*/
+				/* //////////////////////////////////////// */
+				/*                Download File 			*/
+				/* //////////////////////////////////////// */
+
+				fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
+
+				if err != nil {
+					fmt.Printf("No Review Created for %v\n", i)
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+					continue
+				}
+
+				/* //////////////////////////////////////// */
+				/*                Create UUID   		    */
+				/* //////////////////////////////////////// */
 
 				photoInfo := CreatePhoto(username)
+
 				if photoInfo.ID == 0 {
 					fmt.Println("Something went wrong to create photo")
 					myErrorResponse.Code = http.StatusPartialContent
 					myErrorResponse.Error = "Not all reviews added: " + err.Error()
 				}
 
-				err := instaData.Data[i].CreateReview(photoInfo)
+				/* //////////////////////////////////////// */
+				/*                Store File    		    */
+				/* //////////////////////////////////////// */
+
+				storageReq.Bucket = FileDownload.Bucket
+				storageReq.FileName = FileDownload.FileLoc + fileName
+				storageReq.FileUuid = photoInfo.Uuid
+
+				err = storageReq.StorePhoto(client)
+
+				if err != nil {
+					fmt.Println("Something went wrong storing photo")
+					myErrorResponse.Code = http.StatusPartialContent
+					myErrorResponse.Error = "Not all photos added: " + err.Error()
+					continue
+				}
+
+				/* //////////////////////////////////////// */
+				/*                Create Review   		    */
+				/* //////////////////////////////////////// */
+
+				err = instaData.Data[i].CreateReview(photoInfo)
 				if err == nil {
 
 					fmt.Printf("Review %v added\n", i)
@@ -371,31 +366,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 					fmt.Printf("No Review Created for %v\n", i)
 					myErrorResponse.Code = http.StatusPartialContent
 					myErrorResponse.Error = "Not all reviews added: " + err.Error()
-				}
-				/* //////////////////////////////////////// */
-				/*                FILE DOWNLOAD 			*/
-				/* //////////////////////////////////////// */
-
-				fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
-				if err != nil {
-					fmt.Printf("No Review Created for %v\n", i)
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all reviews added: " + err.Error()
-				}
-
-				/* //////////////////////////////////////// */
-				/*                FILE DOWNLOAD END			*/
-				/* //////////////////////////////////////// */
-
-				storageReq.Bucket = "chomp_photos"
-				//storageReq.FileName = "/home/amir.chatur/file_serve/game_chair_box.jpg"
-				storageReq.FileName = FileDownload.FileLoc + fileName
-				storageReq.FileUuid = photoInfo.Uuid
-				err = storageReq.StorePhoto(client)
-				if err != nil {
-					fmt.Println("Something went wrong storing photo")
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all photos added: " + err.Error()
+					continue
 				}
 
 				if i == 0 {
@@ -410,6 +381,10 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 						myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
 						myErrorResponse.HttpErrorResponder(w)
 					}
+
+				/* //////////////////////////////////////// */
+				/*               Set Last Crawl 			*/
+				/* //////////////////////////////////////// */
 
 					// err = igStore.UpdateLastPull()
 
@@ -441,24 +416,22 @@ func CreatePhoto(username string) db.Photos {
 
 	if err != nil {
 		//need logging here instead of print
-		// myErrorResponse.Code = http.StatusInternalServerError
-		// myErrorResponse.Error = err.Error()
-		// myErrorResponse.HttpErrorResponder(w)
 		return photoInfo
 	} 
+
 	err2 := photoInfo.GetPhotoInfoByUuid()
+
 	if err2 != nil {
 		//need logging here instead of print
 		fmt.Printf("Something went wrong in db, %v\n", err2)
-		// myErrorResponse.Code = http.StatusInternalServerError
-		// myErrorResponse.Error = err.Error()
-		// myErrorResponse.HttpErrorResponder(w)
 		return photoInfo
 	}
+
 	return photoInfo
 }
 
 func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
+
 	review := new(db.Review)
 	dbRestaurant := new(db.Restaurants)
 	//fill in restaurant info
@@ -570,6 +543,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 }
 
 func AppendIfMissing(slice []int, i int) []int {
+
     for _, ele := range slice {
         if ele == i {
             return slice
@@ -581,54 +555,44 @@ func AppendIfMissing(slice []int, i int) []int {
 func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, error) {
 
 	googTokUrl 	 	:= "https://www.googleapis.com/oauth2/v3/token"
-	// googGT 	 	 	:= "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion="
 	assert := crypto.CreateJwt(w)
-	// request := gorequest.New()
-	//token := new(oauth2.Token)
 	hc := oauth2.NewClient(context.TODO(), nil)
 
 	if assert.JWT == "" {
 		fmt.Println("Couldn't create jwt")
-		//return token, errors.New("Could not create JWT")
 		return &oauth2.Token{}, errors.New("Could not create JWT")
 	}
-	fmt.Printf("====\n")
-	fmt.Printf("Assert = %v\n", assert.JWT)
-	fmt.Printf("====\n")
-	//url :=  fmt.Sprintf(googTokUrl, googGT + assert.JWT)
-	// resp, body, errs := request.Post(url).End()
+
 	v := url.Values{}
 	v.Set("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
 	v.Set("assertion", assert.JWT)
-	//v.Set("assertion", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI0ODY1NDMxNTUzODMtb281Z2xkYm41cTlqbTNtZWkzZGUzcDVwOTVmZm44ZmlAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzY29wZSI6Imh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2F1dGgvZGV2c3RvcmFnZS5mdWxsX2NvbnRyb2wiLCJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjMvdG9rZW4iLCJleHAiOjE0MzYxMTgxMzAsImlhdCI6MTQzNjExNDUzMH0.H689BC46sOoGm3Nu_OC5EcQq3Fr9iRG3wlCORlsc5k0HZl_gqbyE3t5HRw2uDkyah_uAjs-nOFj_feUuDyF_dtzx_4AcqKbBP2xn45f5OZlRMHgfDnLZeZoJY0_WK0G6rixPSl6SP6FFdlQ7lRVJPtH_-zZzCxMRHoD5YJAW7_wnWfs3jgCvYMzwuwSwZxe7gDeFoeZlpB7aNAAQqwZJlEdXutZmWQUV6wGOSMoa__ngYBc0JaPDIzLoi8AiEgZY9bBZONs9OhcDLOVf5CvRH-9nnhaBprEHzkfqjTWK3x51taNyODithiSpR6ENheafikFFHWUd2DijYQFWzQqvfg")
-	//v.Set("assertion", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjMvdG9rZW4iLCJleHAiOjE0MzYxMjA0NjAsImlhdCI6MTQzNjExNjg2MCwiaXNzIjoiNDg2NTQzMTU1MzgzLTR2cXVhcW81bTBpYms1Y24ybm8xaTk4azVsdjA5ZHBzQGRldmVsb3Blci5nc2VydmljZWFjY291bnQuY29tIiwic2NvcGUiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9hdXRoL2RldnN0b3JhZ2UuZnVsbF9jb250cm9sIn0.cG3U8peemtCzPOBFraa7Q9DlP1H-XecocQmxY0XEnTDIt8UnGQnUpMU4HTdAob_9X569oBMwY8ZAlsyy2tGBuwIT9UlRt6N2DJ4jc7PcggtGGblfngczSw6j5-4af-T9CDZscNBHoNsrVm_WV_0D2D1--YC2A0eikQGOutSVJQv4Na-EOB0Orf-sSGbxxlCq0UrdBtVa3fKnVnnlwrGwnPw1S-Vndxfb8UYadG8fu1pxWW9Jbx8knkXXr86ZZSri3CjZuSVpbHY4iVIjn35GmqZKai7uoeNpUqOauaImnHLglgrBsmOMkLwmTQkOxCpMGvZsxsINoURyj9Z3wUavZg")
 	resp, err := hc.PostForm(googTokUrl, v)
+
 	if err != nil {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<20))
+
 	if err != nil {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
+
 	if c := resp.StatusCode; c < 200 || c > 299 {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v\nResponse: %s", resp.Status, body)
 	}
-	// // tokenRes is the JSON response body.
-	// var tokenRes struct {
-	// 	AccessToken string `json:"access_token"`
-	// 	TokenType   string `json:"token_type"`
-	// 	IDToken     string `json:"id_token"`
-	// 	ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
-	// }
+
 	var tokenRes GoogToken
 	if err := json.Unmarshal(body, &tokenRes); err != nil {
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
+
 	token := &oauth2.Token{
 		AccessToken: tokenRes.AccessToken,
 		TokenType:   tokenRes.TokenType,
 	}
+
 	raw := make(map[string]interface{})
 	json.Unmarshal(body, &raw) // no error checks for optional fields
 	token = token.WithExtra(raw)
@@ -636,6 +600,7 @@ func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, erro
 	if secs := tokenRes.ExpiresIn; secs > 0 {
 		token.Expiry = time.Now().Add(time.Duration(secs) * time.Second)
 	}
+
 	if v := tokenRes.IDToken; v != "" {
 		// decode returned id token to get expiry
 		claimSet, err := jws.Decode(v)
@@ -645,53 +610,28 @@ func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, erro
 		token.Expiry = time.Unix(claimSet.Exp, 0)
 	}
 
-	// if errs != nil {
-	// 	fmt.Printf("something went wrong in get %v", errs)
-	// 	// myErrorResponse.Code = http.StatusServiceUnavailable
-	// 	// myErrorResponse.Error = "Communication Issues:Google: " + errs.Error()
-	// 	// myErrorResponse.HttpErrorResponder(w)
-	// 	return token, errs[0]
-	// }
-	// fmt.Printf("\n\ninside getToken\nResp:%v \nbody: %v\n, errs: %v\n\n\n", resp, body, errs)
-
-	// err := json.Unmarshal([]byte(body), &googToken)
-	// //err := json.Unmarshal([]byte(body), &token)
-
-
-	// if err != nil {
-	// 	fmt.Printf("Err = %v", err)
-	// 	return token, err
-	// }
-	// fmt.Printf("GetToken jwt = %v\n", token)
 	return token, nil
 }
 
 func (storageReq *StorageReq) StorePhoto(client *http.Client) error {
-	
-	// if len(argv) != 2 {
-	// 	fmt.Fprintln(os.Stderr, "Usage: storage filename bucket (to upload an object)")
-	// 	return
-	// }
-	fmt.Printf("Client = %v\n", client.Transport)
-	// client.Set("Authorization", storageReq.Token.AccessToken)
 
 	service, err := storage.New(client)
 	if err != nil {
-		// log.Fatalf("Unable to create Storage service: %v", err)
 		fmt.Printf("Unable to create Storage service: %v\n", err)
 		return err
 	}
-	// service.Channel.Token = storageReq.Token
+
 	filename := storageReq.FileName
 	bucket := storageReq.Bucket
-
 	fmt.Printf("Bucket = %v, file = %v\n", bucket, filename)
 
 	goFile, err := os.Open(filename)
+
 	if err != nil {
-		// log.Fatalf("error opening %q: %v", filename, err)
+
 		fmt.Printf("Error opening %v: %v\n", filename, err)
 	}
+
 	storageObject, err := service.Objects.Insert(bucket, &storage.Object{Name: storageReq.FileUuid}).Media(goFile).Do()
 	fmt.Printf("Got storage.Object, err: %#v, %v", storageObject, err)
 	return nil
@@ -702,40 +642,49 @@ func downloadFile(rawUrl string) (string, error) {
 	fmt.Printf("/* //////////////////////////////////////// */\n")
 	fmt.Printf("/*                FILE DOWNLOAD 			*/\n")
 	fmt.Printf("/* //////////////////////////////////////// */\n")
-	//fileURL, err := url.Parse(instaData.Data[i].Images.StandardRes.Url)
+
 	fileURL, err := url.Parse(rawUrl)
+
 	if err != nil {
 		fmt.Printf("Error = %v\n", err)
 		return "", err
 	}
+
 	path := fileURL.Path
 	segments := strings.Split(path, "/")
 	fileName := segments[4]
 	fmt.Printf("Filename = %v\n", fileName)
 	file, err := os.Create(FileDownload.FileLoc + fileName)
+
 	if err != nil {
 		fmt.Printf("Error = %v\n", err)
 		return "", err
 	}
 	defer file.Close()
+
 	check := http.Client{
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
 			return nil
 		},
 	}
+
 	resp, err := check.Get(rawUrl)
+
 	if err != nil {
 		fmt.Printf("Error = %v\n", err)
 		return "", err
 	}
 	defer resp.Body.Close()
+
 	fmt.Printf("Status = %v\n", resp.Status)
 	size, err := io.Copy(file, resp.Body)
+
 	if err != nil {
 		fmt.Printf("Error = %v\n", err)
 		return "", err
 	}
+
 	fmt.Printf("%s with %v bytes downloaded", fileName, size)
 	return fileName, nil
 }
