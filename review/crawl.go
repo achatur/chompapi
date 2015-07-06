@@ -96,11 +96,6 @@ type User struct {
 	FullName 		string
 }
 
-// type GoogToken struct {
-//   AccessToken 		string `json:"access_token"`
-//   TokenType 		string `json:"token_type"`
-//   ExpiresIn 		int    `json:"expires_in"`
-// }
 type GoogToken struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
@@ -282,23 +277,53 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// fmt.Printf("\n\n========\nNewTS = %v\n=======\n", token)
-			privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
-			//privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.p12")
-			if err != nil {
+			// privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
+			// //privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.p12")
+			// if err != nil {
+   //  		    myErrorResponse.Code = http.StatusInternalServerError
+   //  		    myErrorResponse.Error = err.Error()
+   //  		    myErrorResponse.HttpErrorResponder(w)
+   //  		    return
+   //  		}
+			googConfig := new(jwt.Config)
+			gApiInfo := new(crypto.GApiInfo)
+			// googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
+			// //googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
+			// //googConfig.Subject = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
+			// googConfig.PrivateKey = privateKey
+			// // googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
+			// googConfig.Scopes =  []string{"https://www.googleapis.com/auth/devstorage.full_control"}
+			// googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
+    		//gApiInfo := new(GApiInfo)
+    		fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
+    		//privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
+    		if err != nil {
     		    myErrorResponse.Code = http.StatusInternalServerError
     		    myErrorResponse.Error = err.Error()
     		    myErrorResponse.HttpErrorResponder(w)
     		    return
     		}
-			googConfig := new(jwt.Config)
-			googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi@developer.gserviceaccount.com"
-			//googConfig.Email = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
-			//googConfig.Subject = "486543155383-oo5gldbn5q9jm3mei3de3p5p95ffn8fi.apps.googleusercontent.com"
-			googConfig.PrivateKey = privateKey
-			// googConfig.Scopes =  append(googConfig.Scopes, "https://www.googleapis.com/auth/devstorage.full_control")
-			googConfig.Scopes =  []string{"https://www.googleapis.com/auth/devstorage.full_control"}
-			googConfig.TokenURL = "https://www.googleapis.com/oauth2/v3/token"
-
+    		err = json.Unmarshal(fileContent, &gApiInfo)
+    		if err != nil {
+    		    fmt.Printf("Err = %v", err)
+    		    myErrorResponse.Code = http.StatusBadRequest
+    		    myErrorResponse.Error = "Could not decode"
+    		    myErrorResponse.HttpErrorResponder(w)
+    		    return
+    		}
+    		fmt.Printf("Json = %v\n", gApiInfo)
+    		// Set some claims
+    		// token.Claims["scope"] = `https://www.googleapis.com/auth/devstorage.full_control`
+    		// // token.Claims["iss"] = gApiInfo.ClientId
+    		// token.Claims["iss"] = gApiInfo.ClientEmail
+    		// token.Claims["iat"] = time.Now().Unix()
+    		// token.Claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
+    		// token.Claims["aud"] = `https://www.googleapis.com/oauth2/v3/token`
+    		// fmt.Printf("Token Claims: %v\n", token.Claims)
+    		googConfig.Email = gApiInfo.ClientEmail
+    		googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
+    		googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
+    		googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
 
 			storageReq := new(StorageReq)
 			// storageReq.Token = *token
