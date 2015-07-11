@@ -50,7 +50,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 
-	case "POST":
+	case "GET":
 
 		err = userInfo.GetUserInfo()
 		if err != nil {
@@ -143,8 +143,8 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		photoInfo.Username = username
 		vars := mux.Vars(r)
 
-    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    	if thisErr != nil {
+    	photo_id, err := strconv.Atoi(vars["photoID"])
+    	if err != nil {
     		fmt.Println("Not An Integer")
     		myErrorResponse.Code = http.StatusBadRequest
 			myErrorResponse.Error = "Bad Photo ID " + err.Error()
@@ -154,7 +154,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
     	//collect photo ID
     	photoInfo.ID =  photo_id
 
-         err := photoInfo.GetMePhotoByPhotoID()
+         err = photoInfo.GetMePhotoByPhotoID()
          if err != nil {
              //need logging here instead of print
              myErrorResponse.Code = http.StatusInternalServerError
