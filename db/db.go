@@ -201,6 +201,41 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	return nil
 }
 
+func (userInfo *UserInfo) DeleteUser() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	_, err = db.Query("DELETE FROM chomp_users WHERE chomp_user_id=?", userInfo.UserID)
+
+	fmt.Printf("Error = %v\n", err)
+
+	return err
+}
+
+func (userInfo *UserInfo) SetUserInactive() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	_, err = db.Query(`UPDATE chomp_users SET active = ?
+						WHERE chomp_user_id = ?`, false, userInfo.UserID)
+
+	return err
+}
+
 func (userInfo UserInfo) UpdatePassword(temp bool) error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
@@ -375,6 +410,39 @@ func (photo *Photos) DeleteMePhoto() error {
 
 	return err
 }
+
+func (userInfo *UserInfo) DeleteAllPhotos() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	_, err = db.Query("DELETE FROM photos WHERE user_id=?", userInfo.UserID)
+
+	return err
+}
+
+func (userInfo *UserInfo) AbandonAllPhotos() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	_, err = db.Query("UPDATE photos SET chomp_user_id = 0 WHERE chomp_user_id=?", userInfo.UserID)
+
+	return err
+}
+
 
 func (dish *Dish) GetDishInfoByName() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
@@ -743,6 +811,31 @@ func (review *Review) DeleteReview() error {
 	return err2
 }
 
+func (userInfo *UserInfo) DeleteAllReviewsByUser() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	results, err2 := db.Exec("DELETE FROM reviews WHERE user_id=?", userInfo.UserID)
+	if err2 != nil {
+		fmt.Printf("Error = %v", err2)
+		return err2
+	}
+	rows, err2 := results.RowsAffected()
+	if rows < 1 {
+		fmt.Printf("Nothing updated\n")
+		err2 = errors.New("0 rows deleted")
+	}
+
+	return err2
+}
+
 func IsValid(s sql.NullString) string {
 
 	if s.Valid {
@@ -752,4 +845,34 @@ func IsValid(s sql.NullString) string {
 		fmt.Println("s is not valid")
 		return s.String
 	}
+}
+
+func Logout(sessionId string) error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Print("Type of userInfo = %v\n", sessionId)
+
+	_, err = db.Query("UPDATE session SET session_expiry=? WHERE session_key=?", time.Now().Unix(), sessionId)
+
+	return err
+}
+
+func LogoutAllSessions(username string) error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Print("Type of userInfo = %v\n", username)
+
+	_, err = db.Query("UPDATE session SET session_expiry=? WHERE session_data LIKE '%?'", time.Now().Unix(), username)
+
+	return err
 }

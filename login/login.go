@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"chompapi/db"
 	"chompapi/crypto"
-	"github.com/astaxie/beego/session"
 	"chompapi/globalsessionkeeper"
 	"strconv"
 )
@@ -16,9 +15,10 @@ type LoginInput struct {
 	Password string
 }
 
-var globalSessions *session.Manager
+// var globalSessions *session.Manager
 
 func DoLogin(w http.ResponseWriter, r *http.Request) {
+
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
@@ -37,6 +37,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
+		// fmt.Printf("Number of active sessions: %v\n", GlobalSessions.GetActiveSession())
 		userInfo.Username = input.Username
 		err := userInfo.GetUserInfo()
 		if err != nil {
@@ -60,6 +61,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			//create session using the request data which includes the cookie/sessionid
 			fmt.Printf("about to start session\n")
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
+			// sessionStore, err := GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				//need logging here instead of print
 				fmt.Printf("Error, could not start session %v\n", err)
@@ -107,8 +109,4 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-	// w.WriteHeader(http.StatusUnauthorized)
-	myErrorResponse.Code = http.StatusUnauthorized
-	myErrorResponse.HttpErrorResponder(w)
-	return
 }

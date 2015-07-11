@@ -28,48 +28,31 @@ type Photo struct {
 
 func GetMe(w http.ResponseWriter, r *http.Request) {
 
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	userInfo := new(db.UserInfo)
-	fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
-
+	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Println("Cookie = %v", cookie)
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "No Cookie Present"
-		myErrorResponse.HttpErrorResponder(w)
-		return
-	}
-
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "Session Expired"
+		myErrorResponse.Error = err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-
 	sessionUser := sessionStore.Get("username")
-	fmt.Println("SessionUser = %v", sessionUser)
-	if sessionUser == nil {
-		//need logging here instead of print
-		fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "Session Expired"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+	username := reflect.ValueOf(sessionUser).String()
+	//need logging here instead of print
+	//extend session time by GC time
+	defer sessionStore.SessionRelease(w)
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
+	userInfo.Username = username
 
-	} else {
-		//need logging here instead of print
-		//extend session time by GC time
-		defer sessionStore.SessionRelease(w)
-		fmt.Printf("Found Session! Session username = %v\n", sessionUser)
-		fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
-		userInfo.Username = reflect.ValueOf(sessionUser).String()
+	switch r.Method {
 
-		err := userInfo.GetUserInfo()
+	case "POST":
+
+		err = userInfo.GetUserInfo()
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
@@ -82,7 +65,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			userInfo.PasswordHash = ""
 			json.NewEncoder(w).Encode(userInfo)
-
+	
 			if err != nil {
 				myErrorResponse.Code = http.StatusBadRequest
 				myErrorResponse.Error = "Malformed JSON " + err.Error()
@@ -91,205 +74,319 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+	default:
+
+		fmt.Printf("Made it here.. method = %v\n", r.Method)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 }
 
 func PostPhotoId(w http.ResponseWriter, r *http.Request) {
-	//variable definition
+
+	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
-
 	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-		//need logging here instead of print
-		fmt.Println("Cookie = %v", cookie)
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "No Cookie Present"
-		myErrorResponse.HttpErrorResponder(w)
-		return
-	}
-
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "Session Expired"
+		myErrorResponse.Error = err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-
 	sessionUser := sessionStore.Get("username")
-	fmt.Println("SessionUser = %v", sessionUser)
-	if sessionUser == nil {
-		//need logging here instead of print
-		fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = "Session Expired"
-		myErrorResponse.HttpErrorResponder(w)
-		return
-	} else {
-		defer sessionStore.SessionRelease(w)
-		username := reflect.ValueOf(sessionUser).String()
-		switch r.Method {
+	username := reflect.ValueOf(sessionUser).String()
+	//need logging here instead of print
+	//extend session time by GC time
+	defer sessionStore.SessionRelease(w)
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
+	userInfo.Username = username
+	// defer sessionStore.SessionRelease(w)
+	// username := reflect.ValueOf(sessionUser).String()
+	fmt.Printf("Method = %v\n", r.Method)
+	switch r.Method {
 
-		case "POST":
+	case "POST":
+		var photoInfo db.Photos
+		w.Header().Set("Content-Type", "application/json")
 
-			var photoInfo db.Photos
-			w.Header().Set("Content-Type", "application/json")
-
-			photoInfo.Uuid = GenerateUuid()
-			photoInfo.Username = username
-		
-			err := photoInfo.SetMePhoto()
-			if err != nil {
-				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			} 
-			err2 := photoInfo.GetPhotoInfoByUuid()
-			if err2 != nil {
-				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
-			w.Header().Set("UUID", photoInfo.Uuid)
-			w.WriteHeader(http.StatusCreated)
+		photoInfo.Uuid = GenerateUuid()
+		photoInfo.Username = username
+	
+		err := photoInfo.SetMePhoto()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
 			return
-
-		case "GET":
-			//variable definition
-			var photoInfo db.Photos
-			photoInfo.Username = username
-			vars := mux.Vars(r)
-
-    		photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    		if thisErr != nil {
-    			fmt.Println("Not An Integer")
-    			myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Bad Photo ID " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-    		}
-    		//collect photo ID
-    		photoInfo.ID =  photo_id
-
-            err := photoInfo.GetMePhotoByPhotoID()
-            if err != nil {
-                //need logging here instead of print
-                myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-                return
-            } else {
-                fmt.Println("type for userInfo = ", photoInfo)
-                w.Header().Set("Content-Type", "application/json")
-                json.NewEncoder(w).Encode(photoInfo)
-                if err != nil {
-                    myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Error = err.Error()
-					myErrorResponse.HttpErrorResponder(w)
-                    return
-                }
-                return
-            }
-            return
-
-		case "PUT":
-			//variable definition
-			var photoInfo db.Photos
-			photoInfo.Username = username
-
-			vars := mux.Vars(r)
-    		photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    		if thisErr != nil {
-    			fmt.Println("Not An Integer")
-    			myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Bad Photo ID " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-    		}
-    		//collect photo info and gen uuid
-    		photoInfo.ID =  photo_id
-
-    		photoInfo.Uuid = GenerateUuid()
-    		fmt.Println("uuid = ", photoInfo.Uuid)
-    		if photoInfo.Uuid == "" {
-    			myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-    			return
-    		}
-    		//add username to struct
-			photoInfo.Username = username
-		
-            err := photoInfo.UpdateMePhoto()
-            if err != nil {
-                //need logging here instead of print
-                myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-                return
-            } 
-            err = photoInfo.UpdatePhotoIDUserTable()
-			if err != nil {
-				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-			w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
-			w.Header().Set("UUID", photoInfo.Uuid)
-			w.WriteHeader(http.StatusNoContent)
-            return
-
-		case "DELETE":
-			//variable definition
-			var photoInfo db.Photos
-			photoInfo.Username = username
-			vars := mux.Vars(r)
-
-    		photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    		if thisErr != nil {
-    			fmt.Println("Not An Integer")
-    			myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Bad Photo ID " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-    		}
-    		//collect photo info
-    		photoInfo.ID =  photo_id
-
-            err := photoInfo.DeleteMePhoto()
-            if err != nil {
-                //need logging here instead of print
-                myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-                return
-            }
-            //change userid and update table
-            photoInfo.ID = 0
-            err = photoInfo.UpdatePhotoIDUserTable()
-			if err != nil {
-				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-            w.WriteHeader(http.StatusNoContent)
-
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+		} 
+		err2 := photoInfo.GetPhotoInfoByUuid()
+		if err2 != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
+
+		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
+		w.Header().Set("UUID", photoInfo.Uuid)
+		w.WriteHeader(http.StatusCreated)
+		return
+
+	case "GET":
+		//variable definition
+		var photoInfo db.Photos
+		photoInfo.Username = username
+		vars := mux.Vars(r)
+
+    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
+    	if thisErr != nil {
+    		fmt.Println("Not An Integer")
+    		myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+    	}
+    	//collect photo ID
+    	photoInfo.ID =  photo_id
+
+         err := photoInfo.GetMePhotoByPhotoID()
+         if err != nil {
+             //need logging here instead of print
+             myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+             return
+         } else {
+             fmt.Println("type for userInfo = ", photoInfo)
+             w.Header().Set("Content-Type", "application/json")
+             json.NewEncoder(w).Encode(photoInfo)
+             if err != nil {
+                 myErrorResponse.Code = http.StatusInternalServerError
+				myErrorResponse.Error = err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+                 return
+             }
+             return
+         }
+         return
+
+	case "PUT":
+		//variable definition
+		var photoInfo db.Photos
+		photoInfo.Username = username
+
+		vars := mux.Vars(r)
+    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
+    	if thisErr != nil {
+    		fmt.Println("Not An Integer")
+    		myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+    	}
+    	//collect photo info and gen uuid
+    	photoInfo.ID =  photo_id
+
+    	photoInfo.Uuid = GenerateUuid()
+    	fmt.Println("uuid = ", photoInfo.Uuid)
+    	if photoInfo.Uuid == "" {
+    		myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+    		return
+    	}
+    	//add username to struct
+		photoInfo.Username = username
+	
+         err := photoInfo.UpdateMePhoto()
+         if err != nil {
+             //need logging here instead of print
+             myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+             return
+         } 
+         err = photoInfo.UpdatePhotoIDUserTable()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
+		w.Header().Set("UUID", photoInfo.Uuid)
+		w.WriteHeader(http.StatusNoContent)
+         return
+
+	case "DELETE":
+		//variable definition
+		var photoInfo db.Photos
+		photoInfo.Username = username
+		vars := mux.Vars(r)
+
+    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
+    	if thisErr != nil {
+    		fmt.Println("Not An Integer")
+    		myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+    	}
+    	//collect photo info
+    	photoInfo.ID =  photo_id
+
+         err := photoInfo.DeleteMePhoto()
+         if err != nil {
+             //need logging here instead of print
+             myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+             return
+         }
+         //change userid and update table
+         photoInfo.ID = 0
+         err = photoInfo.UpdatePhotoIDUserTable()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+
+	default:
+		fmt.Printf("Made it here.. method = %v\n", r.Method)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func DeleteMe(w http.ResponseWriter, r *http.Request) {
+
+	var myErrorResponse globalsessionkeeper.ErrorResponse
+	cookie := globalsessionkeeper.GetCookie(r)
+	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+	if err != nil {
+		//need logging here instead of print
+		myErrorResponse.Code = http.StatusUnauthorized
+		myErrorResponse.Error = err.Error()
+		myErrorResponse.HttpErrorResponder(w)
+		return
+	}
+	sessionUser := sessionStore.Get("username")
+	username := reflect.ValueOf(sessionUser).String()
+	switch r.Method {
+
+	case "DELETE":
+		//variable definition
+		var userInfo db.UserInfo
+		userInfo.Username = username
+		vars := mux.Vars(r)
+
+		userId, err := strconv.Atoi(vars["userID"])
+		if err != nil {
+			fmt.Println("Not An Integer")
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Bad User ID " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		fmt.Printf("Getting user info for userid %v\n", userId)
+		userInfo.UserID =  userId
+		err = userInfo.GetUserInfo()
+		if err != nil {
+	        //need logging here instead of print
+	        myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+	        return
+	    }
+
+	    fmt.Printf("Deleting reviews for user %v\n", userInfo.Username)
+		err = userInfo.DeleteAllReviewsByUser()
+	    if err != nil {
+	        //need logging here instead of print
+	        myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+	        return
+	    }
+
+	    fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)
+	    err = userInfo.AbandonAllPhotos()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		//change userid and update table
+		fmt.Printf("Deleting me for user %v, photo ID = %v\n", userInfo.Username, userInfo.Photo.ID)
+		fmt.Printf("Deleting me photo %v\n", userInfo.Photo.ID)
+	    photoInfo := new(db.Photos)
+	    photoInfo.ID = userInfo.Photo.ID
+	    err = photoInfo.DeleteMePhoto()
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+	    fmt.Printf("Deleting user %v\n", userInfo.Username)
+	    err = userInfo.DeleteUser()
+	    if err != nil {
+	        //need logging here instead of print
+	        myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+	        return
+	    }
+
+		// err = userInfo.DeleteAllPhotos()
+		// if err != nil {
+		// 	//need logging here instead of print
+		// 	myErrorResponse.Code = http.StatusInternalServerError
+		// 	myErrorResponse.Error = err.Error()
+		// 	myErrorResponse.HttpErrorResponder(w)
+		// 	return
+		// }
+		fmt.Printf("Logging all sessions out for user %v\n", userInfo.Username)
+		err = db.LogoutAllSessions(userInfo.Username)
+		if err != nil {
+			//need logging here instead of print
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+	    w.WriteHeader(http.StatusNoContent)
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+func DeactivateMe(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
 	}
 }
 
