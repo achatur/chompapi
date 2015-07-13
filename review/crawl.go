@@ -508,16 +508,19 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			}
 		} 
 	}
-	var tags string
-	for _,e := range instaData.Tags {
-		fmt.Printf("adding tag %v\n", e)
-		if tags != "" {
-			tags = tags + "," + e
-		} else {
-			tags = e
-		}
-	}
-	review.DishTags = tags
+
+	///NEED TO FIX THIS
+	// var tags string
+	// for _,e := range instaData.Tags {
+	// 	fmt.Printf("adding tag %v\n", e)
+	// 	if tags != "" {
+	// 		tags = tags + "," + e
+	// 	} else {
+	// 		tags = e
+	// 	}
+	// }
+	// review.DishTags = tags
+	review.DishTags = instaData.Tags
 	if instaData.Likes.Count > 0 {
 		review.Liked.Bool = true
 		review.Liked.Valid = true

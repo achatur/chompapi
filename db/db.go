@@ -671,24 +671,62 @@ func (review *Review) CreateReview() error {
 						 	  					  review.Liked,review.DishTags, review.Description)
 	fmt.Printf("Distags = %v\n", review.DishTags)
 	fmt.Printf("Liked = %v\n", review.Liked)
-	results, err2 := db.Exec(`INSERT INTO reviews
-						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
+	dishTagIds, err := review.AddDishTags()
+	if err != nil {
+		return err
+	}
+	
+	results, err := db.Exec(`INSERT INTO reviews
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tags2=?, dish_tag_ids = ?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
 						 liked = ?, finished = ?, description = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, review.DishTags,
+						 					      review.Dish.ID, fmt.Sprintf("%+v",
+						 					      review.DishTags), fmt.Sprintf("%+v", dishTagIds),
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
 						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description)
 
-	if err2 != nil {
-		fmt.Printf("Error = %v", err2)
-		return err2
+	if err != nil {
+		fmt.Printf("Error = %v", err)
+		return err
 	}
-	id, err2 := results.LastInsertId()
+	id, err := results.LastInsertId()
 	review.ID = int(id)	
 
-	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
-	return err2
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err)
+	return err
+}
+
+func (review *Review) AddDishTags() ([]int, error) {
+
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return make([]int, 0), err
+	}
+	defer db.Close()
+
+	var dishTagIds []int
+	for _, e := range review.DishTags {
+
+		fmt.Printf("Insert Dishtags %v\n", e)
+		results, err := db.Exec(`INSERT INTO dish_tags
+						 			SET tag = ?, count = count+1
+						 			ON DUPLICATE KEY UPDATE count = count+1`, e)
+
+		if err != nil {
+			fmt.Printf("Error = %v", err)
+			return dishTagIds, err
+		}
+
+		id, err := results.LastInsertId()
+		if err != nil {
+			fmt.Printf("Error = %v", err)
+			return dishTagIds, err
+		}
+		review.ID = int(id)
+		dishTagIds = append(dishTagIds, int(id))
+	}
+	return dishTagIds, nil
 }
 
 func (igStore *IgStore) UpdateLastPull() error {
