@@ -14,21 +14,25 @@ import (
 
 
 func Reviews(w http.ResponseWriter, r *http.Request) {
+
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
+
 	if cookie == "" {
 			//need logging here instead of print
 		fmt.Println("Cookie = %v", cookie)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+
 	if err != nil {
 			//need logging here instead of print
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	}
-	//input.Username = sessionStore.Get("username")
+
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
@@ -227,7 +231,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case "DELETE":
-		vars := mux.Vars(r)
+
+	vars := mux.Vars(r)
    	review_id, thisErr := strconv.Atoi(vars["reviewID"])
    	if thisErr != nil {
    		fmt.Println("Not An Integer")

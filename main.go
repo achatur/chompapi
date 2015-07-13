@@ -164,7 +164,6 @@ func SessionAuth(pass handler) handler {
 			MyErrorResponse.HttpErrorResponder(w)
 			return
 		}
-		defer sessionStore.SessionRelease(w)
 		pass(w, r)
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/pborman/uuid"
 	"github.com/gorilla/mux"
 	"strconv"
+	"strings"
 )
 
 type UserInfo struct {
@@ -315,10 +316,13 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		err = userInfo.DeleteAllReviewsByUser()
 	    if err != nil {
 	        //need logging here instead of print
-	        myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-	        return
+	        if strings.Contains("0 rows deleted", err.Error()) == false  {
+
+	        	myErrorResponse.Code = http.StatusInternalServerError
+				myErrorResponse.Error = err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+	        	return
+	        }
 	    }
 
 	    fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)

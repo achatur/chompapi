@@ -36,13 +36,6 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("This SessionId = %v\n", sessionUserID)
 
 
-	// if sessionUser == nil {
-	// 		//need logging here instead of print
-	// 	fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-	// 	w.WriteHeader(http.StatusUnauthorized)
-	// 	return
-	// } else {
-		//reset time to time.now() + maxlifetime
 	defer sessionStore.SessionRelease(w)
 	//create variables
 	username := reflect.ValueOf(sessionUser).String()
@@ -118,7 +111,6 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-	// }
 
 }
 

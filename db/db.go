@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"errors"
 	"time"
+	"github.com/astaxie/beego/session"
+	"chompapi/globalsessionkeeper"
 )
 
 type RegisterInput struct {
@@ -82,7 +84,7 @@ type Review struct {
 	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
-	DishTags		string 	 		`json:"dishTags"`
+	DishTags		[]string 	 	`json:"dishTags"`
 	CreatedDate		string 			`json:"createdDate,omitempty"`
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
 }
@@ -829,7 +831,7 @@ func (userInfo *UserInfo) DeleteAllReviewsByUser() error {
 	}
 	rows, err2 := results.RowsAffected()
 	if rows < 1 {
-		fmt.Printf("Nothing updated\n")
+		fmt.Printf("Nothing deleted\n")
 		err2 = errors.New("0 rows deleted")
 	}
 
@@ -855,9 +857,14 @@ func Logout(sessionId string) error {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Print("Type of userInfo = %v\n", sessionId)
+	fmt.Printf("SessionId = %v\n", sessionId)
+	fmt.Printf("Time Now = %v\n", time.Now().Unix())
 
-	_, err = db.Query("UPDATE session SET session_expiry=? WHERE session_key=?", time.Now().Unix(), sessionId)
+	_, err = db.Query("UPDATE session SET session_expiry=? WHERE session_key=?", time.Now().Unix() - globalsessionkeeper.ChompConfig.ManagerConfig.Maxlifetime, sessionId)
+
+	if err != nil {
+		fmt.Printf("Got an error. %v\n", err.Error())
+	}
 
 	return err
 }
@@ -870,9 +877,32 @@ func LogoutAllSessions(username string) error {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Print("Type of userInfo = %v\n", username)
+	fmt.Print("Logging out user = %v\n", username)
 
-	_, err = db.Query("UPDATE session SET session_expiry=? WHERE session_data LIKE '%?'", time.Now().Unix(), username)
+	rows, err := db.Query("SELECT * FROM session WHERE session_data LIKE ?", "%" + username + "%")
+
+	if err == nil  {
+		var sessionData []byte
+		var sessionKey string
+		var sessionExpiry int64
+
+		for rows.Next() {
+
+			rows.Scan(&sessionKey, &sessionData, &sessionExpiry)
+			kv, err := session.DecodeGob(sessionData)
+
+			if err != nil {
+
+				fmt.Printf("Error scaning..%v\n", err.Error())
+				return err
+			}
+
+			fmt.Printf("\n\nkv = %v\n\n", kv)
+			if kv["username"] == username {
+				Logout(sessionKey)
+			}
+		}
+	}
 
 	return err
 }

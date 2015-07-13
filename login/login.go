@@ -8,6 +8,7 @@ import (
 	"chompapi/crypto"
 	"chompapi/globalsessionkeeper"
 	"strconv"
+	"time"
 )
 
 type LoginInput struct {
@@ -37,7 +38,6 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
-		// fmt.Printf("Number of active sessions: %v\n", GlobalSessions.GetActiveSession())
 		userInfo.Username = input.Username
 		err := userInfo.GetUserInfo()
 		if err != nil {
@@ -50,6 +50,18 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		fmt.Println("return from db = %v", userInfo)
+
+		if (userInfo.IsPasswordTemp) {
+
+			if userInfo.PasswordExpiry < int(time.Now().Unix()) {
+				myErrorResponse.Code = http.StatusUnauthorized
+				myErrorResponse.Error = "Temp Password Expired"
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+
+		}
+		
 
 		dbPassword := userInfo.PasswordHash
 
