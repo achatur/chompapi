@@ -38,6 +38,8 @@ func main() {
 	router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
 	router.HandleFunc("/me", SessionAuth(me.GetMe))
+	router.HandleFunc("/me/logout", SessionAuth(me.Logout))
+	router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
 	router.HandleFunc("/me/photos", SessionAuth(me.PostPhotoId))
 	router.HandleFunc("/me/photos/{photoID}", SessionAuth(me.PostPhotoId))
 	router.HandleFunc("/me/reviews", SessionAuth(me.Reviews))
