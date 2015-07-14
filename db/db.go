@@ -9,6 +9,8 @@ import (
 	"time"
 	"github.com/astaxie/beego/session"
 	"chompapi/globalsessionkeeper"
+	"strings"
+	"strconv"
 )
 
 type RegisterInput struct {
@@ -84,7 +86,8 @@ type Review struct {
 	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
-	DishTags		[]string 	 	`json:"dishTags"`
+	DishTags		[]string 		 	`json:"dishTags"`
+	DishTagIds		[]int 	 	 	`json:"dishTagIds"`
 	CreatedDate		string 			`json:"createdDate,omitempty"`
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
 }
@@ -622,12 +625,24 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 		return reviews
 	}
 	defer db.Close()
-	fmt.Printf("id = %v", userId)
+	fmt.Printf("id = %v\n", userId)
+	fmt.Printf(`SELECT reviews.id, reviews.user_id, reviews.username,
+						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
+						latitude, longitude, location_num, source, source_location_id,
+						price, liked, finished, description,
+						reviews.created_date, reviews.last_updated, reviews.dish_tags,
+						reviews.dish_tags2, reviews.dish_tag_ids
+					   FROM reviews
+					   JOIN restaurants on reviews.restaurant_id = restaurants.id
+					   JOIN dish on reviews.dish_id = dish.id
+					   WHERE user_id =%v\n` + "\n",userId)
+
 	rows, err := db.Query(`SELECT reviews.id, reviews.user_id, reviews.username,
 						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
 						latitude, longitude, location_num, source, source_location_id,
 						price, liked, finished, description,
-						reviews.created_date, reviews.last_updated, reviews.dish_tags
+						reviews.created_date, reviews.last_updated,
+						reviews.dish_tags2, reviews.dish_tag_ids
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
 					   JOIN dish on reviews.dish_id = dish.id
@@ -636,17 +651,39 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 		return reviews
 	}
 	var review Review
-	// reviews := []Review{}
+	var blobTags string
+	var blobIds string
 	for rows.Next() {
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
 			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
-			&review.CreatedDate, &review.LastUpdated, &review.DishTags); err != nil {
+			&review.CreatedDate, &review.LastUpdated, &blobTags, &blobIds); err != nil {
 			fmt.Printf("Err= %v\n", err.Error())
 			return reviews
 		}
 		fmt.Printf("in for, review = %v\n", review)
+		fmt.Printf("tags = %v\n", blobTags)
+		fmt.Printf("ids = %v\n", blobIds)
+		blobTgSlice := strings.Fields(strings.Trim(blobTags, "[]"))
+		blobIdSlice := strings.Fields(strings.Trim(blobIds, "[]"))
+		for i, e := range blobTgSlice {
+			fmt.Printf("%v = %v\n", i, e)
+		}
+		fmt.Printf("ids = \n")
+		var newIntSlice []int
+		for i, e := range blobIdSlice {
+			fmt.Printf("%v = %d\n", i, e)
+			num, err := strconv.Atoi(e)
+			if err != nil {
+				fmt.Printf("Could not convert string\n")
+			}
+			newIntSlice = append(newIntSlice, num)
+
+		}
+		fmt.Printf("Newarray = %v\n", newIntSlice)
+		review.DishTags = blobTgSlice
+		review.DishTagIds = newIntSlice
 		reviews = append(reviews, review)
 	}
 	fmt.Printf("\nReturning = %v\n", reviews)
@@ -723,7 +760,6 @@ func (review *Review) AddDishTags() ([]int, error) {
 			fmt.Printf("Error = %v", err)
 			return dishTagIds, err
 		}
-		review.ID = int(id)
 		dishTagIds = append(dishTagIds, int(id))
 	}
 	return dishTagIds, nil
@@ -803,28 +839,81 @@ func (review *Review) UpdateReview() error {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", review)
-	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
+	fmt.Printf("In Update Rewviews, Review = %v\nreview Id = %v\n", 
+		reflect.TypeOf(review), review.ID)
 
-	results, err2 := db.Exec(`UPDATE reviews
-						 SET user_id = ?, username = ?, dish_id = ?, dish_tags=?,
+	fmt.Printf("Distags = %v\n", review.DishTags)
+	fmt.Printf("Liked = %v\n", review.Liked)
+	dishTagIds, err := review.AddDishTags()
+
+	if err != nil {
+		return err
+	}
+
+	dishTagsCr := fmt.Sprintf("%+v",review.DishTags)
+	dishTagIdsCr := fmt.Sprintf("%+v", dishTagIds)
+	fmt.Printf("DishTagCr = %v\n", dishTagsCr)
+	fmt.Printf("DishTagIdsCr = %v\n", dishTagIdsCr)
+
+	fmt.Printf(`UPDATE reviews
+						 SET user_id = %v, username = %v, dish_id = %v, dish_tags2 = %v, dish_tag_ids = %v,
+						 photo_id = %v, restaurant_id = %v, price = %v,
+						 liked = %v, finished = %v, description = %v
+						 WHERE id = %v\n\n`, review.UserID, review.Username,
+						 					      review.Dish.ID, dishTagsCr, dishTagIdsCr,
+						 	  					  review.Photo.ID, review.Restaurant.ID, 
+						 	  					  review.Price, review.Liked, review.Finished,
+						 	  					  review.Description, review.ID)
+
+	results, err := db.Exec(`UPDATE reviews
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tags2 = ?, dish_tag_ids = ?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, finished = ?, description = ? WHERE id = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, review.DishTags, review.Photo.ID,
-						 	  					  review.Restaurant.ID, review.Price, review.Liked,
-						 	  					  review.Finished, review.Description, review.ID)
-	if err2 != nil {
-		fmt.Printf("Error = %v", err2)
-		return err2
+						 liked = ?, finished = ?, description = ?
+						 WHERE id = ?`, review.UserID, review.Username,
+						 					      review.Dish.ID, dishTagsCr, dishTagIdsCr,
+						 	  					  review.Photo.ID, review.Restaurant.ID, 
+						 	  					  review.Price, review.Liked, review.Finished,
+						 	  					  review.Description, review.ID)
+
+	if err != nil {
+		fmt.Printf("Error = %v", err)
+		return err
 	}
-	rows, err2 := results.RowsAffected()
+	rows, err := results.RowsAffected()
 	if rows < 1 {
-		fmt.Printf("Nothing updated\n")
-		err2 = errors.New("0 rows updated")
+		fmt.Printf("Nothing updated, dec counter\n")
+		err = errors.New("0 rows updated, Might be duplicate")
+		DecDishTagCounter(dishTagIds)
 	}
 
-	return err2
+	return err
 }
+
+func DecDishTagCounter(dishTagIds []int) (error) {
+
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	fmt.Printf("DecDishCounter %v\n", dishTagIds)
+
+	for _, e := range dishTagIds {
+
+		fmt.Printf("Decrement Dishtags %v\n", e)
+		_, err := db.Exec(`UPDATE dish_tags
+						 	SET count = count-1
+						 	WHERE id = ?`, e)
+
+		if err != nil {
+			fmt.Printf("Error = %v", err)
+			return err
+		}
+	}
+	return nil
+}
+
 
 func (review *Review) DeleteReview() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")

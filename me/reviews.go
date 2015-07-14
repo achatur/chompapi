@@ -28,17 +28,11 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
-	fmt.Println("SessionUser = %v", sessionUser)
-	fmt.Println("This SessionId = %v", sessionUserID)
+	fmt.Printf("SessionUser = %v\n", sessionUser)
+	fmt.Printf("This SessionUserID = %v\n", sessionUserID)
 
 
-	// if sessionUser == nil {
-	// 		//need logging here instead of print
-	// 		fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-	// 		w.WriteHeader(http.StatusUnauthorized)
-	// 		return
-	// } else {
-		//reset time to time.now() + maxlifetime
+	//reset time to time.now() + maxlifetime
 	defer sessionStore.SessionRelease(w)
 
 	//create variables
@@ -68,7 +62,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.Code = http.StatusInternalServerError
 			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
-             return
+            return
          }
          return
 
@@ -76,7 +70,5 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
 	}
-	// }
-
 }
 

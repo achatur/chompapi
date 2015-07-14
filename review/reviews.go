@@ -214,7 +214,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
-				myErrorResponse.Code = http.StatusInternalServerError
+				myErrorResponse.Code = http.StatusBadRequest
 				myErrorResponse.Error = "could not create review:-:" + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
