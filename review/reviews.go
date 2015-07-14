@@ -55,10 +55,9 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	case "PUT", "POST":
 		
 		decoder := json.NewDecoder(r.Body)
-		// fmt.Printf("r.Body = %v\n", reflect.ValueOf(r.Body.Value()).String())
 		if err := decoder.Decode(&review); err != nil {
 			//need logging here instead of print
-			fmt.Printf("something went wrong in login %v", err)
+			fmt.Printf("something went wrong in reviews %v\n", err.Error())
 			myErrorResponse.Code = http.StatusBadRequest
 			myErrorResponse.Error = "Malformed JSON: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)

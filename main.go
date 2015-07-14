@@ -48,8 +48,8 @@ func main() {
 	router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
 
 
-	router.HandleFunc("/reviews", review.Reviews)
-	router.HandleFunc("/reviews/{reviewID}", review.Reviews)
+	router.HandleFunc("/reviews", SessionAuth(review.Reviews))
+	router.HandleFunc("/reviews/{reviewID}", SessionAuth(review.Reviews))
 	
 	router.HandleFunc("/insta/crawl", review.Crawl)
 
@@ -127,7 +127,7 @@ func SessionAuth(pass handler) handler {
 		cookie := globalsessionkeeper.GetCookie(r)
 		if cookie == "" {
 			//need logging here instead of print
-			fmt.Println("Cookie = %v", cookie)
+			fmt.Println("Session Auth Cookie = %v", cookie)
 			MyErrorResponse.Code = http.StatusUnauthorized
 			MyErrorResponse.Error = "No Cookie Present"
 			MyErrorResponse.HttpErrorResponder(w)
@@ -144,7 +144,7 @@ func SessionAuth(pass handler) handler {
 		}
 	
 		sessionUser := sessionStore.Get("username")
-		fmt.Println("SessionUser = %v", sessionUser)
+		fmt.Printf("Session Auth SessionUser = %v\n", sessionUser)
 		if sessionUser == nil {
 			//need logging here instead of print
 			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
@@ -154,13 +154,13 @@ func SessionAuth(pass handler) handler {
 			return
 		}
 
-		fmt.Println("Getting user info for user %v\n", sessionUser)
+		fmt.Printf("Session Auth Getting user info for user %v\n", sessionUser)
 		userInfo := new(db.UserInfo)
 		userInfo.Username = reflect.ValueOf(sessionUser).String()
 		err = userInfo.GetUserInfo()
 		if err != nil {
 			//need logging here instead of print
-			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
+			fmt.Printf("Session Auth Username not found, returning unauth, Get has %v\n", sessionStore)
 			MyErrorResponse.Code = http.StatusUnauthorized
 			MyErrorResponse.Error = "Session Expired"
 			MyErrorResponse.HttpErrorResponder(w)

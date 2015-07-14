@@ -86,7 +86,7 @@ type Review struct {
 	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
-	DishTags		[]string 		 	`json:"dishTags"`
+	DishTags		[]string 		`json:"dishTags"`
 	DishTagIds		[]int 	 	 	`json:"dishTagIds"`
 	CreatedDate		string 			`json:"createdDate,omitempty"`
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
