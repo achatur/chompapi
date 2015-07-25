@@ -741,10 +741,8 @@ func (review *Review) CreateReview() error {
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
 						 liked = ?, finished = ?, description = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, //fmt.Sprintf("%+v",
-						 					      //review.DishTags), 
-						 					      	fmt.Sprintf("%+v", dishTagIds),
-						 					      	// dishTags,
+						 					      review.Dish.ID,
+						 					      fmt.Sprintf("%+v", dishTagIds),
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
 						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description)
@@ -774,8 +772,6 @@ func (review *Review) GetReviewLastTimeStamp(reviewId int) error {
 	fmt.Printf("SELECT last_updated from reviews WHERE id = %v\n", reviewId)
 	fmt.Printf("Distags = %v\n", review.DishTags)
 	fmt.Printf("Liked = %v\n", review.Liked)
-	// dishTagIds, err := review.AddDishTags()
-	// dishTags, err := review.AddDishTags()
 	if err != nil {
 		return err
 	}
@@ -786,8 +782,6 @@ func (review *Review) GetReviewLastTimeStamp(reviewId int) error {
 		fmt.Printf("Error = %v", err)
 		return err
 	}
-	// rows.Next().Scan(&review.LastUpdated)
-
 	return err
 }
 
@@ -935,15 +929,32 @@ func (review *Review) UpdateReview() error {
 						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description, review.ID)
 
+	// results, err := db.Exec(`UPDATE reviews
+	// 					 SET user_id = ?, username = ?, dish_id = ?, dish_tags2 = ?,
+	// 					 photo_id = ?, restaurant_id = ?, price = ?,
+	// 					 liked = ?, finished = ?, description = ?
+	// 					 WHERE id = ?`, review.UserID, review.Username,
+	// 					 					      review.Dish.ID, dishTagsCr, //dishTagIdsCr,
+	// 					 	  					  review.Photo.ID, review.Restaurant.ID, 
+	// 					 	  					  review.Price, review.Liked, review.Finished,
+	// 					 	  					  review.Description, review.ID)
+	dishTagIds, err := review.AddDishTags()
+	// dishTags, err := review.AddDishTags()
+	if err != nil {
+		return err
+	}
+	
 	results, err := db.Exec(`UPDATE reviews
-						 SET user_id = ?, username = ?, dish_id = ?, dish_tags2 = ?,
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
 						 liked = ?, finished = ?, description = ?
 						 WHERE id = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID, dishTagsCr, //dishTagIdsCr,
+						 					      review.Dish.ID,
+						 					      fmt.Sprintf("%+v", dishTagIds),
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
 						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description, review.ID)
+
 
 	if err != nil {
 		fmt.Printf("Error = %v", err)
