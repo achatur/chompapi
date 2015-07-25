@@ -510,7 +510,8 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	}
 
 	///NEED TO FIX THIS
-	// var tags string
+	// var tags db.DishTag
+	// var tags db.DishTag
 	// for _,e := range instaData.Tags {
 	// 	fmt.Printf("adding tag %v\n", e)
 	// 	if tags != "" {
@@ -518,9 +519,12 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	// 	} else {
 	// 		tags = e
 	// 	}
+	// 	tags.Tag = e
 	// }
 	// review.DishTags = tags
-	review.DishTags = instaData.Tags
+	review.Tags = instaData.Tags
+	// review.DishTags = append(review.DishTags, tags)
+
 	if instaData.Likes.Count > 0 {
 		review.Liked.Bool = true
 		review.Liked.Valid = true
