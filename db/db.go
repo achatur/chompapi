@@ -929,17 +929,7 @@ func (review *Review) UpdateReview() error {
 						 	  					  review.Price, review.Liked, review.Finished,
 						 	  					  review.Description, review.ID)
 
-	// results, err := db.Exec(`UPDATE reviews
-	// 					 SET user_id = ?, username = ?, dish_id = ?, dish_tags2 = ?,
-	// 					 photo_id = ?, restaurant_id = ?, price = ?,
-	// 					 liked = ?, finished = ?, description = ?
-	// 					 WHERE id = ?`, review.UserID, review.Username,
-	// 					 					      review.Dish.ID, dishTagsCr, //dishTagIdsCr,
-	// 					 	  					  review.Photo.ID, review.Restaurant.ID, 
-	// 					 	  					  review.Price, review.Liked, review.Finished,
-	// 					 	  					  review.Description, review.ID)
 	dishTagIds, err := review.AddDishTags()
-	// dishTags, err := review.AddDishTags()
 	if err != nil {
 		return err
 	}
@@ -964,8 +954,7 @@ func (review *Review) UpdateReview() error {
 	if rows < 1 {
 		fmt.Printf("Nothing updated, dec counter\n")
 		err = errors.New("0 rows updated, Might be duplicate")
-		//DecDishTagCounter(dishTagIds)
-		//DecDishTagCounter([]int{dishTags.Id})
+		DecDishTagCounter(dishTagIds)
 	}
 
 	return err
