@@ -206,6 +206,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					myErrorResponse.HttpErrorResponder(w)
 				}
 			} else {
+				review.GetReviewLastTimeStamp(review.ID)
+				w.Header().Set("LastUpdated", review.LastUpdated)
 				w.WriteHeader(http.StatusNoContent)
 			}
 		} else {
@@ -218,6 +220,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			} else {
+				review.GetReviewLastTimeStamp(review.ID)
+				w.Header().Set("LastUpdated", review.LastUpdated)
 				w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%d", review.ID))
 				w.WriteHeader(http.StatusCreated)
 			}

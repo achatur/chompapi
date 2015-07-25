@@ -760,6 +760,38 @@ func (review *Review) CreateReview() error {
 	return err
 }
 
+func (review *Review) GetReviewLastTimeStamp(reviewId int) error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Printf("REVIEW = %v\n", review)
+	fmt.Printf("Type of review = %v\n", reflect.TypeOf(review))
+
+	fmt.Printf("SELECT last_updated from reviews WHERE id = %v\n", reviewId)
+	fmt.Printf("Distags = %v\n", review.DishTags)
+	fmt.Printf("Liked = %v\n", review.Liked)
+	// dishTagIds, err := review.AddDishTags()
+	// dishTags, err := review.AddDishTags()
+	if err != nil {
+		return err
+	}
+	
+	err = db.QueryRow(`SELECT last_updated from reviews WHERE id = ?`, reviewId).Scan(&review.LastUpdated)
+
+	if err != nil {
+		fmt.Printf("Error = %v", err)
+		return err
+	}
+	// rows.Next().Scan(&review.LastUpdated)
+
+	return err
+}
+
+
 func (review *Review) AddDishTags() ([]int, error) {
 // func (review *Review) AddDishTags() ([]DishTag, error) {
 
