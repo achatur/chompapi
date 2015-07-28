@@ -51,7 +51,7 @@ func main() {
 	router.HandleFunc("/reviews", SessionAuth(review.Reviews))
 	router.HandleFunc("/reviews/{reviewID}", SessionAuth(review.Reviews))
 	
-	router.HandleFunc("/insta/crawl", review.Crawl)
+	router.HandleFunc("/insta/crawl", BasicAuth(review.Crawl))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

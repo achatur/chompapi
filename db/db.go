@@ -906,18 +906,14 @@ func (review *Review) UpdateReview() error {
 
 	fmt.Printf("Distags = %v\n", review.DishTags)
 	fmt.Printf("Liked = %v\n", review.Liked)
-	//dishTagIds, err := review.AddDishTags()
-	dishTags, err := review.AddDishTags()
 
+	dishTags, err := review.AddDishTags()
 	if err != nil {
 		return err
 	}
 
-	//dishTagsCr := fmt.Sprintf("%+v",review.DishTags)
 	dishTagsCr := fmt.Sprintf("%+v",dishTags)
-	//dishTagIdsCr := fmt.Sprintf("%+v", dishTagIds)
 	fmt.Printf("DishTagCr = %v\n", dishTagsCr)
-	//fmt.Printf("DishTagIdsCr = %v\n", dishTagIdsCr)
 
 	fmt.Printf(`UPDATE reviews
 						 SET user_id = %v, username = %v, dish_id = %v, dish_tags2 = %v,
@@ -993,7 +989,7 @@ func (review *Review) DeleteReview() error {
 	}
 	defer db.Close()
 
-	// Prepare statement for writing chomp_users table data
+	// Prepare statement for writing reviews table data
 	fmt.Println("map = %v\n", review)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(review))
 

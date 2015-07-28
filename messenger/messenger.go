@@ -3,75 +3,40 @@ package messenger
 import (
 	"net/smtp"
 	"fmt"
-	"text/template"
+	// "text/template"
+	"html/template"
 	"bytes"
 	"io/ioutil"
-	"strconv"
+	// "strconv"
 	"encoding/json"
-	// "chompapi/globalsessionkeeper"
-	// "errors"
-	// "net/http"
 )
 
-// const emailTemplate = `From: &#123;&#123;.From&#125;&#125;
-// To: &#123;&#123;.To&#125;&#125;
-// Subject: &#123;&#123;.Subject&#125;&#125;
+// const emailTemplate = `From: {{.From}}
+// To: {{.To}}
+// Subject: {{.Subject}}
+// MIME-version: 1.0
+// Content-Type: text/html; charset="UTF-8"
+// Content-Transfer-Encoding: quoted-printable
 
-// &#123;&#123;.Body&#125;&#125;
-
-// Sincerely,
-
-// &#123;&#123;.From&#125;&#125;
-// `
-
-const emailTemplate = `From: &amp;#123;&amp;#123;.From&amp;#125;&amp;#125;
-To: &amp;#123;&amp;#123;.To&amp;#125;&amp;#125;
-Subject: &amp;#123;&amp;#123;.Subject&amp;#125;&amp;#125;
-
-Hello!
-
-We have reset your password at your request:
-
-%v
-
-Feel free to delete this email and carry on enjoying your food!
-
-BTW, we can add HTML and make this email a lot prettier.  This is just a POC.
-
-All the best,
-
-The Chomp Team` 
-
-const emailTemplateNopass = `From: &amp;#123;&amp;#123;.From&amp;#125;&amp;#125;
-To: &amp;#123;&amp;#123;.To&amp;#125;&amp;#125;
-Subject: &amp;#123;&amp;#123;.Subject&amp;#125;&amp;#125;
-
-Hello!
-
-This is just an email to inform you that you changed your password recently.
-
-Feel free to delete this email and carry on enjoying your food!
-
-All the best,
-
-The Chomp Team` 
-
-const emailTemplateUser = `From: &amp;#123;&amp;#123;.From&amp;#125;&amp;#125;
-To: &amp;#123;&amp;#123;.To&amp;#125;&amp;#125;
-Subject: &amp;#123;&amp;#123;.Subject&amp;#125;&amp;#125;
-
-Hello!
-
-We recently recieved word that you forgot your username.  Here's your username:
-
-%v
-
-Feel free to delete this email and carry on enjoying your food!
-
-All the best,
-
-The Chomp Team` 
-
+// Hello!
+// {{if .Pass}}
+// We have reset your password at your request:</br>
+// </br>
+// {{.Pass}}</br></br>
+// {{else if .Username}}
+// We recently recieved word that you forgot your username.  Here's your username:</br>
+// </br>
+// {{.Username}}</br></br>
+// {{else}}
+// This is just an email to inform you that you changed your password recently.</br>
+// {{end}}
+// Feel free to delete this email and carry on enjoying your food!</br>
+// </br>
+// <a href="chompapp://">Login To App</a></br>
+// </br>
+// All the best,</br>
+// </br>
+// The Chomp Team</br></body></html>` 
 
 type EmailUser struct {
     Username    string
@@ -91,18 +56,23 @@ type SmtpTemplateData struct {
 
 func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 
-	// var myErrorResponse globalsessionkeeper.ErrorResponse
 	fmt.Printf("smtp data = %v\n", smtpTemplateData)
 	emailUser := new(EmailUser)
-	// err := errors.New("")
-	 fileContent, err := ioutil.ReadFile("./chomp_private/email.json")
+	// fileContent, err := ioutil.ReadFile("./chomp_private/email.json")
+	fileContent, err := ioutil.ReadFile("./chomp_private/email_mandrill.json")
 
 	if err != nil {
 
 		fmt.Printf("Could not open file")
 		return err
 	}
-	
+
+	emailTemplateByte, err := ioutil.ReadFile("./messenger/email_template.html")
+	if err != nil {
+	    return err
+	}
+	// n := bytes.Index(emailTemplateByte, []byte{0})
+	emailTemplate := string(emailTemplateByte[:])
 	err = json.Unmarshal(fileContent, &emailUser)
 
 	if  err != nil {
@@ -119,19 +89,9 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
     	emailUser.EmailServer)
 
 	var doc bytes.Buffer
-	var message string
-	if smtpTemplateData.Pass != "" {
-		message = fmt.Sprintf(emailTemplate, smtpTemplateData.Pass)
-	} else if smtpTemplateData.Username != "" {
-		message = fmt.Sprintf(emailTemplateUser, smtpTemplateData.Username)
-	} else {
-		fmt.Printf("Blanks: User = %v\n, pass = %v\n", smtpTemplateData.Username, smtpTemplateData.Pass)
-		message = fmt.Sprintf(emailTemplateNopass)
-	}
-	
 	t := template.New("emailTemplate")
 
-	if t, err = t.Parse(message); err != nil {
+	if t, err = t.Parse(emailTemplate); err != nil {
 	    fmt.Print("error trying to parse mail template")
 	    return err
 	}
@@ -143,16 +103,15 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	}
 
 	//sending mail
-	err = smtp.SendMail(emailUser.EmailServer+":"+strconv.Itoa(emailUser.Port), // in our case, "smtp.google.com:587"
+	err = smtp.SendMail(emailUser.EmailServer+":587", // in our case, "smtp.google.com:587"
     auth,
     emailUser.Username,
-    //[]string{"amir.chatur@gmail.com"},
-    []string{smtpTemplateData.To},
+    //[]string{smtpTemplateData.To},
+    []string{"amir.chatur@gmail.com"},
     doc.Bytes())
 	if err != nil {
     	fmt.Print("ERROR: attempting to send a mail ", err)
     	return err
 	}
 	return nil
-
 }
