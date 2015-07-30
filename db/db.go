@@ -40,6 +40,7 @@ type UserInfo struct {
 	Lname 			string 		 	`json:"lname"`
 	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
 	PasswordExpiry 	int 			`josn:"passwordExpiry"`
+	InstagramLink	bool 			`json:"instagramLink"`
 }
 
 // Plurals are names of tables in DB
@@ -72,9 +73,7 @@ type Reviews struct {
 	Descr			string
 	Complete		bool
 }
-// type DishTags struct {
-// 	Tags 	[]string
-// }
+
 type Review struct {
 	ID 				int 			`json:"id"`
 	Username 		string			`json:"username"`
@@ -86,12 +85,11 @@ type Review struct {
 	Liked 			sql.NullBool	`json:"liked,omitempty"`
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
-	// DishTags		[]string 		`json:"dishTags"`
-	Tags			[]string 			`json:"dishTags"`
-	DishTags		[]DishTag
-	// DishTagIds		[]int 	 	 	`json:"dishTagIds"`
+	DishTags		[]DishTag 		`json:"dishTags"`
 	CreatedDate		string 			`json:"createdDate,omitempty"`
 	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
+	FinishedTime 	string 			`json:"finishedTime,omitempty"`
+	Source 			string 			`json:"source"`
 }
 
 type DishTag struct {	
@@ -288,7 +286,6 @@ func (photo Photos) SetMePhoto() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
 	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid) SELECT chomp_user_id, '%s', '%s', '%s' from chomp_users WHERE chomp_username='%s'", 
 						photo.FilePath, photo.FileHash, photo.Uuid, photo.Username)
 	fmt.Printf("Query = %v\n", query)
@@ -317,7 +314,6 @@ func (photo Photos) UpdatePhotoIDUserTable() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	//query := fmt.Sprintf("INSERT INTO photos SET dish_id='%d', chomp_user_id='%d', file_path='%s', file_hash='%s', uuid='%s'", photo.DishID, photo.UserID, photo.FilePath, photo.FileHash, photo.Uuid)
 	query := fmt.Sprintf("UPDATE chomp_users SET photo_id='%d' WHERE chomp_username='%s'", 
 						photo.ID, photo.Username)
 	fmt.Println("Query = %v\n", query)
@@ -635,7 +631,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	fmt.Printf("id = %v\n", userId)
 	fmt.Printf(`SELECT reviews.id, reviews.user_id, reviews.username,
 						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
-						latitude, longitude, location_num, source, source_location_id,
+						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						reviews.created_date, reviews.last_updated, reviews.dish_tags,
 						reviews.dish_tags2, reviews.dish_tag_ids
@@ -645,8 +641,8 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 					   WHERE user_id =%v\n` + "\n",userId)
 
 		rows, err := db.Query(`SELECT reviews.id, reviews.user_id, reviews.username,
-						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
-						latitude, longitude, location_num, source, source_location_id,
+						dish_id, dish.name, photo_id, restaurant_id, reviews.source, restaurants.name,
+						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						reviews.created_date, reviews.last_updated,
 						reviews.dish_tag_ids
@@ -656,6 +652,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 					   WHERE user_id =?`,userId)
 
 	if err != nil {
+		fmt.Printf("Error while retrieving dish..%v\n", err)
 		return reviews
 	}
 	var review Review
@@ -665,7 +662,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
-			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID,
+			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated, &blobIds); err != nil {
@@ -724,28 +721,43 @@ func (review *Review) CreateReview() error {
 	fmt.Printf("REVIEW = %v\n", review)
 	fmt.Printf("Type of review = %v\n", reflect.TypeOf(review))
 
-	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, dish_tags = %v, description = %v\n\n", 
+	fmt.Printf("INSERT INTO reviews SET user_id = %v, username = %v, dish_id = %v, photo_id = %v, restaurant_id = %v, price = %v, liked = %v, dish_tags = %v, description = %v, finished = %v\n\n", 
 												  review.UserID, review.Username,
 						 					      review.Dish.ID, review.Photo.ID,
 						 	  					  review.Restaurant.ID, review.Price,
-						 	  					  review.Liked,review.DishTags, review.Description)
+						 	  					  review.Liked,review.DishTags, review.Description, review.Finished)
 	fmt.Printf("Distags = %v\n", review.DishTags)
 	fmt.Printf("Liked = %v\n", review.Liked)
 	dishTagIds, err := review.AddDishTags()
-	// dishTags, err := review.AddDishTags()
+
 	if err != nil {
 		return err
 	}
-	
-	results, err := db.Exec(`INSERT INTO reviews
+
+	var results sql.Result
+
+	if review.Finished.Valid == true && review.Finished.Bool == true {
+			results, err = db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, finished = ?, description = ?`, review.UserID, review.Username,
+						 liked = ?, finished = ?, description = ?, finished_time=now(),
+						 source = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID,
 						 					      fmt.Sprintf("%+v", dishTagIds),
 						 	  					  review.Photo.ID, review.Restaurant.ID, 
 						 	  					  review.Price, review.Liked, review.Finished,
-						 	  					  review.Description)
+						 	  					  review.Description, review.Source)
+	} else {
+		results, err = db.Exec(`INSERT INTO reviews
+						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
+						 photo_id = ?, restaurant_id = ?, price = ?,
+						 liked = ?, finished = ?, description = ?, source = ?`, review.UserID, review.Username,
+						 					      review.Dish.ID,
+						 					      fmt.Sprintf("%+v", dishTagIds),
+						 	  					  review.Photo.ID, review.Restaurant.ID, 
+						 	  					  review.Price, review.Liked, review.Finished,
+						 	  					  review.Description, review.Source)
+	}
 
 	if err != nil {
 		fmt.Printf("Error = %v", err)
@@ -799,12 +811,12 @@ func (review *Review) AddDishTags() ([]int, error) {
 	var dishTagIds []int
 	// var dishTags []DishTag
 	// for _, e := range review.DishTags {
-	for _, e := range review.Tags {
+	for _, e := range review.DishTags {
 
 		fmt.Printf("Insert Dishtags %v\n", e)
 		results, err := db.Exec(`INSERT INTO dish_tags
 						 			SET tag = ?, count = count+1
-						 			ON DUPLICATE KEY UPDATE count = count+1`, e)
+						 			ON DUPLICATE KEY UPDATE count = count+1`, e.Tag)
 
 		if err != nil {
 			fmt.Printf("Error = %v", err)
@@ -933,17 +945,33 @@ func (review *Review) UpdateReview() error {
 	if err != nil {
 		return err
 	}
-	
-	results, err := db.Exec(`UPDATE reviews
-						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
-						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, finished = ?, description = ?
-						 WHERE id = ?`, review.UserID, review.Username,
-						 					      review.Dish.ID,
-						 					      fmt.Sprintf("%+v", dishTagIds),
-						 	  					  review.Photo.ID, review.Restaurant.ID, 
-						 	  					  review.Price, review.Liked, review.Finished,
-						 	  					  review.Description, review.ID)
+	var results sql.Result
+
+	if review.Finished.Valid  == true && review.Finished.Bool == true  {
+		results, err = db.Exec(`UPDATE reviews
+					 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
+					 photo_id = ?, restaurant_id = ?, price = ?,
+					 liked = ?, finished = ?, description = ?, finished_time=now(),
+					 source = ?
+					 WHERE id = ?`, review.UserID, review.Username,
+					 					      review.Dish.ID,
+					 					      fmt.Sprintf("%+v", dishTagIds),
+					 	  					  review.Photo.ID, review.Restaurant.ID, 
+					 	  					  review.Price, review.Liked, review.Finished,
+					 	  					  review.Description, review.Source, review.ID)
+		
+	} else {
+		results, err = db.Exec(`UPDATE reviews
+					 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
+					 photo_id = ?, restaurant_id = ?, price = ?,
+					 liked = ?, finished = ?, description = ?, source = ?
+					 WHERE id = ?`, review.UserID, review.Username,
+					 					      review.Dish.ID,
+					 					      fmt.Sprintf("%+v", dishTagIds),
+					 	  					  review.Photo.ID, review.Restaurant.ID, 
+					 	  					  review.Price, review.Liked, review.Finished,
+					 	  					  review.Description, review.Source, review.ID)
+	}
 
 
 	if err != nil {

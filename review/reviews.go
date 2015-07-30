@@ -65,6 +65,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		}
 
 		fmt.Printf("Dishtags = %v\n", review.DishTags)
+		fmt.Printf("Review = %v\n", review)
 		dbRestaurant.Name = review.Restaurant.Name
 		err2 := dbRestaurant.GetRestaurantInfoByName()
 		if err2 != nil && err2 != sql.ErrNoRows{

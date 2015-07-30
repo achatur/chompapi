@@ -509,21 +509,9 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 		} 
 	}
 
-	///NEED TO FIX THIS
-	// var tags db.DishTag
-	// var tags db.DishTag
-	// for _,e := range instaData.Tags {
-	// 	fmt.Printf("adding tag %v\n", e)
-	// 	if tags != "" {
-	// 		tags = tags + "," + e
-	// 	} else {
-	// 		tags = e
-	// 	}
-	// 	tags.Tag = e
-	// }
-	// review.DishTags = tags
-	review.Tags = instaData.Tags
-	// review.DishTags = append(review.DishTags, tags)
+	for _, tag := range instaData.Tags {
+		review.DishTags = append(review.DishTags, db.DishTag{0, tag})
+	}
 
 	if instaData.Likes.Count > 0 {
 		review.Liked.Bool = true
