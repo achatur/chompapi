@@ -644,7 +644,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 						dish_id, dish.name, photo_id, restaurant_id, reviews.source, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
-						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated),
+						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), UNIX_TIMESTAMP(reviews.finished_time),
 						reviews.dish_tag_ids
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
@@ -665,7 +665,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
-			&review.CreatedDate, &review.LastUpdated, &blobIds); err != nil {
+			&review.CreatedDate, &review.LastUpdated, &review.FinishedTime, &blobIds); err != nil {
 			fmt.Printf("Err= %v\n", err.Error())
 			return reviews
 		}
