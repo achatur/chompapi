@@ -208,7 +208,8 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				review.GetReviewLastTimeStamp(review.ID)
-				w.Header().Set("LastUpdated", review.LastUpdated)
+				lastUpdate := strconv.Itoa(review.LastUpdated)
+				w.Header().Set("LastUpdated", lastUpdate)
 				w.WriteHeader(http.StatusNoContent)
 			}
 		} else {
@@ -222,7 +223,9 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				review.GetReviewLastTimeStamp(review.ID)
-				w.Header().Set("LastUpdated", review.LastUpdated)
+				review.GetReviewLastTimeStamp(review.ID)
+				lastUpdate := strconv.Itoa(review.LastUpdated)
+				w.Header().Set("LastUpdated", lastUpdate)
 				w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%d", review.ID))
 				w.WriteHeader(http.StatusCreated)
 			}

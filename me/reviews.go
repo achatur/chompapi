@@ -25,7 +25,6 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	}
-	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Printf("SessionUser = %v\n", sessionUser)

@@ -53,7 +53,7 @@ type Photos struct {
 	UserID		int				`json:"userId"`
 	FilePath	string			`json:"filePath"`
 	FileHash	string			`json:"fileHash"`
-	TimeStamp	string			`json:"timeStamp"`
+	TimeStamp	int				`json:"timeStamp"`
 	Uuid		string			`json:"uuid"`
 	Username 	string			`json:"username"`
 }
@@ -86,9 +86,9 @@ type Review struct {
 	Description 	string			`json:"description"`
 	Finished		sql.NullBool	`json:"finished,omitempty"`
 	DishTags		[]DishTag 		`json:"dishTags"`
-	CreatedDate		string 			`json:"createdDate,omitempty"`
-	LastUpdated 	string 			`json:"lastUpdated,omitempty"`
-	FinishedTime 	string 			`json:"finishedTime,omitempty"`
+	CreatedDate		int 			`json:"createdDate,omitempty"`
+	LastUpdated 	int 			`json:"lastUpdated,omitempty"`
+	FinishedTime 	int 			`json:"finishedTime,omitempty"`
 	Source 			string 			`json:"source"`
 }
 
@@ -125,7 +125,7 @@ type IgStore struct {
 	UserID 			int
 	IgMediaID 		string
 	Epoch 			int
-	LastUpdated 	string
+	LastUpdated 	int
 	IgCreatedTime 	int
 }
 
@@ -341,7 +341,7 @@ func (photo *Photos) GetPhotoInfoByUuid() error {
 	// m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, last_updated, uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
 	fmt.Println("Row =", row)
 	fmt.Println("Row Type = ", reflect.TypeOf(photo))
 	if row != nil {
@@ -361,7 +361,7 @@ func (photo *Photos) GetMePhotoByUsername() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, last_updated, uuid
+	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid
 						FROM photos
 						JOIN chomp_users on photos.id = chomp_users.photo_id
 						WHERE chomp_users.chomp_username=?`,photo.Username).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
@@ -379,7 +379,7 @@ func (photo *Photos) GetMePhotoByPhotoID() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, last_updated, uuid
+	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid
 						FROM photos
 						WHERE id=?`,photo.ID).Scan(&photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
 	return err
@@ -633,7 +633,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
-						reviews.created_date, reviews.last_updated, reviews.dish_tags,
+						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), reviews.dish_tags,
 						reviews.dish_tags2, reviews.dish_tag_ids
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
@@ -644,7 +644,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 						dish_id, dish.name, photo_id, restaurant_id, reviews.source, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
-						reviews.created_date, reviews.last_updated,
+						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated),
 						reviews.dish_tag_ids
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
@@ -740,7 +740,7 @@ func (review *Review) CreateReview() error {
 			results, err = db.Exec(`INSERT INTO reviews
 						 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 						 photo_id = ?, restaurant_id = ?, price = ?,
-						 liked = ?, finished = ?, description = ?, finished_time=now(),
+						 liked = ?, finished = ?, description = ?, finished_time=UNIX_TIMESTAMP(now()),
 						 source = ?`, review.UserID, review.Username,
 						 					      review.Dish.ID,
 						 					      fmt.Sprintf("%+v", dishTagIds),
@@ -788,7 +788,7 @@ func (review *Review) GetReviewLastTimeStamp(reviewId int) error {
 		return err
 	}
 	
-	err = db.QueryRow(`SELECT last_updated from reviews WHERE id = ?`, reviewId).Scan(&review.LastUpdated)
+	err = db.QueryRow(`SELECT UNIX_TIMESTAMP(last_updated) from reviews WHERE id = ?`, reviewId).Scan(&review.LastUpdated)
 
 	if err != nil {
 		fmt.Printf("Error = %v", err)
@@ -918,18 +918,14 @@ func (review *Review) UpdateReview() error {
 
 	fmt.Printf("Distags = %v\n", review.DishTags)
 	fmt.Printf("Liked = %v\n", review.Liked)
-	//dishTagIds, err := review.AddDishTags()
 	dishTags, err := review.AddDishTags()
 
 	if err != nil {
 		return err
 	}
 
-	//dishTagsCr := fmt.Sprintf("%+v",review.DishTags)
 	dishTagsCr := fmt.Sprintf("%+v",dishTags)
-	//dishTagIdsCr := fmt.Sprintf("%+v", dishTagIds)
 	fmt.Printf("DishTagCr = %v\n", dishTagsCr)
-	//fmt.Printf("DishTagIdsCr = %v\n", dishTagIdsCr)
 
 	fmt.Printf(`UPDATE reviews
 						 SET user_id = %v, username = %v, dish_id = %v, dish_tags2 = %v,
@@ -951,7 +947,7 @@ func (review *Review) UpdateReview() error {
 		results, err = db.Exec(`UPDATE reviews
 					 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 					 photo_id = ?, restaurant_id = ?, price = ?,
-					 liked = ?, finished = ?, description = ?, finished_time=now(),
+					 liked = ?, finished = ?, description = ?, finished_time=UNIX_TIMESTAMP(now()),
 					 source = ?
 					 WHERE id = ?`, review.UserID, review.Username,
 					 					      review.Dish.ID,
