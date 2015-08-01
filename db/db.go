@@ -685,12 +685,12 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 		fmt.Printf("Error while retrieving dish..%v\n", err)
 		return reviews
 	}
-	var review Review
-	var blobTags string
-	var blobIds string
 
 	defer rows.Close()
 	for rows.Next() {
+		var review Review
+		var blobTags string
+		var blobIds string
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
 			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Photo.Uuid, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
