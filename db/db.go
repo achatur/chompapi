@@ -48,17 +48,18 @@ type UserInfo struct {
 // are the inputs from json
 
 type Photos struct {
-	ID			int				`json:"id"`
-	DishID		int				`json:"dishId"`
-	UserID		int				`json:"userId"`
-	FilePath	string			`json:"filePath"`
-	FileHash	string			`json:"fileHash"`
-	TimeStamp	int				`json:"timeStamp"`
-	Uuid		string			`json:"uuid"`
-	Username 	string			`json:"username"`
-}
-type Photo struct {
-	ID 	int 	`json:"id"`
+	ID			int					`json:"id"`
+	DishID		int					`json:"dishId"`
+	UserID		int					`json:"userId"`
+	FilePath	string				`json:"filePath"`
+	FileHash	string				`json:"fileHash"`
+	TimeStamp	int					`json:"timeStamp"`
+	Uuid		string				`json:"uuid"`
+	Username 	string				`json:"username"`
+}	
+type Photo struct {	
+	ID 			int 				`json:"id"`
+	Uuid 		string 				`json:"uuid"`
 }
 
 type Reviews struct {
@@ -656,7 +657,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	defer db.Close()
 	fmt.Printf("id = %v\n", userId)
 	fmt.Printf(`SELECT reviews.id, reviews.user_id, reviews.username,
-						dish_id, dish.name, photo_id, restaurant_id, restaurants.name,
+						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, restaurant_id, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), reviews.dish_tags,
@@ -664,10 +665,11 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
 					   JOIN dish on reviews.dish_id = dish.id
+					   JOIN photos on reviews.photo_id = photos.id
 					   WHERE user_id =%v\n` + "\n",userId)
 
 		rows, err := db.Query(`SELECT reviews.id, reviews.user_id, reviews.username,
-						dish_id, dish.name, photo_id, restaurant_id, reviews.source, restaurants.name,
+						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, restaurant_id, reviews.source, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), UNIX_TIMESTAMP(reviews.finished_time),
@@ -675,6 +677,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
 					   JOIN dish on reviews.dish_id = dish.id
+					   JOIN photos on reviews.photo_id = photos.id
 					   WHERE user_id =?`,userId)
 
 	if err != nil {
@@ -688,7 +691,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
-			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Restaurant.ID, &review.Source,
+			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Photo.Uuid, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated, &review.FinishedTime, &blobIds); err != nil {
