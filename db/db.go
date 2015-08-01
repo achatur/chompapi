@@ -92,9 +92,9 @@ type Review struct {
 	Source 			string 			`json:"source"`
 }
 
-type DishTag struct {	
-	ID 				int 			`json:"id`
-	Tag 			string 			`json:"dishTag`
+type DishTag struct {
+	ID 				int 			`json:"id"`
+	Tag 			string 			`json:"dishTag"`
 }
 
 type Crawl struct {
