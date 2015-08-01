@@ -88,13 +88,13 @@ type Review struct {
 	DishTags		[]DishTag 		`json:"dishTags"`
 	CreatedDate		int 			`json:"createdDate,omitempty"`
 	LastUpdated 	int 			`json:"lastUpdated,omitempty"`
-	FinishedTime 	int 			`json:"finishedTime,omitempty"`
+	FinishedTime 	*int 			`json:"finishedTime,omitempty"`
 	Source 			string 			`json:"source"`
 }
 
-type DishTag struct {	
-	ID 				int 			`json:"id`
-	Tag 			string 			`json:"dishTag`
+type DishTag struct {
+	ID 				int 			`json:"id"`
+	Tag 			string 			`json:"dishTag"`
 }
 
 type Crawl struct {
