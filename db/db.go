@@ -139,15 +139,16 @@ func (userInfo *UserInfo) GetUserInfo() error {
 
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
-	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
-						phone_number, password_hash, dob, gender, photo_id,
+	err = db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
+						phone_number, password_hash, dob, gender, photo_id, photos.uuid,
 						is_password_temp, password_expiry, fname, lname, insta_code
 					   FROM chomp_users
+					   JOIN photos on photos.id = chomp_users.photo_id
 					   WHERE chomp_username=?`, 
 					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.PhoneNumber,
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
-					   							    &userInfo.Gender, &userInfo.Photo.ID,
+					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
 					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode)
 	if err != nil {
