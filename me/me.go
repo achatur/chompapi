@@ -478,6 +478,54 @@ func LogoutAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func Instagram(w http.ResponseWriter, r *http.Request) {
+
+	userInfo := new(db.UserInfo)
+	var myErrorResponse globalsessionkeeper.ErrorResponse
+	cookie := globalsessionkeeper.GetCookie(r)
+	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+	if err != nil {
+		//need logging here instead of print
+		myErrorResponse.Code = http.StatusUnauthorized
+		myErrorResponse.Error = err.Error()
+		myErrorResponse.HttpErrorResponder(w)
+		return
+	}
+	sessionUser := sessionStore.Get("username")
+	username := reflect.ValueOf(sessionUser).String()
+	//need logging here instead of print
+	//extend session time by GC time
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
+	userInfo.Username = username
+
+	switch r.Method {
+
+	case "GET":
+		query := mux.Vars(r)
+		fmt.Printf("Query %v\n", query)
+		userInfo.InstaCode = query["code"]
+		err = userInfo.UpdateInstaCode()
+		if err != nil {
+			fmt.Printf("Err updating instacode %v\n", err)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+		//w.Header().Set("Content-Type", "application/json")
+		//w.WriteHeader(http.StatusNoContent)
+		return
+		
+	default:
+
+		fmt.Printf("Made it here.. method = %v\n", r.Method)
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+}
+
+
 
 func DeactivateMe(w http.ResponseWriter, r *http.Request) {
 

@@ -40,7 +40,7 @@ type UserInfo struct {
 	Lname 			string 		 	`json:"lname"`
 	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
 	PasswordExpiry 	int 			`josn:"passwordExpiry"`
-	InstagramLink	bool 			`json:"instagramLink"`
+	InstaCode 		string 			`json:"instaCode,omitempty"`
 }
 
 // Plurals are names of tables in DB
@@ -140,7 +140,7 @@ func (userInfo *UserInfo) GetUserInfo() error {
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
 						phone_number, password_hash, dob, gender, photo_id,
-						is_password_temp, password_expiry, fname, lname
+						is_password_temp, password_expiry, fname, lname, insta_code
 					   FROM chomp_users
 					   WHERE chomp_username=?`, 
 					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
@@ -148,7 +148,7 @@ func (userInfo *UserInfo) GetUserInfo() error {
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
 					   							    &userInfo.Gender, &userInfo.Photo.ID,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
-					   							    &userInfo.Fname, &userInfo.Lname)
+					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
@@ -268,6 +268,32 @@ func (userInfo UserInfo) UpdatePassword(temp bool) error {
 
 		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
 							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0, userInfo.UserID)
+	}
+	
+	id, err2 := results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+	return err2
+}
+
+func (userInfo UserInfo) UpdateInstaCode() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Printf("userinfo = %v\n", userInfo)
+	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+	var results sql.Result
+	var err2 error
+
+	results, err2 = db.Exec(`UPDATE chomp_users SET insta_code=?
+							  WHERE chomp_username=?`, userInfo.InstaCode, userInfo.Username)
+
+	if err2 != nil {
+		fmt.Printf("Err = %v\n", err2)
+		return err2
 	}
 	
 	id, err2 := results.LastInsertId()

@@ -38,7 +38,14 @@ func main() {
 	router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
 	router.HandleFunc("/me", SessionAuth(me.GetMe))
+	// router.HandleFunc("/me/instagram/{query}", SessionAuth(me.Instagram))
+	router.Queries("code", "{code}").HandlerFunc(SessionAuth(me.Instagram))
+	// router.Queries("error", "{error}", "error_reason", "{errorReason}",
+	// 				"error_description", "errorDescription").HandlerFunc(SessionAuth(me.Instagram))
+	router.Queries("error", "{error}").HandlerFunc(SessionAuth(me.Instagram))
+
 	router.HandleFunc("/me/logout", SessionAuth(me.Logout))
+
 	router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
 	router.HandleFunc("/me/photos", SessionAuth(me.PostPhotoId))
 	router.HandleFunc("/me/photos/{photoID}", SessionAuth(me.PostPhotoId))
