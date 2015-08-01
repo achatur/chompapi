@@ -502,19 +502,33 @@ func Instagram(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	case "GET":
+		w.Header().Set("Content-Type", "application/json")
 		query := mux.Vars(r)
 		fmt.Printf("Query %v\n", query)
+		if query["error"] != "" {
+			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = query["error"]
+			myErrorResponse.HttpErrorResponder(w)
+			userInfo.InstaCode = ""
+			err = userInfo.UpdateInstaCode()
+			if err != nil {
+				fmt.Printf("Err updating 1 instacode %v\n", err)
+				myErrorResponse.Code = http.StatusBadRequest
+				myErrorResponse.Error = err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+			}
+			return
+		}
 		userInfo.InstaCode = query["code"]
 		err = userInfo.UpdateInstaCode()
 		if err != nil {
-			fmt.Printf("Err updating instacode %v\n", err)
+			fmt.Printf("Err updating 2 instacode %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest
 			myErrorResponse.Error = err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
-		//w.Header().Set("Content-Type", "application/json")
-		//w.WriteHeader(http.StatusNoContent)
 		return
 		
 	default:
