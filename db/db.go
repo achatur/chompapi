@@ -159,7 +159,7 @@ func (userInfo *UserInfo) GetUserInfo() error {
 }
 
 func (userInfo *UserInfo) GetUserInfoByEmail() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	db, err := sql.Open("mysql", "root@tcp("+globalsessionkeeper.ChompConfig.DbConfig.Host+":"+globalsessionkeeper.ChompConfig.DbConfig.Port+")/chomp")
 	if err != nil {
 		return err
 	}
@@ -224,8 +224,13 @@ func (userInfo *UserInfo) UpdateAccountSetupTimestamp() error {
 	fmt.Println("map = %v\n", userInfo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
 
-	results, err := db.Exec(`UPDATE account_setup SET finished_timestamp=now()
-							  WHERE chomp_user_id=?`, userInfo.UserID)
+	results, err := db.Exec(`INSERT INTO account_setup 
+							SET finished_timestamp=now(), user_id = ?`, userInfo.UserID)
+
+	if err != nil {
+		fmt.Printf("Update Account Setup Time err = %v\n", err)
+		return err
+	}
 	
 	id, err := results.LastInsertId()
 	fmt.Printf("Results = %v\n err3 = %v\n", id , err)

@@ -53,6 +53,7 @@ func main() {
 	router.HandleFunc("/me/update/up", SessionAuth(me.UpdatePassword))
 	router.HandleFunc("/me/update/d/{userID}", SessionAuth(me.DeleteMe))
 	router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
+	router.HandleFunc("/me/update/astu", SessionAuth(me.UpdateAccountSetupTimestamp))
 
 
 	router.HandleFunc("/reviews", SessionAuth(review.Reviews))
