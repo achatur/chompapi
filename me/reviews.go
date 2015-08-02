@@ -40,7 +40,20 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	case "GET":
-		reviews := db.GetReviewsByUserID(int(userId))
+		reviews, err := db.GetReviewsByUserID(int(userId))
+		if err != nil {
+			fmt.Printf("something went while retrieving data %v\n", err)
+			fmt.Printf("Reviews list = %v\n", reviews)
+			w.Header().Set("Content-Type", "application/json")
+			// emptyList := json.RawMessage(`{"reviews" : [] }`)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			returnJson := reviews
+         	// json.NewEncoder(w).Encode(&emptyList)
+         	json.NewEncoder(w).Encode(&returnJson)
+			return
+		}
 		if reviews == nil {
 			//something bad happened
 			fmt.Printf("something went while retrieving data %v\n", err)

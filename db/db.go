@@ -59,7 +59,7 @@ type Photos struct {
 }	
 type Photo struct {	
 	ID 			int 				`json:"id"`
-	Uuid 		string 				`json:"uuid"`
+	Uuid 		*string 				`json:"uuid"`
 }
 
 type Reviews struct {
@@ -212,6 +212,28 @@ func (userInfo RegisterInput) SetUserInfo() error {
 	}
 	return nil
 }
+
+func (userInfo *UserInfo) UpdateAccountSetupTimestamp() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	results, err := db.Exec(`UPDATE account_setup SET finished_timestamp=now()
+							  WHERE chomp_user_id=?`, userInfo.UserID)
+	
+	id, err := results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err)
+	fmt.Printf("Error = %v\n", err)
+
+	return err
+}
+
 
 func (userInfo *UserInfo) DeleteUser() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
@@ -650,10 +672,10 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 }
 
 
-func GetReviewsByUserID(userId int) (reviews []Review) {
+func GetReviewsByUserID(userId int) (reviews []Review, error error) {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return reviews
+		return reviews, errors.New("Could not connect to DB")
 	}
 	defer db.Close()
 	fmt.Printf("id = %v\n", userId)
@@ -661,8 +683,8 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, restaurant_id, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
-						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), reviews.dish_tags,
-						reviews.dish_tags2, reviews.dish_tag_ids
+						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated),
+						reviews.dish_tag_ids
 					   FROM reviews
 					   JOIN restaurants on reviews.restaurant_id = restaurants.id
 					   JOIN dish on reviews.dish_id = dish.id
@@ -683,7 +705,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 
 	if err != nil {
 		fmt.Printf("Error while retrieving dish..%v\n", err)
-		return reviews
+		return reviews, err
 	}
 
 	defer rows.Close()
@@ -691,13 +713,14 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 		var review Review
 		var blobTags string
 		var blobIds string
+		fmt.Printf("About to scan\n")
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
 			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Photo.Uuid, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated, &review.FinishedTime, &blobIds); err != nil {
-			fmt.Printf("Err= %v\n", err.Error())
-			return reviews
+				fmt.Printf("Err while scaning= %v\n", err.Error())
+				return reviews, err
 		}
 		fmt.Printf("in for, review = %v\n", review)
 		fmt.Printf("tags = %v\n", blobTags)
@@ -712,20 +735,20 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 			id, err := strconv.Atoi(e)
 			if err != nil {
 				fmt.Printf("Error converting..%v\n", err)
-				return reviews
+				return reviews, err
 			}
 			rows, err := db.Query(`SELECT id, tag
 					   FROM dish_tags
 					   WHERE id =?`, id)
 			if err != nil {
 				fmt.Printf("Err= %v\n", err.Error())
-				return reviews
+				return reviews, err
 			}
 			defer rows.Close()
 			for rows.Next() {
 				if err := rows.Scan(&dishTag.ID, &dishTag.Tag); err != nil {
 					fmt.Printf("Err= %v\n", err.Error())
-					return reviews
+					return reviews, err
 				}
 				review.DishTags = append(review.DishTags, dishTag)
 				fmt.Printf("dishTag = %v\n", dishTag)
@@ -737,7 +760,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 		reviews = append(reviews, review)
 	}
 	fmt.Printf("\nReturning = %v\n", reviews)
-	return reviews
+	return reviews, err
 }
 
 func (review *Review) CreateReview() error {
@@ -977,7 +1000,7 @@ func (review *Review) UpdateReview() error {
 		results, err = db.Exec(`UPDATE reviews
 					 SET user_id = ?, username = ?, dish_id = ?, dish_tag_ids=?,
 					 photo_id = ?, restaurant_id = ?, price = ?,
-					 liked = ?, finished = ?, description = ?, finished_time=UNIX_TIMESTAMP(now()),
+					 liked = ?, finished = ?, description = ?, finished_time=now(),
 					 source = ?
 					 WHERE id = ?`, review.UserID, review.Username,
 					 					      review.Dish.ID,
