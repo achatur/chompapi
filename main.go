@@ -38,7 +38,11 @@ func main() {
 	router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
 	router.HandleFunc("/me", SessionAuth(me.GetMe))
+	router.Queries("code", "{code}").HandlerFunc(SessionAuth(me.Instagram))
+	router.Queries("error", "{error}").HandlerFunc(SessionAuth(me.Instagram))
+
 	router.HandleFunc("/me/logout", SessionAuth(me.Logout))
+
 	router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
 	router.HandleFunc("/me/photos", SessionAuth(me.PostPhotoId))
 	router.HandleFunc("/me/photos/{photoID}", SessionAuth(me.PostPhotoId))
@@ -46,12 +50,13 @@ func main() {
 	router.HandleFunc("/me/update/up", SessionAuth(me.UpdatePassword))
 	router.HandleFunc("/me/update/d/{userID}", SessionAuth(me.DeleteMe))
 	router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
+	router.HandleFunc("/me/update/astu", SessionAuth(me.UpdateAccountSetupTimestamp))
 
 
 	router.HandleFunc("/reviews", SessionAuth(review.Reviews))
 	router.HandleFunc("/reviews/{reviewID}", SessionAuth(review.Reviews))
 	
-	router.HandleFunc("/insta/crawl", BasicAuth(review.Crawl))
+	router.HandleFunc("/insta/crawl", SessionAuth(review.Crawl))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {
