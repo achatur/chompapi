@@ -58,8 +58,8 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 
 	fmt.Printf("smtp data = %v\n", smtpTemplateData)
 	emailUser := new(EmailUser)
-	// fileContent, err := ioutil.ReadFile("./chomp_private/email.json")
-	fileContent, err := ioutil.ReadFile("./chomp_private/email_mandrill.json")
+	fileContent, err := ioutil.ReadFile("./chomp_private/email.json")
+	// fileContent, err := ioutil.ReadFile("./chomp_private/email_mandrill.json")
 
 	if err != nil {
 
@@ -67,11 +67,10 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 		return err
 	}
 
-	emailTemplateByte, err := ioutil.ReadFile("./messenger/email_template.html")
+	emailTemplateByte, err := ioutil.ReadFile("./messenger/email_template_2.html")
 	if err != nil {
 	    return err
 	}
-	// n := bytes.Index(emailTemplateByte, []byte{0})
 	emailTemplate := string(emailTemplateByte[:])
 	err = json.Unmarshal(fileContent, &emailUser)
 
@@ -106,8 +105,8 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	err = smtp.SendMail(emailUser.EmailServer+":587", // in our case, "smtp.google.com:587"
     auth,
     emailUser.Username,
-    //[]string{smtpTemplateData.To},
-    []string{"amir.chatur@gmail.com"},
+    []string{smtpTemplateData.To},
+    // []string{"amir.chatur@gmail.com"},
     doc.Bytes())
 	if err != nil {
     	fmt.Print("ERROR: attempting to send a mail ", err)
