@@ -239,6 +239,32 @@ func (userInfo *UserInfo) UpdateAccountSetupTimestamp() error {
 	return err
 }
 
+func (userInfo *UserInfo) InstagramLinkClick() error {
+	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	results, err := db.Exec(`UPDATE chomp_users 
+							SET insta_click = true
+							WHERE chomp_user_id = ?`, userInfo.UserID)
+
+	if err != nil {
+		fmt.Printf("Update Account Setup Time err = %v\n", err)
+		return err
+	}
+	
+	id, err := results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err)
+	fmt.Printf("Error = %v\n", err)
+
+	return err
+}
 
 func (userInfo *UserInfo) DeleteUser() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
