@@ -369,6 +369,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		// }
 		fmt.Printf("Logging all sessions out for user %v\n", userInfo.Username)
 		err = db.LogoutAllSessions(userInfo.Username)
+
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
@@ -420,6 +421,10 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		} else {
 			fmt.Printf("Logged out user %v, sessionId = %v\n", userInfo.Username, cookie)
 			w.Header().Set("Content-Type", "application/json")
+			err = globalsessionkeeper.ExpireCookie(r, w)
+			if err != nil {
+				fmt.Printf("Error = %v\n", err)
+			}
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -586,7 +591,6 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("pass = %v\n", dbUserInfo.Password)
 
 		err = dbUserInfo.InstagramLinkClick()
-
 		if err != nil {
 			fmt.Println("Something not valid")
 			myErrorResponse.Code = http.StatusBadRequest
@@ -594,7 +598,6 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
-
 		w.WriteHeader(http.StatusNoContent)
 		return
 		

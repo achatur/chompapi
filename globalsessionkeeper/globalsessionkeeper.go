@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
+	"errors"
 )
 
 type Config struct {
@@ -89,4 +91,24 @@ func GetCookie(r *http.Request) string {
 		}
 	}
 	return ""
+}
+
+func ExpireCookie(r *http.Request, w http.ResponseWriter) error {
+
+	fmt.Println("Full header = %v", r.Header)
+	cookie, err := r.Cookie("chomp_sessionid")
+	if err != nil {
+		fmt.Println("Error..cookie = %v, err:%v, cookie1:%v err1:%v",cookie, err)
+		return err
+	}
+	fmt.Println("Cookie = %v", cookie)
+
+	if cookiestr := r.Header.Get("Cookie"); cookiestr == "" {
+		return errors.New("Cookie not found")
+	} else {
+		expiration := time.Now()
+		cookie.Expires = expiration
+		http.SetCookie(w, cookie)
+	}
+	return nil
 }
