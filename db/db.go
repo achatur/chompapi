@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
+	_ "cmd/github.com/go-sql-driver/mysql"
 	"reflect"
 	"errors"
 	"time"

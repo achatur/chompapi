@@ -1,7 +1,7 @@
 package crypto
 
 import (
-    "github.com/dgrijalva/jwt-go"
+    "cmd/github.com/dgrijalva/jwt-go"
     "encoding/json"
     "net/http"
     "cmd/chompapi/globalsessionkeeper"

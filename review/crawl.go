@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"github.com/parnurzeal/gorequest"
+	"cmd/github.com/parnurzeal/gorequest"
 	"cmd/chompapi/db"
 	"cmd/chompapi/globalsessionkeeper"
 	"reflect"
