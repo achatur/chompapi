@@ -563,6 +563,7 @@ func GetReviewsByUserID(userId int) (reviews []Review) {
 					   JOIN dish on reviews.dish_id = dish.id
 					   WHERE user_id =?`,userId)
 	if err != nil {
+		fmt.Printf("Error getting reviews: %v\n", err)
 		return reviews
 	}
 	var review Review
