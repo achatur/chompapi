@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"cmd/chompapi/db"
 	"cmd/chompapi/crypto"
-	"cmd/github.com/astaxie/beego/session"
+	"github.com/astaxie/beego/session"
 	"cmd/chompapi/globalsessionkeeper"
 	"strconv"
 )

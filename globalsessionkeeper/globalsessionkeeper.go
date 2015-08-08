@@ -1,8 +1,8 @@
 package globalsessionkeeper
 
 import (
-	"cmd/github.com/astaxie/beego/session"
-	_ "cmd/github.com/astaxie/beego/session/mysql"
+	"github.com/astaxie/beego/session"
+	_ "github.com/astaxie/beego/session/mysql"
 	"encoding/json"
 	"fmt"
 	"net/http"

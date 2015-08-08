@@ -8,7 +8,7 @@ import (
 	"cmd/chompapi/globalsessionkeeper"
 	"reflect"
 	"database/sql"
-	"cmd/github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 	"strconv"
 )
 
