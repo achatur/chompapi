@@ -56,10 +56,14 @@ type Photos struct {
 	TimeStamp	int					`json:"timeStamp"`
 	Uuid		string				`json:"uuid"`
 	Username 	string				`json:"username"`
+	Latitude 	*float64 			`json:"latt,omitempty"`
+	Longitude 	*float64 			`json:"long,omitempty"`
 }	
 type Photo struct {	
 	ID 			int 				`json:"id"`
-	Uuid 		*string 				`json:"uuid"`
+	Uuid 		*string 			`json:"uuid"`
+	Latitude 	*float64 			`json:"latt"`
+	Longitude 	*float64 			`json:"long"`
 }
 
 type Reviews struct {
@@ -140,7 +144,7 @@ func (userInfo *UserInfo) GetUserInfo() error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err = db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
-						phone_number, password_hash, dob, gender, photo_id, photos.uuid,
+						phone_number, password_hash, dob, gender, photo_id, photos.uuid, photos.latitude, photos.longitude,
 						is_password_temp, password_expiry, fname, lname, insta_code
 					   FROM chomp_users
 					   JOIN photos on photos.id = chomp_users.photo_id
@@ -149,6 +153,7 @@ func (userInfo *UserInfo) GetUserInfo() error {
 					   							    &userInfo.Username, &userInfo.PhoneNumber,
 					   							    &userInfo.PasswordHash,&userInfo.DOB,
 					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
+					   							    &userInfo.Photo.Latitude, &userInfo.Photo.Longitude,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
 					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode)
 	if err != nil {
@@ -367,8 +372,8 @@ func (photo Photos) SetMePhoto() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid) SELECT chomp_user_id, '%s', '%s', '%s' from chomp_users WHERE chomp_username='%s'", 
-						photo.FilePath, photo.FileHash, photo.Uuid, photo.Username)
+	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid, latitude, longitude) SELECT chomp_user_id, '%s', '%s', '%s', '%f', '%f' from chomp_users WHERE chomp_username='%s'", 
+						photo.FilePath, photo.FileHash, photo.Uuid, *photo.Latitude, *photo.Longitude, photo.Username)
 	fmt.Printf("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
@@ -422,7 +427,7 @@ func (photo *Photos) GetPhotoInfoByUuid() error {
 	// m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
-	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid, latitude, longitude from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid, &photo.Latitude, &photo.Longitude)
 	fmt.Println("Row =", row)
 	fmt.Println("Row Type = ", reflect.TypeOf(photo))
 	if row != nil {
@@ -442,10 +447,10 @@ func (photo *Photos) GetMePhotoByUsername() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid
+	err = db.QueryRow(`SELECT id, chomp_users.chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid, latitude, longitude
 						FROM photos
 						JOIN chomp_users on photos.id = chomp_users.photo_id
-						WHERE chomp_users.chomp_username=?`,photo.Username).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+						WHERE chomp_users.chomp_username=?`,photo.Username).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid, &photo.Latitude, &photo.Longitude)
 	return err
 }
 
@@ -460,9 +465,9 @@ func (photo *Photos) GetMePhotoByPhotoID() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid
+	err = db.QueryRow(`SELECT chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid, latitude, longitude
 						FROM photos
-						WHERE id=?`,photo.ID).Scan(&photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid)
+						WHERE id=?`,photo.ID).Scan(&photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid, &photo.Latitude, &photo.Longitude)
 	return err
 }
 
@@ -478,8 +483,8 @@ func (photo *Photos) UpdateMePhoto() error {
 	fmt.Println("map = %v\n", photo)
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(photo))
 
-	_, err = db.Query("UPDATE photos set uuid=? WHERE id=?", 
-					photo.Uuid, photo.ID)
+	_, err = db.Query(`UPDATE photos set uuid=?, latitude = ?, longitude = ?
+					   WHERE id=?`, photo.Uuid, *photo.Latitude, *photo.Longitude, photo.ID)
 
 	return err
 }
@@ -711,7 +716,7 @@ func GetReviewsByUserID(userId int) (reviews []Review, error error) {
 	defer db.Close()
 	fmt.Printf("id = %v\n", userId)
 	fmt.Printf(`SELECT reviews.id, reviews.user_id, reviews.username,
-						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, restaurant_id, restaurants.name,
+						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, photo.latitude, photo.longitude, restaurant_id, restaurants.name,
 						latitude, longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated),
@@ -723,8 +728,8 @@ func GetReviewsByUserID(userId int) (reviews []Review, error error) {
 					   WHERE user_id =%v\n` + "\n",userId)
 
 		rows, err := db.Query(`SELECT reviews.id, reviews.user_id, reviews.username,
-						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, restaurant_id, reviews.source, restaurants.name,
-						latitude, longitude, location_num, restaurants.source, source_location_id,
+						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, photos.latitude, photos.longitude, restaurant_id, reviews.source, restaurants.name,
+						restaurants.latitude, restaurants.longitude, location_num, restaurants.source, source_location_id,
 						price, liked, finished, description,
 						UNIX_TIMESTAMP(reviews.created_date), UNIX_TIMESTAMP(reviews.last_updated), UNIX_TIMESTAMP(reviews.finished_time),
 						reviews.dish_tag_ids
@@ -746,7 +751,7 @@ func GetReviewsByUserID(userId int) (reviews []Review, error error) {
 		var blobIds string
 		fmt.Printf("About to scan\n")
 		if err := rows.Scan(&review.ID, &review.UserID, &review.Username,
-			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Photo.Uuid, &review.Restaurant.ID, &review.Source,
+			&review.Dish.ID, &review.Dish.Name, &review.Photo.ID, &review.Photo.Uuid, &review.Photo.Latitude, &review.Photo.Longitude, &review.Restaurant.ID, &review.Source,
 			&review.Restaurant.Name, &review.Restaurant.Latt, &review.Restaurant.Long, &review.Restaurant.LocationNum,
 			&review.Restaurant.Source, &review.Restaurant.SourceLocID, &review.Price, &review.Liked, &review.Finished, &review.Description,
 			&review.CreatedDate, &review.LastUpdated, &review.FinishedTime, &blobIds); err != nil {

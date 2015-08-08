@@ -111,10 +111,23 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 
 	case "POST":
 		var photoInfo db.Photos
+		// var photoInfoInput db.Photos
 		w.Header().Set("Content-Type", "application/json")
+
+		// input := newUser()
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&photoInfo); err != nil {
+			fmt.Printf("something %v\n", err)
+			fmt.Printf("Photos = %v\n", photoInfo)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Malformed JSON:-:" +  err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
 
 		photoInfo.Uuid = GenerateUuid()
 		photoInfo.Username = username
+		fmt.Printf("photoInfo = %v\n", photoInfo)
 	
 		err := photoInfo.SetMePhoto()
 		if err != nil {
@@ -179,7 +192,6 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 	case "PUT":
 		//variable definition
 		var photoInfo db.Photos
-		photoInfo.Username = username
 
 		vars := mux.Vars(r)
     	photo_id, thisErr := strconv.Atoi(vars["photoID"])
@@ -191,6 +203,16 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 			return
     	}
     	//collect photo info and gen uuid
+    	decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&photoInfo); err != nil {
+			fmt.Printf("something %v", err)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Malformed JSON:-:" +  err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		photoInfo.Username = username
     	photoInfo.ID =  photo_id
 
     	photoInfo.Uuid = GenerateUuid()
