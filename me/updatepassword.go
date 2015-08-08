@@ -3,13 +3,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"chompapi/db"
-	"chompapi/globalsessionkeeper"
+	"cmd/chompapi/db"
+	"cmd/chompapi/globalsessionkeeper"
 	"reflect"
 	"unicode/utf8"
 	"encoding/hex"
-	"chompapi/crypto"
-	"chompapi/messenger"
+	"cmd/chompapi/crypto"
+	"cmd/chompapi/messenger"
 )
 
 func UpdatePassword(w http.ResponseWriter, r *http.Request) {

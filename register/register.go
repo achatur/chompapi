@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"chompapi/db"
-	"chompapi/crypto"
+	"cmd/chompapi/db"
+	"cmd/chompapi/crypto"
 	"time"
-	"chompapi/globalsessionkeeper"
-	"chompapi/me"
+	"cmd/chompapi/globalsessionkeeper"
+	"cmd/chompapi/me"
 )
 
 func DoRegister(w http.ResponseWriter, r *http.Request) {

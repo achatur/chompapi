@@ -4,7 +4,7 @@ import (
     "github.com/dgrijalva/jwt-go"
     "encoding/json"
     "net/http"
-    "chompapi/globalsessionkeeper"
+    "cmd/chompapi/globalsessionkeeper"
     "io/ioutil"
     "fmt"
     "time"

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"chompapi/db"
-	"chompapi/globalsessionkeeper"
-	"chompapi/messenger"
+	"cmd/chompapi/db"
+	"cmd/chompapi/globalsessionkeeper"
+	"cmd/chompapi/messenger"
 )
 
 func ForgotUsername(w http.ResponseWriter, r *http.Request) {

@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"chompapi/db"
-	"chompapi/crypto"
+	"cmd/chompapi/db"
+	"cmd/chompapi/crypto"
 	"time"
-	"chompapi/globalsessionkeeper"
+	"cmd/chompapi/globalsessionkeeper"
 	"math/rand"
-	"chompapi/messenger"
+	"cmd/chompapi/messenger"
 )
 
 func ForgotPassword(w http.ResponseWriter, r *http.Request) {

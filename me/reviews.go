@@ -3,8 +3,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"chompapi/db"
-	"chompapi/globalsessionkeeper"
+	"cmd/chompapi/db"
+	"cmd/chompapi/globalsessionkeeper"
 	"reflect"
 )
 type ReturnJson struct {

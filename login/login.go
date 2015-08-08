@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"chompapi/db"
-	"chompapi/crypto"
+	"cmd/chompapi/db"
+	"cmd/chompapi/crypto"
 	"github.com/astaxie/beego/session"
-	"chompapi/globalsessionkeeper"
+	"cmd/chompapi/globalsessionkeeper"
 	"strconv"
 )
 
