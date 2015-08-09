@@ -141,268 +141,261 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 	sessionUserID := sessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
 
-	if sessionUser == nil {
+	//reset time to time.now() + maxlifetime
+	defer sessionStore.SessionRelease(w)
+
+	//create variables
+	username 	 := reflect.ValueOf(sessionUser).String()
+	userId 	 	 := reflect.ValueOf(sessionUserID).Int()
+
+	crawl 	 	 := new(db.Crawl)
+	instaData 	 := new(ParentData)
+	igStore 	 := new(db.IgStore)
+
+	instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+
+	crawl.Username = username
+	crawl.UserID = int(userId)
+	igStore.UserID = int(userId)
+
+	switch r.Method {
+
+	case "POST":
+
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&crawl); err != nil {
 			//need logging here instead of print
-			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Printf("something went wrong in login %v", err)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
 			return
-	} else {
-		//reset time to time.now() + maxlifetime
-		defer sessionStore.SessionRelease(w)
+		}
+		fileContent, err := ioutil.ReadFile("./chomp_private/file_download.json")
+		if err != nil {
+    	    myErrorResponse.Code = http.StatusInternalServerError
+    	    myErrorResponse.Error = err.Error()
+    	    myErrorResponse.HttpErrorResponder(w)
+    	    return
+    	}
+    	err = json.Unmarshal(fileContent, &FileDownload)
+    	if err != nil {
+    	    fmt.Printf("Err = %v", err)
+    	    myErrorResponse.Code = http.StatusBadRequest
+    	    myErrorResponse.Error = "Could not decode"
+    	    myErrorResponse.HttpErrorResponder(w)
+    	    return
+    	}
 
-		//create variables
-		username 	 := reflect.ValueOf(sessionUser).String()
-		userId 	 	 := reflect.ValueOf(sessionUserID).Int()
+    	/* //////////////////////////////////////// */
+		/*                Check Last Crawl 			*/
+		/* //////////////////////////////////////// */
 
-		crawl 	 	 := new(db.Crawl)
-		instaData 	 := new(ParentData)
-		igStore 	 := new(db.IgStore)
-
-		instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
-
-		crawl.Username = username
-		crawl.UserID = int(userId)
-		igStore.UserID = int(userId)
-
-		switch r.Method {
-
-		case "POST":
-
-			decoder := json.NewDecoder(r.Body)
-			if err := decoder.Decode(&crawl); err != nil {
-				//need logging here instead of print
-				fmt.Printf("something went wrong in login %v", err)
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Malformed JSON: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-			fileContent, err := ioutil.ReadFile("./chomp_private/file_download.json")
-			if err != nil {
-    		    myErrorResponse.Code = http.StatusInternalServerError
-    		    myErrorResponse.Error = err.Error()
-    		    myErrorResponse.HttpErrorResponder(w)
-    		    return
-    		}
-    		err = json.Unmarshal(fileContent, &FileDownload)
-    		if err != nil {
-    		    fmt.Printf("Err = %v", err)
-    		    myErrorResponse.Code = http.StatusBadRequest
-    		    myErrorResponse.Error = "Could not decode"
-    		    myErrorResponse.HttpErrorResponder(w)
-    		    return
-    		}
-
-    		/* //////////////////////////////////////// */
-			/*                Check Last Crawl 			*/
-			/* //////////////////////////////////////// */
-
-			fmt.Println("=======================================")
-			igStore.GetLastPull()
-			if err != nil {
-				fmt.Printf("Error = %v\n")
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Could not set last crawl: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-			}
-			fmt.Printf("\nigStore Pull = %v\n", igStore)
-			fmt.Println("=======================================")
-
-			iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
-			request := gorequest.New()
-			resp, body, errs := request.Get(iurl).End()
-
-			if errs != nil {
-				fmt.Printf("something went wrong in get %v", err)
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Malformed JSON: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-            err = json.Unmarshal([]byte(body), &instaData)
-
-			if err != nil {
-				fmt.Printf("Err = %v", err)
-				myErrorResponse.Code = http.StatusServiceUnavailable
-				myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-			}
-
-			if len(instaData.Data) == 0 {
-				fmt.Println("No New Photos")
-				myErrorResponse.Code = http.StatusOK
-				myErrorResponse.Error = "Nothing to update"
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-			fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
-			fmt.Printf("instaData = %v\n", instaData.Data[0])
-			fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
-			fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
-			fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
-
-			var reviewsToWrite []int
-
-			for _, tag_word := range crawl.Tags {
-
-				fmt.Printf("-----Tag----- = %v\n", tag_word)
-				for index, each := range instaData.Data {
-
-					fmt.Printf("Index = %v\neach = %v\n", index, each)
-					for i, e := range each.Tags {
-
-						fmt.Printf("Tag %v: %s\n", i,e)
-						if strings.Contains(strings.ToLower(e), tag_word) {
-
-							fmt.Printf("\n\nContains %v\n", tag_word)
-							fmt.Printf("Adding %v\n\n", index)
-							// add to unique slice
-							reviewsToWrite = AppendIfMissing(reviewsToWrite, index)
-						}
-					}
-				}
-			}
-
-			fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
-			if len(reviewsToWrite) == 0 {
-				fmt.Println("No New Photos")
-				myErrorResponse.Code = http.StatusOK
-				myErrorResponse.Error = "Nothing to update"
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-			if err != nil {
-				myErrorResponse.Code = http.StatusServiceUnavailable
-				myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
-			}
-
-			googConfig := new(jwt.Config)
-			gApiInfo := new(crypto.GApiInfo)
-    		fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
-
-    		if err != nil {
-    		    myErrorResponse.Code = http.StatusInternalServerError
-    		    myErrorResponse.Error = err.Error()
-    		    myErrorResponse.HttpErrorResponder(w)
-    		    return
-    		}
-    		err = json.Unmarshal(fileContent, &gApiInfo)
-    		if err != nil {
-    		    fmt.Printf("Err = %v", err)
-    		    myErrorResponse.Code = http.StatusBadRequest
-    		    myErrorResponse.Error = "Could not decode"
-    		    myErrorResponse.HttpErrorResponder(w)
-    		    return
-    		}
-
-    		googConfig.Email = gApiInfo.ClientEmail
-    		googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
-    		googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
-    		googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
-
-			storageReq := new(StorageReq)
-			ctx := context.Background()
-			client := googConfig.Client(ctx)
-
-			for i := range reviewsToWrite {
-
-				/* //////////////////////////////////////// */
-				/*                Download File 			*/
-				/* //////////////////////////////////////// */
-
-				fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
-
-				if err != nil {
-					fmt.Printf("No Review Created for %v\n", i)
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all reviews added: " + err.Error()
-					continue
-				}
-
-				/* //////////////////////////////////////// */
-				/*                Create UUID   		    */
-				/* //////////////////////////////////////// */
-
-				photoInfo := CreatePhoto(username)
-
-				if photoInfo.ID == 0 {
-					fmt.Println("Something went wrong to create photo")
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all reviews added: " + err.Error()
-				}
-
-				/* //////////////////////////////////////// */
-				/*                Store File    		    */
-				/* //////////////////////////////////////// */
-
-				storageReq.Bucket = FileDownload.Bucket
-				storageReq.FileName = FileDownload.FileLoc + fileName
-				storageReq.FileUuid = photoInfo.Uuid
-
-				err = storageReq.StorePhoto(client)
-
-				if err != nil {
-					fmt.Println("Something went wrong storing photo")
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all photos added: " + err.Error()
-					continue
-				}
-
-				/* //////////////////////////////////////// */
-				/*                Create Review   		    */
-				/* //////////////////////////////////////// */
-
-				err = instaData.Data[i].CreateReview(photoInfo)
-				if err == nil {
-
-					fmt.Printf("Review %v added\n", i)
-				} else {
-
-					fmt.Printf("No Review Created for %v\n", i)
-					myErrorResponse.Code = http.StatusPartialContent
-					myErrorResponse.Error = "Not all reviews added: " + err.Error()
-					continue
-				}
-
-				if i == 0 {
-
-					igStore.IgMediaID = instaData.Data[i].ID
-					igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
-
-					if err != nil {
-
-						fmt.Printf("Cound't convert string%v\n", err)
-						myErrorResponse.Code = http.StatusServiceUnavailable
-						myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
-						myErrorResponse.HttpErrorResponder(w)
-					}
-
-				/* //////////////////////////////////////// */
-				/*               Set Last Crawl 			*/
-				/* //////////////////////////////////////// */
-
-					err = igStore.UpdateLastPull()
-
-					if err != nil {
-						fmt.Printf("Could not update table\n")
-						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.Error = "Not all reviews added: " + err.Error()
-						return
-					}
-				}
-			}
-
-		default:
-
-			myErrorResponse.Code = http.StatusMethodNotAllowed
-			myErrorResponse.Error = "Method Not Allowed"
+		fmt.Println("=======================================")
+		igStore.GetLastPull()
+		if err != nil {
+			fmt.Printf("Error = %v\n")
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Could not set last crawl: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 		}
+		fmt.Printf("\nigStore Pull = %v\n", igStore)
+		fmt.Println("=======================================")
+
+		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
+		request := gorequest.New()
+		resp, body, errs := request.Get(iurl).End()
+
+		if errs != nil {
+			fmt.Printf("something went wrong in get %v", err)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+          err = json.Unmarshal([]byte(body), &instaData)
+
+		if err != nil {
+			fmt.Printf("Err = %v", err)
+			myErrorResponse.Code = http.StatusServiceUnavailable
+			myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+		}
+
+		if len(instaData.Data) == 0 {
+			fmt.Println("No New Photos")
+			myErrorResponse.Code = http.StatusOK
+			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
+		fmt.Printf("instaData = %v\n", instaData.Data[0])
+		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
+		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
+		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
+
+		var reviewsToWrite []int
+
+		for _, tag_word := range crawl.Tags {
+
+			fmt.Printf("-----Tag----- = %v\n", tag_word)
+			for index, each := range instaData.Data {
+
+				fmt.Printf("Index = %v\neach = %v\n", index, each)
+				for i, e := range each.Tags {
+
+					fmt.Printf("Tag %v: %s\n", i,e)
+					if strings.Contains(strings.ToLower(e), tag_word) {
+
+						fmt.Printf("\n\nContains %v\n", tag_word)
+						fmt.Printf("Adding %v\n\n", index)
+						// add to unique slice
+						reviewsToWrite = AppendIfMissing(reviewsToWrite, index)
+					}
+				}
+			}
+		}
+
+		fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
+		if len(reviewsToWrite) == 0 {
+			fmt.Println("No New Photos")
+			myErrorResponse.Code = http.StatusOK
+			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		if err != nil {
+			myErrorResponse.Code = http.StatusServiceUnavailable
+			myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		googConfig := new(jwt.Config)
+		gApiInfo := new(crypto.GApiInfo)
+    	fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
+
+    	if err != nil {
+    	    myErrorResponse.Code = http.StatusInternalServerError
+    	    myErrorResponse.Error = err.Error()
+    	    myErrorResponse.HttpErrorResponder(w)
+    	    return
+    	}
+    	err = json.Unmarshal(fileContent, &gApiInfo)
+    	if err != nil {
+    	    fmt.Printf("Err = %v", err)
+    	    myErrorResponse.Code = http.StatusBadRequest
+    	    myErrorResponse.Error = "Could not decode"
+    	    myErrorResponse.HttpErrorResponder(w)
+    	    return
+    	}
+
+    	googConfig.Email = gApiInfo.ClientEmail
+    	googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
+    	googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
+    	googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
+
+		storageReq := new(StorageReq)
+		ctx := context.Background()
+		client := googConfig.Client(ctx)
+
+		for i := range reviewsToWrite {
+
+			/* //////////////////////////////////////// */
+			/*                Download File 			*/
+			/* //////////////////////////////////////// */
+
+			fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
+
+			if err != nil {
+				fmt.Printf("No Review Created for %v\n", i)
+				myErrorResponse.Code = http.StatusPartialContent
+				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				continue
+			}
+
+			/* //////////////////////////////////////// */
+			/*                Create UUID   		    */
+			/* //////////////////////////////////////// */
+
+			photoInfo := CreatePhoto(username)
+
+			if photoInfo.ID == 0 {
+				fmt.Println("Something went wrong to create photo")
+				myErrorResponse.Code = http.StatusPartialContent
+				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+			}
+
+			/* //////////////////////////////////////// */
+			/*                Store File    		    */
+			/* //////////////////////////////////////// */
+
+			storageReq.Bucket = FileDownload.Bucket
+			storageReq.FileName = FileDownload.FileLoc + fileName
+			storageReq.FileUuid = photoInfo.Uuid
+
+			err = storageReq.StorePhoto(client)
+
+			if err != nil {
+				fmt.Println("Something went wrong storing photo")
+				myErrorResponse.Code = http.StatusPartialContent
+				myErrorResponse.Error = "Not all photos added: " + err.Error()
+				continue
+			}
+
+			/* //////////////////////////////////////// */
+			/*                Create Review   		    */
+			/* //////////////////////////////////////// */
+
+			err = instaData.Data[i].CreateReview(photoInfo)
+			if err == nil {
+
+				fmt.Printf("Review %v added\n", i)
+			} else {
+
+				fmt.Printf("No Review Created for %v\n", i)
+				myErrorResponse.Code = http.StatusPartialContent
+				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				continue
+			}
+
+			if i == 0 {
+
+				igStore.IgMediaID = instaData.Data[i].ID
+				igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
+
+				if err != nil {
+
+					fmt.Printf("Cound't convert string%v\n", err)
+					myErrorResponse.Code = http.StatusServiceUnavailable
+					myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
+					myErrorResponse.HttpErrorResponder(w)
+				}
+
+			/* //////////////////////////////////////// */
+			/*               Set Last Crawl 			*/
+			/* //////////////////////////////////////// */
+
+				err = igStore.UpdateLastPull()
+
+				if err != nil {
+					fmt.Printf("Could not update table\n")
+					myErrorResponse.Code = http.StatusInternalServerError
+					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+					return
+				}
+			}
+		}
+
+	default:
+
+		myErrorResponse.Code = http.StatusMethodNotAllowed
+		myErrorResponse.Error = "Method Not Allowed"
+		myErrorResponse.HttpErrorResponder(w)
 	}
 }
 
@@ -515,16 +508,11 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			}
 		} 
 	}
-	var tags string
-	for _,e := range instaData.Tags {
-		fmt.Printf("adding tag %v\n", e)
-		if tags != "" {
-			tags = tags + "," + e
-		} else {
-			tags = e
-		}
+
+	for _, tag := range instaData.Tags {
+		review.DishTags = append(review.DishTags, db.DishTag{0, tag})
 	}
-	review.DishTags = tags
+
 	if instaData.Likes.Count > 0 {
 		review.Liked.Bool = true
 		review.Liked.Valid = true

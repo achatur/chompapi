@@ -13,14 +13,19 @@ import (
 	"github.com/astaxie/beego/session"
 	"cmd/chompapi/me"
 	"cmd/chompapi/review"
+	_ "github.com/astaxie/beego/session/mysql"
 	"github.com/gorilla/mux"
 	"cmd/chompapi/crypto"
 	"encoding/base64"
 	"io/ioutil"
 	"encoding/json"
+	"cmd/chompapi/db"
+	"reflect"
 )
 
 type handler func(w http.ResponseWriter, r *http.Request)
+var MyErrorResponse globalsessionkeeper.ErrorResponse
+var GlobalSessions *session.Manager
 
 func main() {
 
@@ -32,16 +37,28 @@ func main() {
 	router.HandleFunc("/admin/fu", BasicAuth(register.ForgotUsername))
 	router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
-	router.HandleFunc("/me", me.GetMe)
-	router.HandleFunc("/me/photos", me.PostPhotoId)
-	router.HandleFunc("/me/photos/{photoID}", me.PostPhotoId)
-	router.HandleFunc("/me/reviews", me.Reviews)
-	router.HandleFunc("/me/update/up", me.UpdatePassword)
+	router.HandleFunc("/me", SessionAuth(me.GetMe))
+	router.Queries("code", "{code}").HandlerFunc(SessionAuth(me.Instagram))
+	router.Queries("error", "{error}").HandlerFunc(SessionAuth(me.Instagram))
 
-	router.HandleFunc("/reviews", review.Reviews)
-	router.HandleFunc("/reviews/{reviewID}", review.Reviews)
+	router.HandleFunc("/me/logout", SessionAuth(me.Logout))
+
+	router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
+	router.HandleFunc("/me/photos", SessionAuth(me.PostPhotoId))
+	router.HandleFunc("/me/photos/{photoID}", SessionAuth(me.PostPhotoId))
+	router.HandleFunc("/me/reviews", SessionAuth(me.Reviews))
+	router.HandleFunc("/me/update/up", SessionAuth(me.UpdatePassword))
+	router.HandleFunc("/me/update/d/{userID}", SessionAuth(me.DeleteMe))
+	router.HandleFunc("/me/update/instaClick", SessionAuth(me.InstagramLinkClick))
+
+	router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
+	router.HandleFunc("/me/update/astu", SessionAuth(me.UpdateAccountSetupTimestamp))
+
+
+	router.HandleFunc("/reviews", SessionAuth(review.Reviews))
+	router.HandleFunc("/reviews/{reviewID}", SessionAuth(review.Reviews))
 	
-	router.HandleFunc("/insta/crawl", review.Crawl)
+	router.HandleFunc("/insta/crawl", SessionAuth(review.Crawl))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {
@@ -49,7 +66,7 @@ func main() {
 	}
 
 	if strings.Contains(string(port), "443") {
-		log.Fatal(http.ListenAndServeTLS(":"+port, "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.pem", "/home/amir.chatur/working/playground/gen_cert/thechompapp.com.key.pem", router))
+		log.Fatal(http.ListenAndServeTLS(":"+port, globalsessionkeeper.ChompConfig.Cert.Cert, globalsessionkeeper.ChompConfig.Cert.Key, router))
 	} else {
 		log.Fatal(http.ListenAndServe(":" + port, router))
 	}
@@ -63,11 +80,13 @@ func init() {
 
 	var err error
 	GetConfig()
-
-	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", `{"EnableSetCookie":true, "Secure":true, "cookieLifeTime":604800, "CookieName":"chomp_sessionid","Gclifetime":300,"Maxlifetime":604800,"ProviderConfig":"root@tcp(172.16.0.1:3306)/chomp"}`)
+	sessionConfig, _ := json.Marshal(globalsessionkeeper.ChompConfig.ManagerConfig)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", string(sessionConfig))
 
 	if err != nil {
-		fmt.Printf("Error")
+		fmt.Printf("Coud not start session..Error: %v\n", err.Error())
+		os.Exit(-1)
+
 	}
 
 	globalsessionkeeper.GlobalSessions.SetSecure(true)
@@ -108,8 +127,57 @@ func BasicAuth(pass handler) handler {
         pass(w, r)
     }
 }
+
+func SessionAuth(pass handler) handler {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie := globalsessionkeeper.GetCookie(r)
+		if cookie == "" {
+			//need logging here instead of print
+			fmt.Println("Session Auth Cookie = %v", cookie)
+			MyErrorResponse.Code = http.StatusUnauthorized
+			MyErrorResponse.Error = "No Cookie Present"
+			MyErrorResponse.HttpErrorResponder(w)
+			return
+		}
+	
+		sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+		if err != nil {
+			//need logging here instead of print
+			MyErrorResponse.Code = http.StatusUnauthorized
+			MyErrorResponse.Error = "Session Expired"
+			MyErrorResponse.HttpErrorResponder(w)
+			return
+		}
+	
+		sessionUser := sessionStore.Get("username")
+		fmt.Printf("Session Auth SessionUser = %v\n", sessionUser)
+		if sessionUser == nil {
+			//need logging here instead of print
+			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
+			MyErrorResponse.Code = http.StatusUnauthorized
+			MyErrorResponse.Error = "Session Expired"
+			MyErrorResponse.HttpErrorResponder(w)
+			return
+		}
+
+		fmt.Printf("Session Auth Getting user info for user %v\n", sessionUser)
+		userInfo := new(db.UserInfo)
+		userInfo.Username = reflect.ValueOf(sessionUser).String()
+		err = userInfo.GetUserInfo()
+		if err != nil {
+			//need logging here instead of print
+			fmt.Printf("Session Auth Username not found, returning unauth, Get has %v\n", sessionStore)
+			MyErrorResponse.Code = http.StatusUnauthorized
+			MyErrorResponse.Error = "Session Expired"
+			MyErrorResponse.HttpErrorResponder(w)
+			return
+		}
+		pass(w, r)
+	}
+}
  
- func GetConfig() error {
+func GetConfig() error {
 	configFile, err := ioutil.ReadFile("./chomp_private/config.json")
 	if err != nil {
 	    return err

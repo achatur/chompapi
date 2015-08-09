@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"cmd/chompapi/db"
 	"cmd/chompapi/crypto"
-	"github.com/astaxie/beego/session"
+	_ "github.com/astaxie/beego/session"
 	"cmd/chompapi/globalsessionkeeper"
 	"strconv"
+	"time"
 )
 
 type LoginInput struct {
@@ -16,9 +17,10 @@ type LoginInput struct {
 	Password string
 }
 
-var globalSessions *session.Manager
+// var globalSessions *session.Manager
 
 func DoLogin(w http.ResponseWriter, r *http.Request) {
+
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
@@ -50,6 +52,18 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		}
 		fmt.Println("return from db = %v", userInfo)
 
+		if (userInfo.IsPasswordTemp) {
+
+			if userInfo.PasswordExpiry < int(time.Now().Unix()) {
+				myErrorResponse.Code = http.StatusUnauthorized
+				myErrorResponse.Error = "Temp Password Expired"
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+
+		}
+		
+
 		dbPassword := userInfo.PasswordHash
 
 		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
@@ -60,6 +74,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			//create session using the request data which includes the cookie/sessionid
 			fmt.Printf("about to start session\n")
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
+			// sessionStore, err := GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				//need logging here instead of print
 				fmt.Printf("Error, could not start session %v\n", err)
@@ -107,8 +122,4 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
-	// w.WriteHeader(http.StatusUnauthorized)
-	myErrorResponse.Code = http.StatusUnauthorized
-	myErrorResponse.HttpErrorResponder(w)
-	return
 }

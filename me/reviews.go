@@ -25,58 +25,62 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 	}
-	//input.Username = sessionStore.Get("username")
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
-	fmt.Println("SessionUser = %v", sessionUser)
-	fmt.Println("This SessionId = %v", sessionUserID)
+	fmt.Printf("SessionUser = %v\n", sessionUser)
+	fmt.Printf("This SessionUserID = %v\n", sessionUserID)
 
 
-	if sessionUser == nil {
-			//need logging here instead of print
-			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-	} else {
-		//reset time to time.now() + maxlifetime
-		defer sessionStore.SessionRelease(w)
+	//reset time to time.now() + maxlifetime
+	defer sessionStore.SessionRelease(w)
 
-		//create variables
-		userId := reflect.ValueOf(sessionUserID).Int()
+	//create variables
+	userId := reflect.ValueOf(sessionUserID).Int()
 
-		switch r.Method {
+	switch r.Method {
 
-		case "GET":
-			reviews := db.GetReviewsByUserID(int(userId))
-			if reviews == nil {
-				//something bad happened
-				fmt.Printf("something went while retrieving data %v\n", err)
-				fmt.Printf("Reviews list = %v\n", reviews)
-				w.Header().Set("Content-Type", "application/json")
-				emptyList := json.RawMessage(`{"reviews" : [] }`)
-            	json.NewEncoder(w).Encode(&emptyList)
-				return
-			}
+	case "GET":
+		reviews, err := db.GetReviewsByUserID(int(userId))
+		if err != nil {
+			fmt.Printf("something went while retrieving data %v\n", err)
 			fmt.Printf("Reviews list = %v\n", reviews)
 			w.Header().Set("Content-Type", "application/json")
-			returnJson :=  new(ReturnJson)
-			returnJson.Reviews = reviews
-			fmt.Printf("\n\nReview: reviews = %v\n", returnJson)
-            json.NewEncoder(w).Encode(returnJson)
-            if err != nil {
-                fmt.Printf("something went while retrieving data %v\n", err)
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-                return
-            }
-            return
-
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			// emptyList := json.RawMessage(`{"reviews" : [] }`)
+			myErrorResponse.Code = http.StatusBadRequest
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+			returnJson := reviews
+         	// json.NewEncoder(w).Encode(&emptyList)
+         	json.NewEncoder(w).Encode(&returnJson)
 			return
 		}
-	}
+		if reviews == nil {
+			//something bad happened
+			fmt.Printf("something went while retrieving data %v\n", err)
+			fmt.Printf("Reviews list = %v\n", reviews)
+			w.Header().Set("Content-Type", "application/json")
+			emptyList := json.RawMessage(`{"reviews" : [] }`)
+         	json.NewEncoder(w).Encode(&emptyList)
+			return
+		}
+		fmt.Printf("Reviews list = %v\n", reviews)
+		w.Header().Set("Content-Type", "application/json")
+		returnJson :=  new(ReturnJson)
+		returnJson.Reviews = reviews
+		fmt.Printf("\n\nReview: reviews = %v\n", returnJson)
+         json.NewEncoder(w).Encode(returnJson)
+         if err != nil {
+             fmt.Printf("something went while retrieving data %v\n", err)
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = err.Error()
+			myErrorResponse.HttpErrorResponder(w)
+            return
+         }
+         return
 
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 }
 
