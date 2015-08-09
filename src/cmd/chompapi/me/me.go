@@ -334,21 +334,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 	        return
 	    }
 
-	    //change userid and update table
-		fmt.Printf("Deleting me for user %v, photo ID = %v\n", userInfo.Username, userInfo.Photo.ID)
-		fmt.Printf("Deleting me photo %v\n", userInfo.Photo.ID)
-	    photoInfo := new(db.Photos)
-	    photoInfo.ID = userInfo.Photo.ID
-	    err = photoInfo.DeleteMePhoto()
-		if err != nil {
-			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
-		}
-
-		fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)
+	    fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)
 	    err = userInfo.AbandonAllPhotos()
 		if err != nil {
 			//need logging here instead of print
@@ -358,6 +344,22 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		
+	    //change userid and update table
+		fmt.Printf("Deleting me for user %v, photo ID = %v\n", userInfo.Username, userInfo.Photo.ID)
+		fmt.Printf("Deleting me photo %v\n", userInfo.Photo.ID)
+	    photoInfo := new(db.Photos)
+	    photoInfo.ID = userInfo.Photo.ID
+	    if userInfo.Photo.ID != 0 {
+	    	err = photoInfo.DeleteMePhoto()
+			if err != nil {
+				//need logging here instead of print
+				myErrorResponse.Code = http.StatusInternalServerError
+				myErrorResponse.Error = err.Error()
+				myErrorResponse.HttpErrorResponder(w)
+				return
+			}
+	    }
+
 	    fmt.Printf("Deleting reviews for user %v\n", userInfo.Username)
 		err = userInfo.DeleteAllReviewsByUser()
 	    if err != nil {
