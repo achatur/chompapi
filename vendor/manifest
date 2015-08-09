@@ -1,0 +1,89 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/astaxie/beego/session",
+			"repository": "https://github.com/astaxie/beego",
+			"revision": "a89f14d80dab442927bdc11d641aa1250ab8ad71",
+			"branch": "master",
+			"path": "/session"
+		},
+		{
+			"importpath": "github.com/astaxie/beego/utils",
+			"repository": "https://github.com/astaxie/beego",
+			"revision": "a89f14d80dab442927bdc11d641aa1250ab8ad71",
+			"branch": "master",
+			"path": "/utils"
+		},
+		{
+			"importpath": "github.com/dgrijalva/jwt-go",
+			"repository": "https://github.com/dgrijalva/jwt-go",
+			"revision": "9fe8afe96d32468fba230b8b22acea86251f0506",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/go-sql-driver/mysql",
+			"repository": "https://github.com/go-sql-driver/mysql",
+			"revision": "3dd7008ac1529aca1bcd8a9db75228a71ba23cac",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gorilla/context",
+			"repository": "https://github.com/gorilla/context",
+			"revision": "215affda49addc4c8ef7e2534915df2c8c35c6cd",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/gorilla/mux",
+			"repository": "https://github.com/gorilla/mux",
+			"revision": "ffb3f683aad4dcbc2bb65177799563252585dd22",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/parnurzeal/gorequest",
+			"repository": "https://github.com/parnurzeal/gorequest",
+			"revision": "3ac223894abdc1d3f4fb6b196df15c18b0ed4a18",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/pborman/uuid",
+			"repository": "https://github.com/pborman/uuid",
+			"revision": "ca53cad383cad2479bbba7f7a1a05797ec1386e4",
+			"branch": "master"
+		},
+		{
+			"importpath": "golang.org/x/net/context",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "1bc0720082d79ce7ffc6ef6e523d00d46b0dee45",
+			"branch": "master",
+			"path": "/context"
+		},
+		{
+			"importpath": "golang.org/x/net/publicsuffix",
+			"repository": "https://go.googlesource.com/net",
+			"revision": "1bc0720082d79ce7ffc6ef6e523d00d46b0dee45",
+			"branch": "master",
+			"path": "/publicsuffix"
+		},
+		{
+			"importpath": "golang.org/x/oauth2",
+			"repository": "https://go.googlesource.com/oauth2",
+			"revision": "8914e5017ca260f2a3a1575b1e6868874050d95e",
+			"branch": "master"
+		},
+		{
+			"importpath": "google.golang.org/api/googleapi",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"revision": "0a735f7ec81c85ce7ec31bf7a67e125ef62266ec",
+			"branch": "master",
+			"path": "/googleapi"
+		},
+		{
+			"importpath": "google.golang.org/api/storage/v1",
+			"repository": "https://code.googlesource.com/google-api-go-client",
+			"revision": "0a735f7ec81c85ce7ec31bf7a67e125ef62266ec",
+			"branch": "master",
+			"path": "/storage/v1"
+		}
+	]
+}

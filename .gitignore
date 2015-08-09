@@ -1,3 +1,5 @@
 pkg/
 bin/
-chomp_private/
+src/cmd/chompapi/chomp_private/
+src/cmd/chompapi/.git
+src/cmd/chompapi/.gitignore
