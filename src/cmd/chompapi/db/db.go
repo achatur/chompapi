@@ -216,7 +216,7 @@ func (userInfo *RegisterInput) SetUserInfo() error {
 	// if err != nil {
 	// 	return err
 	// }
-	results, err := db.Exec(`INSERT INTO chomp_users SET chomp_username=?, email=?, phone_number=?, password_hash=?, dob='?', gender='?`, 
+	results, err := db.Exec(`INSERT INTO chomp_users SET chomp_username=?, email=?, phone_number=?, password_hash=?, dob=?, gender=?`, 
 							userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 
 	if err != nil {
