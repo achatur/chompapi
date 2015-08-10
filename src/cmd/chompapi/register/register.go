@@ -56,6 +56,8 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		var photoInfo db.Photos
 		photoInfo.Uuid = me.GenerateUuid()
 		photoInfo.Username = input.Username
+		*photoInfo.Latt = 0
+		*photoInfo.Long = 0
 		err = photoInfo.SetMePhoto()
 			if err != nil {
 				//need logging here instead of print
