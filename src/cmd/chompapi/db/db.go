@@ -380,7 +380,7 @@ func (photo Photos) SetMePhoto() error {
 	}
 
 	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid, latitude, longitude) SELECT chomp_user_id, '%s', '%s', '%s', '%f', '%f' from chomp_users WHERE chomp_username='%s'", 
-						photo.FilePath, photo.FileHash, photo.Uuid, *photo.Latitude, *photo.Longitude, photo.Username)
+						photo.FilePath, photo.FileHash, photo.Uuid, lat, long, photo.Username)
 	fmt.Printf("Query = %v\n", query)
 
 	stmt, err := db.Prepare(query)
