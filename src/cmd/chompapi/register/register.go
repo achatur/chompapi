@@ -84,6 +84,18 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
+		igStore 	 := new(db.IgStore)
+		igStore.UserID = int(userId)
+		igStore.IgMediaID = "fake"
+		igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
+		err = igStore.UpdateLastPull()
+		if err != nil {
+			fmt.Printf("Could not update table\n")
+			myErrorResponse.Code = http.StatusInternalServerError
+			myErrorResponse.Error = "IG UpdateLastPull failed: " + err.Error()
+			return
+		}
+
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)
