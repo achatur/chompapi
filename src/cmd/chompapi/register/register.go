@@ -88,7 +88,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		igStore 	 := new(db.IgStore)
 		igStore.UserID = input.UserID
 		igStore.IgMediaID = "fake"
-		igStore.IgCreatedTime = time.Unix(int64(input.Dob), 0)
+		igStore.IgCreatedTime = time.Now().Unix()
 		err = igStore.UpdateLastPull()
 		if err != nil {
 			fmt.Printf("Could not update table\n")
