@@ -371,8 +371,8 @@ func (photo Photos) SetMePhoto() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
 	fmt.Printf("Type of Photo = %v\n", reflect.TypeOf(photo))
-	lat = 0.0
-	long = 0.0
+	lat := 0.0
+	long := 0.0
 
 	if photo.Latitude != nil {
 		lat = *photo.Latitude
