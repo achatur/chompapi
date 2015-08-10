@@ -371,6 +371,13 @@ func (photo Photos) SetMePhoto() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
 	fmt.Printf("Type of Photo = %v\n", reflect.TypeOf(photo))
+	lat = 0.0
+	long = 0.0
+
+	if photo.Latitude != nil {
+		lat = *photo.Latitude
+		long = *photo.Longitude
+	}
 
 	query := fmt.Sprintf("INSERT into photos(chomp_user_id, file_path, file_hash, uuid, latitude, longitude) SELECT chomp_user_id, '%s', '%s', '%s', '%f', '%f' from chomp_users WHERE chomp_username='%s'", 
 						photo.FilePath, photo.FileHash, photo.Uuid, *photo.Latitude, *photo.Longitude, photo.Username)
