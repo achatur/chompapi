@@ -19,7 +19,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		// input := newUser()
-		input = new(db.RegisterInput)
+		input := new(db.RegisterInput)
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
