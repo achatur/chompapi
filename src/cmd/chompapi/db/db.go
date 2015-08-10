@@ -14,6 +14,7 @@ import (
 )
 
 type RegisterInput struct {
+	UserID 		 int
 	Username	 string
 	Email   	 string
 	Password	 string
@@ -223,8 +224,8 @@ func (userInfo *RegisterInput) SetUserInfo() error {
 		return err
 	}
 	
-	userInfo.UserId, err = results.LastInsertId()
-	fmt.Printf("Results = %v\n err3 = %v\n", userInfo.UserId , err)
+	userInfo.UserID, err = results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", userInfo.UserID , err)
 	fmt.Printf("Error = %v\n", err)
 	return nil
 }
