@@ -86,7 +86,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		igStore 	 := new(db.IgStore)
-		igStore.UserID = int(userId)
+		igStore.UserID = input.UserID
 		igStore.IgMediaID = "fake"
 		igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
 		err = igStore.UpdateLastPull()
