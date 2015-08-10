@@ -224,7 +224,8 @@ func (userInfo *RegisterInput) SetUserInfo() error {
 		return err
 	}
 	
-	userInfo.UserID, err = int(results.LastInsertId())
+	id, err := results.LastInsertId()
+	userInfo.UserID = int(id)
 	fmt.Printf("Results = %v\n err3 = %v\n", userInfo.UserID , err)
 	fmt.Printf("Error = %v\n", err)
 	return nil
