@@ -711,7 +711,8 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Println("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("inside call: restaurant name = %v\n", restaurant.Name)
 	fmt.Printf("Type of Restaurant = %v\n\n", reflect.TypeOf(restaurant))
 	fmt.Printf(`UPDATE restaurants
 				SET latitude = %v, longitude = %v,
@@ -724,9 +725,10 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 	results, err2 := db.Exec(`UPDATE restaurants
 						 SET latitude = ?, longitude = ?,
 						 location_num = ?, source = ?,
-						 source_location_id = ?`, restaurant.Latt, restaurant.Long,
+						 source_location_id = ?
+						 WHERE id = ?`, restaurant.Latt, restaurant.Long,
 						 	  					  restaurant.LocationNum, restaurant.Source,
-						 	  					  restaurant.SourceLocID)
+						 	  					  restaurant.SourceLocID, restaurant.ID)
 	id, err2 := results.LastInsertId()
 	restaurant.ID = int(id)
 

@@ -225,7 +225,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 		if len(instaData.Data) == 0 {
 			fmt.Println("No New Photos")
-			myErrorResponse.Code = http.StatusOK
+			myErrorResponse.Code = http.StatusNoContent
 			myErrorResponse.Error = "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
@@ -262,7 +262,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
 		if len(reviewsToWrite) == 0 {
 			fmt.Println("No New Photos")
-			myErrorResponse.Code = http.StatusOK
+			myErrorResponse.Code = http.StatusNoContent
 			myErrorResponse.Error = "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
@@ -303,16 +303,16 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()
 		client := googConfig.Client(ctx)
 
-		for i := range reviewsToWrite {
+		for i, elem := range reviewsToWrite {
 
 			/* //////////////////////////////////////// */
 			/*                Download File 			*/
 			/* //////////////////////////////////////// */
 
-			fileName, err := downloadFile(instaData.Data[i].Images.StandardRes.Url)
+			fileName, err := downloadFile(instaData.Data[elem].Images.StandardRes.Url)
 
 			if err != nil {
-				fmt.Printf("No Review Created for %v\n", i)
+				fmt.Printf("No Review Created for %v\n", elem)
 				myErrorResponse.Code = http.StatusPartialContent
 				myErrorResponse.Error = "Not all reviews added: " + err.Error()
 				continue
@@ -351,13 +351,13 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			/*                Create Review   		    */
 			/* //////////////////////////////////////// */
 
-			err = instaData.Data[i].CreateReview(photoInfo)
+			err = instaData.Data[elem].CreateReview(photoInfo)
 			if err == nil {
 
-				fmt.Printf("Review %v added\n", i)
+				fmt.Printf("Review %v added\n", elem)
 			} else {
 
-				fmt.Printf("No Review Created for %v\n", i)
+				fmt.Printf("No Review Created for %v\n", elem)
 				myErrorResponse.Code = http.StatusPartialContent
 				myErrorResponse.Error = "Not all reviews added: " + err.Error()
 				continue
@@ -365,8 +365,8 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 			if i == 0 {
 
-				igStore.IgMediaID = instaData.Data[i].ID
-				igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
+				igStore.IgMediaID = instaData.Data[elem].ID
+				igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[elem].CreatedTime)
 
 				if err != nil {
 
@@ -482,13 +482,19 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				fmt.Println("Location ID Equal, using db values")
 				review.Restaurant = *dbRestaurant
 			}
-		} else if dbRestaurant.Source == "instagram"  {
+		} else if dbRestaurant.Source == "factual"  {
+			//trust DB over New
+			fmt.Println("Source not same, DB == factual")
+			review.Restaurant = *dbRestaurant
+
+		} else if dbRestaurant.Source == "instagram"  && review.Restaurant.Source != "factual" {
 			//trust DB over New
 			fmt.Println("Source not same, DB == insta")
 			review.Restaurant = *dbRestaurant
 
-		} else if review.Restaurant.Source == "instagram" {
-			fmt.Println("New restaurant instagram, updating db")
+		} else if review.Restaurant.Source == "instagram" || 
+				  review.Restaurant.Source == "factual" {
+			fmt.Println("New restaurant instagram or factual, updating db")
 			if dbRestaurant.LocationNum == 0 {
 				review.Restaurant.UpdateRestaurant()
 				if err != nil {

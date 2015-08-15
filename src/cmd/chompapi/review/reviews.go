@@ -120,14 +120,21 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					fmt.Println("Location ID Equal, using db values")
 					review.Restaurant = *dbRestaurant
 				}
-			} else if dbRestaurant.Source == "instagram"  {
+			} else if dbRestaurant.Source == "factual"  {
+				//trust DB over New
+				fmt.Println("Source not same, DB == factual")
+				review.Restaurant = *dbRestaurant
+				//review.CreateReview()
+			} else if dbRestaurant.Source == "instagram" && review.Restaurant.Source != "factual"  {
 				//trust DB over New
 				fmt.Println("Source not same, DB == insta")
 				review.Restaurant = *dbRestaurant
 				//review.CreateReview()
-			} else if review.Restaurant.Source == "instagram" {
-				fmt.Println("New restaurant instagram, updating db")
+			} else if review.Restaurant.Source == "instagram" ||
+					   review.Restaurant.Source == "factual" {
+				fmt.Printf("New restaurant %v, updating db\n", review.Restaurant.Source)
 				if dbRestaurant.LocationNum == 0 {
+					review.Restaurant.ID = dbRestaurant.ID
 					review.Restaurant.UpdateRestaurant()
 					if err != nil {
 						//something bad happened
@@ -150,7 +157,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 						return	
 					}
 				}
-			} 
+			}  
 		}  
 		// all other cases
 		//Validate dish
