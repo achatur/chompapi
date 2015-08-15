@@ -19,9 +19,9 @@ type LoginInput struct {
 
 // var globalSessions *session.Manager
 
-func DoLogin(w http.ResponseWriter, r *http.Request) {
+func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) (error) {
 
-	var myErrorResponse globalsessionkeeper.ErrorResponse
+	// var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
 	case "POST":
@@ -31,34 +31,36 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in login %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			// myErrorResponse.Code = http.StatusBadRequest
+			// myErrorResponse.Desc= "Malformed JSON: " + err.Error()
+			// myErrorResponse.HttpErrorResponder(w)
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
 		userInfo.Username = input.Username
-		err := userInfo.GetUserInfo()
+		err := userInfo.GetUserInfo(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			myErrorResponse.Code = http.StatusUnauthorized
-			myErrorResponse.Error = "Invalid Username"
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			// myErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "Invalid Username"
+			// myErrorResponse.HttpErrorResponder(w)
+			// return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Invalid Username"}
 		}
 		fmt.Println("return from db = %v", userInfo)
 
 		if (userInfo.IsPasswordTemp) {
 
 			if userInfo.PasswordExpiry < int(time.Now().Unix()) {
-				myErrorResponse.Code = http.StatusUnauthorized
-				myErrorResponse.Error = "Temp Password Expired"
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				// myErrorResponse.Code = http.StatusUnauthorized
+				// myErrorResponse.Desc= "Temp Password Expired"
+				// myErrorResponse.HttpErrorResponder(w)
+				// return
+				return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Temp Password Expired"}
 			}
 
 		}
@@ -78,7 +80,7 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				//need logging here instead of print
 				fmt.Printf("Error, could not start session %v\n", err)
-				break
+				return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
 			}
 			defer sessionStore.SessionRelease(w) //update db upon completion for request
 
@@ -90,12 +92,13 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
+					return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
 				}
 				err = sessionStore.Set("userId", userInfo.UserID)
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
-					break
+					return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
 				}
 			} else {
 				//need logging here instead of print
@@ -104,10 +107,11 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 		} else {
 			fmt.Printf("Login Failed")
 			w.WriteHeader(http.StatusUnauthorized)
-			myErrorResponse.Code = http.StatusUnauthorized
-			myErrorResponse.Error = "Invalid Password"
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			// myErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "Invalid Password"
+			// myErrorResponse.HttpErrorResponder(w)
+			// return
+			return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Password"}
 		}
 		//Send back 204 no content (with cookie) + temp password header
 		if userInfo.PasswordExpiry > 0 && userInfo.IsPasswordTemp == true {
@@ -115,11 +119,12 @@ func DoLogin(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Location", "https://chompapi.com/me/update/up")
 		}
 		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 	default:
 		// w.WriteHeader(http.StatusUnauthorized)
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		// myErrorResponse.Code = http.StatusUnauthorized
+		// myErrorResponse.HttpErrorResponder(w)
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
+		// return
 	}
 }

@@ -47,7 +47,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			// emptyList := json.RawMessage(`{"reviews" : [] }`)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			returnJson := reviews
          	// json.NewEncoder(w).Encode(&emptyList)
@@ -72,7 +72,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
          if err != nil {
              fmt.Printf("something went while retrieving data %v\n", err)
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
             return
          }

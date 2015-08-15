@@ -36,7 +36,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -58,7 +58,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Username Not Found" + err.Error()
+			myErrorResponse.Desc= "Username Not Found" + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		} else {
@@ -69,7 +69,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 	
 			if err != nil {
 				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = "Malformed JSON " + err.Error()
+				myErrorResponse.Desc= "Malformed JSON " + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
@@ -92,7 +92,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -120,7 +120,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("something %v\n", err)
 			fmt.Printf("Photos = %v\n", photoInfo)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON:-:" +  err.Error()
+			myErrorResponse.Desc= "Malformed JSON:-:" +  err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -133,7 +133,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		} 
@@ -141,7 +141,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		if err2 != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -161,7 +161,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
     	if err != nil {
     		fmt.Println("Not An Integer")
     		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
     	}
@@ -172,7 +172,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
          if err != nil {
              //need logging here instead of print
              myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
              return
          } else {
@@ -181,7 +181,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
              json.NewEncoder(w).Encode(photoInfo)
              if err != nil {
                  myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
+				myErrorResponse.Desc= err.Error()
 				myErrorResponse.HttpErrorResponder(w)
                  return
              }
@@ -198,7 +198,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
     	if thisErr != nil {
     		fmt.Println("Not An Integer")
     		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
     	}
@@ -207,7 +207,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&photoInfo); err != nil {
 			fmt.Printf("something %v", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON:-:" +  err.Error()
+			myErrorResponse.Desc= "Malformed JSON:-:" +  err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -219,7 +219,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
     	fmt.Println("uuid = ", photoInfo.Uuid)
     	if photoInfo.Uuid == "" {
     		myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
     		return
     	}
@@ -230,7 +230,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
          if err != nil {
              //need logging here instead of print
              myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
              return
          } 
@@ -238,7 +238,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -258,7 +258,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
     	if thisErr != nil {
     		fmt.Println("Not An Integer")
     		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Bad Photo ID " + err.Error()
+			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
     	}
@@ -269,7 +269,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
          if err != nil {
              //need logging here instead of print
              myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
              return
          }
@@ -279,7 +279,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -300,7 +300,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -318,7 +318,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Not An Integer")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Bad User ID " + err.Error()
+			myErrorResponse.Desc= "Bad User ID " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -329,7 +329,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 	        //need logging here instead of print
 	        myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 	        return
 	    }
@@ -339,7 +339,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -354,7 +354,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				//need logging here instead of print
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
+				myErrorResponse.Desc= err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
@@ -367,7 +367,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 	        if strings.Contains("0 rows deleted", err.Error()) == false  {
 
 	        	myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
+				myErrorResponse.Desc= err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 	        	return
 	        }
@@ -378,7 +378,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 	    if err != nil {
 	        //need logging here instead of print
 	        myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 	        return
 	    }
@@ -387,7 +387,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		// if err != nil {
 		// 	//need logging here instead of print
 		// 	myErrorResponse.Code = http.StatusInternalServerError
-		// 	myErrorResponse.Error = err.Error()
+		// 	myErrorResponse.Desc= err.Error()
 		// 	myErrorResponse.HttpErrorResponder(w)
 		// 	return
 		// }
@@ -397,7 +397,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -418,7 +418,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -439,7 +439,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Username Not Found" + err.Error()
+			myErrorResponse.Desc= "Username Not Found" + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		} else {
@@ -469,7 +469,7 @@ func LogoutAll(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -490,7 +490,7 @@ func LogoutAll(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Username Not Found" + err.Error()
+			myErrorResponse.Desc= "Username Not Found" + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		} else {
@@ -516,7 +516,7 @@ func Instagram(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//need logging here instead of print
 		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Error = err.Error()
+		myErrorResponse.Desc= err.Error()
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
@@ -537,14 +537,14 @@ func Instagram(w http.ResponseWriter, r *http.Request) {
 		if query["error"] != "" {
 			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = query["error"]
+			myErrorResponse.Desc= query["error"]
 			myErrorResponse.HttpErrorResponder(w)
 			userInfo.InstaCode = ""
 			err = userInfo.UpdateInstaCode()
 			if err != nil {
 				fmt.Printf("Err updating 1 instacode %v\n", err)
 				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Error = err.Error()
+				myErrorResponse.Desc= err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 			}
 			return
@@ -554,7 +554,7 @@ func Instagram(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Err updating 2 instacode %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -605,7 +605,7 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -618,7 +618,7 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Something not valid")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -628,7 +628,7 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Error = "Invalid Method"
+		myErrorResponse.Desc= "Invalid Method"
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}

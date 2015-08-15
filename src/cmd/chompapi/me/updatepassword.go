@@ -49,7 +49,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 		}
 
@@ -68,7 +68,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		if err := input.GetUserInfo(); err != nil {
 			fmt.Printf("Could not find user")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "User Not Found " + err.Error()
+			myErrorResponse.Desc= "User Not Found " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -79,7 +79,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 		if err := input.UpdatePassword(false); err != nil {
 			fmt.Println("Error! = %v\n", err)
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = "Could not Update Password: " + err.Error()
+			myErrorResponse.Desc= "Could not Update Password: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -96,7 +96,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	    if err != nil {
 	    	fmt.Printf("Something ewnt wrong %v\n", err)
 	    	myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = "Could not send mail" + err.Error()
+			myErrorResponse.Desc= "Could not send mail" + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 	    }
 
@@ -107,7 +107,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Error = "Invalid Method"
+		myErrorResponse.Desc= "Invalid Method"
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}

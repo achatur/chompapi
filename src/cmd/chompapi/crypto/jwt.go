@@ -42,7 +42,7 @@ func CreateJwt(w http.ResponseWriter) JWT {
     privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
     if err != nil {
         MyErrorResponse.Code = http.StatusInternalServerError
-        MyErrorResponse.Error = err.Error()
+        MyErrorResponse.Desc = err.Error()
         MyErrorResponse.HttpErrorResponder(w)
         return JWT{}
     }
@@ -50,7 +50,7 @@ func CreateJwt(w http.ResponseWriter) JWT {
     if err != nil {
         fmt.Printf("Err = %v", err)
         MyErrorResponse.Code = http.StatusBadRequest
-        MyErrorResponse.Error = "Could not decode"
+        MyErrorResponse.Desc = "Could not decode"
         MyErrorResponse.HttpErrorResponder(w)
         return JWT{}
     }
@@ -67,7 +67,7 @@ func CreateJwt(w http.ResponseWriter) JWT {
     if err != nil {
         fmt.Printf("Err = %v\n", err)
         MyErrorResponse.Code = 500
-        MyErrorResponse.Error = err.Error()
+        MyErrorResponse.Desc = err.Error()
         return JWT{}
     }
     fmt.Printf("tokenString = %v\n", tokenString)

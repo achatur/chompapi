@@ -42,13 +42,13 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Error! = %v\n", err)
 			if strings.Contains(err.Error(), "Error 1062") {
 				myErrorResponse.Code = http.StatusConflict
-				myErrorResponse.Error = "Duplicate Not Allowed:-:" + err.Error()
+				myErrorResponse.Desc= "Duplicate Not Allowed:-:" + err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			}
 
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -62,7 +62,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				//need logging here instead of print
 				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Error = err.Error()
+				myErrorResponse.Desc= err.Error()
 				myErrorResponse.HttpErrorResponder(w)
 				return
 			} 
@@ -71,7 +71,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -80,7 +80,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -92,7 +92,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Could not update table\n")
 			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Error = "IG UpdateLastPull failed: " + err.Error()
+			myErrorResponse.Desc= "IG UpdateLastPull failed: " + err.Error()
 			return
 		}
 
@@ -104,7 +104,7 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Error = "Invalid Method"
+		myErrorResponse.Desc= "Invalid Method"
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}

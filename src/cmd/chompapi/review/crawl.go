@@ -167,14 +167,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in login %v", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
 		fileContent, err := ioutil.ReadFile("./chomp_private/file_download.json")
 		if err != nil {
     	    myErrorResponse.Code = http.StatusInternalServerError
-    	    myErrorResponse.Error = err.Error()
+    	    myErrorResponse.Desc= err.Error()
     	    myErrorResponse.HttpErrorResponder(w)
     	    return
     	}
@@ -182,7 +182,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     	if err != nil {
     	    fmt.Printf("Err = %v", err)
     	    myErrorResponse.Code = http.StatusBadRequest
-    	    myErrorResponse.Error = "Could not decode"
+    	    myErrorResponse.Desc= "Could not decode"
     	    myErrorResponse.HttpErrorResponder(w)
     	    return
     	}
@@ -196,7 +196,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Error = %v\n")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Could not set last crawl: " + err.Error()
+			myErrorResponse.Desc= "Could not set last crawl: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 		}
 		fmt.Printf("\nigStore Pull = %v\n", igStore)
@@ -209,7 +209,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if errs != nil {
 			fmt.Printf("something went wrong in get %v", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = "Malformed JSON: " + err.Error()
+			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -219,14 +219,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Err = %v", err)
 			myErrorResponse.Code = http.StatusServiceUnavailable
-			myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
+			myErrorResponse.Desc= "Communication Issues:IG: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 		}
 
 		if len(instaData.Data) == 0 {
 			fmt.Println("No New Photos")
 			myErrorResponse.Code = http.StatusOK
-			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.Desc= "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -263,14 +263,14 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if len(reviewsToWrite) == 0 {
 			fmt.Println("No New Photos")
 			myErrorResponse.Code = http.StatusOK
-			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.Desc= "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
 
 		if err != nil {
 			myErrorResponse.Code = http.StatusServiceUnavailable
-			myErrorResponse.Error = "Communication Issues:Google: " + err.Error()
+			myErrorResponse.Desc= "Communication Issues:Google: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -281,7 +281,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
     	if err != nil {
     	    myErrorResponse.Code = http.StatusInternalServerError
-    	    myErrorResponse.Error = err.Error()
+    	    myErrorResponse.Desc= err.Error()
     	    myErrorResponse.HttpErrorResponder(w)
     	    return
     	}
@@ -289,7 +289,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
     	if err != nil {
     	    fmt.Printf("Err = %v", err)
     	    myErrorResponse.Code = http.StatusBadRequest
-    	    myErrorResponse.Error = "Could not decode"
+    	    myErrorResponse.Desc= "Could not decode"
     	    myErrorResponse.HttpErrorResponder(w)
     	    return
     	}
@@ -314,7 +314,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				fmt.Printf("No Review Created for %v\n", i)
 				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
 				continue
 			}
 
@@ -327,7 +327,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			if photoInfo.ID == 0 {
 				fmt.Println("Something went wrong to create photo")
 				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
 			}
 
 			/* //////////////////////////////////////// */
@@ -343,7 +343,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				fmt.Println("Something went wrong storing photo")
 				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Error = "Not all photos added: " + err.Error()
+				myErrorResponse.Desc= "Not all photos added: " + err.Error()
 				continue
 			}
 
@@ -359,7 +359,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 				fmt.Printf("No Review Created for %v\n", i)
 				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Error = "Not all reviews added: " + err.Error()
+				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
 				continue
 			}
 
@@ -372,7 +372,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 
 					fmt.Printf("Cound't convert string%v\n", err)
 					myErrorResponse.Code = http.StatusServiceUnavailable
-					myErrorResponse.Error = "Communication Issues:IG: " + err.Error()
+					myErrorResponse.Desc= "Communication Issues:IG: " + err.Error()
 					myErrorResponse.HttpErrorResponder(w)
 				}
 
@@ -385,7 +385,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					fmt.Printf("Could not update table\n")
 					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Error = "Not all reviews added: " + err.Error()
+					myErrorResponse.Desc= "Not all reviews added: " + err.Error()
 					return
 				}
 			}
@@ -394,7 +394,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Error = "Method Not Allowed"
+		myErrorResponse.Desc= "Method Not Allowed"
 		myErrorResponse.HttpErrorResponder(w)
 	}
 }

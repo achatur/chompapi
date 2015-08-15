@@ -9,7 +9,21 @@ import (
 	"strings"
 	"time"
 	"errors"
+	"database/sql"
 )
+
+type AppContext struct {
+    DB        *sql.DB
+    // store     *sessions.CookieStore
+    // templates map[string]*template.Template
+    // decoder   *schema.Decoder
+    // store     *redistore.RediStore
+    // mandrill  *gochimp.MandrillAPI
+    // twitter   *anaconda.TwitterApi
+    // log       *log.Logger
+    // config      *ChompConfig // app-wide configuration: hostname, ports, etc.
+    // MyErrorResponse globalsessionkeeper.ErrorResponse
+}
 
 type Config struct {
 	Authorized 		[]Authorized 	`json:"authorized"`
@@ -54,7 +68,11 @@ var ChompConfig Config
 
 type ErrorResponse struct {
 	Code				int `json:"code"`
-	Error 				string `json:"error"`
+	Desc 				string `json:"error"`
+}
+
+func (h ErrorResponse) Error() string {
+    return fmt.Sprintf("HTTP %d: %s", h.Code, h.Error)
 }
 
 func (errorResponse ErrorResponse) HttpErrorResponder(w http.ResponseWriter) {

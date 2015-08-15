@@ -44,7 +44,7 @@ func UpdateAccountSetupTimestamp(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -58,7 +58,7 @@ func UpdateAccountSetupTimestamp(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fmt.Println("Something not valid")
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Error = err.Error()
+			myErrorResponse.Desc= err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -69,7 +69,7 @@ func UpdateAccountSetupTimestamp(w http.ResponseWriter, r *http.Request) {
 	default:
 
 		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Error = "Invalid Method"
+		myErrorResponse.Desc= "Invalid Method"
 		myErrorResponse.HttpErrorResponder(w)
 		return
 	}
