@@ -24,19 +24,6 @@ import (
 	// "reflect"
 )
 
-// type appContext struct {
-//     db        *sql.DB
-//     // store     *sessions.CookieStore
-//     // templates map[string]*template.Template
-//     // decoder   *schema.Decoder
-//     // store     *redistore.RediStore
-//     // mandrill  *gochimp.MandrillAPI
-//     // twitter   *anaconda.TwitterApi
-//     // log       *log.Logger
-//     config      *globalsessionkeeper.ChompConfig // app-wide configuration: hostname, ports, etc.
-//     // MyErrorResponse globalsessionkeeper.ErrorResponse
-// }
-
 func init() {
 
 	var err error
@@ -93,8 +80,6 @@ func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
 }
 // var MyErrorResponse globalsessionkeeper.ErrorResponse
-var MyErrorResponse globalsessionkeeper.ErrorResponse
-// var GlobalSessions *session.Manager
 
 func main() {
 

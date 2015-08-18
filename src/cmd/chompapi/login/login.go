@@ -31,9 +31,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		if err := decoder.Decode(&input); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in login %v", err)
-			// myErrorResponse.Code = http.StatusBadRequest
-			// myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			// myErrorResponse.HttpErrorResponder(w)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
@@ -45,10 +42,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			// myErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "Invalid Username"
-			// myErrorResponse.HttpErrorResponder(w)
-			// return
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Invalid Username"}
 		}
 		fmt.Println("return from db = %v", userInfo)
@@ -56,10 +49,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		if (userInfo.IsPasswordTemp) {
 
 			if userInfo.PasswordExpiry < int(time.Now().Unix()) {
-				// myErrorResponse.Code = http.StatusUnauthorized
-				// myErrorResponse.Desc= "Temp Password Expired"
-				// myErrorResponse.HttpErrorResponder(w)
-				// return
 				return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Temp Password Expired"}
 			}
 
@@ -105,12 +94,7 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 				fmt.Printf("Found Session! Session username = %v\n", sessionStore.Get("username"))
 			}
 		} else {
-			fmt.Printf("Login Failed")
-			w.WriteHeader(http.StatusUnauthorized)
-			// myErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "Invalid Password"
-			// myErrorResponse.HttpErrorResponder(w)
-			// return
+			fmt.Printf("Login Failed\n")
 			return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Password"}
 		}
 		//Send back 204 no content (with cookie) + temp password header
@@ -121,10 +105,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	default:
-		// w.WriteHeader(http.StatusUnauthorized)
-		// myErrorResponse.Code = http.StatusUnauthorized
-		// myErrorResponse.HttpErrorResponder(w)
 		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
-		// return
 	}
 }
