@@ -17,11 +17,7 @@ type LoginInput struct {
 	Password string
 }
 
-// var globalSessions *session.Manager
-
 func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) (error) {
-
-	// var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
 	case "POST":
@@ -65,7 +61,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 			//create session using the request data which includes the cookie/sessionid
 			fmt.Printf("about to start session\n")
 			sessionStore, err := globalsessionkeeper.GlobalSessions.SessionStart(w, r)
-			// sessionStore, err := GlobalSessions.SessionStart(w, r)
 			if err != nil {
 				//need logging here instead of print
 				fmt.Printf("Error, could not start session %v\n", err)
