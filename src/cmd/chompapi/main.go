@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"html"
+	// "html"
 	"log"
 	"net/http"
 	"os"
@@ -14,14 +14,14 @@ import (
 	// "cmd/chompapi/me"
 	// "cmd/chompapi/review"
 	"database/sql"
-	_ "github.com/astaxie/beego/session/mysql"
+	// _ "github.com/astaxie/beego/session/mysql"
 	"github.com/gorilla/mux"
-	"cmd/chompapi/crypto"
-	"encoding/base64"
+	// "cmd/chompapi/crypto"
+	// "encoding/base64"
 	"io/ioutil"
 	"encoding/json"
-	"cmd/chompapi/db"
-	"reflect"
+	// "cmd/chompapi/db"
+	// "reflect"
 )
 
 // type appContext struct {
@@ -37,17 +37,48 @@ import (
 //     // MyErrorResponse globalsessionkeeper.ErrorResponse
 // }
 
-type AppHandler struct { 
-	*appContext
-	h func(*appContext, http.ResponseWriter, *http.Request) (int, error)
+func init() {
+
+	var err error
+	GetConfig()
+	sessionConfig, _ := json.Marshal(globalsessionkeeper.ChompConfig.ManagerConfig)
+	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", string(sessionConfig))
+
+	if err != nil {
+		fmt.Printf("Coud not start session..Error: %v\n", err.Error())
+		os.Exit(-1)
+
+	}
+
+	globalsessionkeeper.GlobalSessions.SetSecure(true)
+	go globalsessionkeeper.GlobalSessions.GC()
 }
 
-func (ah globalsessionkeeper.AppContext) ServerHttp(w http.ResponseWriter, r *http.Request) {
+func GetConfig() error {
+	configFile, err := ioutil.ReadFile("./chomp_private/config.json")
+	if err != nil {
+	    return err
+	}
+	err = json.Unmarshal(configFile, &globalsessionkeeper.ChompConfig)
+	if err != nil {
+	    fmt.Printf("Err = %v", err)
+	    return err
+	}
+	return nil
+}
+
+type AppHandler struct { 
+	appContext *globalsessionkeeper.AppContext
+	h func(*globalsessionkeeper.AppContext, http.ResponseWriter, *http.Request) (error)
+}
+
+func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
 	err := ah.h(ah.appContext, w, r)
 	if err != nil {
 		// log.Printf("HTTP %d: %q", status, err)
-		switch status = err.(ErrorResponse).Code {
+		status := err.(globalsessionkeeper.ErrorResponse).Code
+		switch status {
 		case http.StatusNotFound:
 			fmt.Printf("Error: Page not found\n")
 			http.NotFound(w, r)
@@ -69,14 +100,16 @@ func main() {
 
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
-		return err
+		// return err
+		fmt.Printf("Error = %v\n", err)
+		panic(fmt.Sprintf("%v", err))
 	}
 	defer db.Close()
 
 	router := mux.NewRouter().StrictSlash(true)
-	context := &appContext{db: db}
+	context := &globalsessionkeeper.AppContext{DB: db}
 
-	router.HandleFunc("/login", AppHandler{context, login.DoLogin})
+	router.HandleFunc("/login", AppHandler{context, login.DoLogin}.ServerHttp)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

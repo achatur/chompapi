@@ -114,21 +114,21 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 func isValidInput(userInfo *db.RegisterInput, errorResponse *globalsessionkeeper.ErrorResponse) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
-		errorResponse.Error = "Invalid Email " + userInfo.Email
+		errorResponse.Desc = "Invalid Email " + userInfo.Email
 		return false
 	}
 	if isValidString(userInfo.Username) == false {
 		fmt.Println("not valid username", userInfo.Username)
-		errorResponse.Error = "Invalid Username " + userInfo.Username
+		errorResponse.Desc = "Invalid Username " + userInfo.Username
 		return false
 	}
 	if isValidString(userInfo.Password) == false {
 		fmt.Println("not valid password", userInfo.Password)
-		errorResponse.Error = "Invalid Password " + userInfo.Password
+		errorResponse.Desc = "Invalid Password " + userInfo.Password
 		return false
 	}
 	if userInfo.Dob == 0 || age(time.Unix(int64(userInfo.Dob), 0)) < 18 {
-		errorResponse.Error = "Invalid Age " + string(age(time.Unix(int64(userInfo.Dob), 0)))
+		errorResponse.Desc = "Invalid Age " + string(age(time.Unix(int64(userInfo.Dob), 0)))
 		return false
 	}
 	

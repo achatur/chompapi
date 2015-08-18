@@ -226,7 +226,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if len(instaData.Data) == 0 {
 			fmt.Println("No New Photos")
 			myErrorResponse.Code = http.StatusNoContent
-			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.Desc = "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -263,7 +263,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 		if len(reviewsToWrite) == 0 {
 			fmt.Println("No New Photos")
 			myErrorResponse.Code = http.StatusNoContent
-			myErrorResponse.Error = "Nothing to update"
+			myErrorResponse.Desc = "Nothing to update"
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
