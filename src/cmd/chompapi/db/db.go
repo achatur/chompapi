@@ -164,17 +164,17 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 	return err
 }
 
-func (userInfo *UserInfo) GetUserInfoByEmail() error {
-	db, err := sql.Open("mysql", "root@tcp("+globalsessionkeeper.ChompConfig.DbConfig.Host+":"+globalsessionkeeper.ChompConfig.DbConfig.Port+")/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (userInfo *UserInfo) GetUserInfoByEmail(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp("+globalsessionkeeper.ChompConfig.DbConfig.Host+":"+globalsessionkeeper.ChompConfig.DbConfig.Port+")/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE email=%s\n", userInfo.Email)
 
-	err = db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
+	err := db.QueryRow(`SELECT chomp_user_id, email, chomp_username,
 						dob, gender, photo_id, is_password_temp, password_expiry,
 						fname, lname
 					   FROM chomp_users
@@ -191,12 +191,12 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	return err
 }
 
-func (userInfo *RegisterInput) SetUserInfo() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (userInfo *RegisterInput) SetUserInfo(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
@@ -374,12 +374,12 @@ func (userInfo UserInfo) UpdateInstaCode() error {
 	return err2
 }
 
-func (photo Photos) SetMePhoto() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (photo Photos) SetMePhoto(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
@@ -417,12 +417,12 @@ func (photo Photos) SetMePhoto() error {
 	return nil
 }
 
-func (photo Photos) UpdatePhotoIDUserTable() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (photo Photos) UpdatePhotoIDUserTable(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
@@ -446,18 +446,20 @@ func (photo Photos) UpdatePhotoIDUserTable() error {
 }
 
 
-func (photo *Photos) GetPhotoInfoByUuid() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (photo *Photos) GetPhotoInfoByUuid(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 	// m := map[string]string{}
 
 	// Prepare statement for reading chomp_users table data
 	row := db.QueryRow("SELECT id, chomp_user_id, file_path, file_hash, UNIX_TIMESTAMP(last_updated), uuid, latitude, longitude from photos where uuid=?", photo.Uuid).Scan(&photo.ID, &photo.UserID, &photo.FilePath, &photo.FileHash, &photo.TimeStamp, &photo.Uuid, &photo.Latitude, &photo.Longitude)
 	fmt.Println("Row =", row)
 	fmt.Println("Row Type = ", reflect.TypeOf(photo))
+	err := errors.New("")
+	err = nil
 	if row != nil {
 		err = errors.New("Could noterrors return photo info")
 	}
@@ -958,12 +960,12 @@ func (review *Review) AddDishTags() ([]int, error) {
 	// return dishTags, nil
 }
 
-func (igStore *IgStore) UpdateLastPull() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (igStore *IgStore) UpdateLastPull(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Printf("UserId = %v\n", igStore.UserID)

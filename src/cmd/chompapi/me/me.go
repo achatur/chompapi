@@ -129,7 +129,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 		photoInfo.Username = username
 		fmt.Printf("photoInfo = %v\n", photoInfo)
 	
-		err := photoInfo.SetMePhoto()
+		err := photoInfo.SetMePhoto(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
@@ -137,7 +137,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		} 
-		err2 := photoInfo.GetPhotoInfoByUuid()
+		err2 := photoInfo.GetPhotoInfoByUuid(a.DB)
 		if err2 != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
@@ -234,7 +234,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			myErrorResponse.HttpErrorResponder(w)
              return
          } 
-         err = photoInfo.UpdatePhotoIDUserTable()
+         err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError
@@ -275,7 +275,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
          }
          //change userid and update table
          photoInfo.ID = 0
-         err = photoInfo.UpdatePhotoIDUserTable()
+         err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			myErrorResponse.Code = http.StatusInternalServerError

@@ -118,7 +118,7 @@ type ConfigFile struct {
 
 var FileDownload ConfigFile
 
-func Crawl(w http.ResponseWriter, r *http.Request) {
+func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
@@ -322,7 +322,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			/*                Create UUID   		    */
 			/* //////////////////////////////////////// */
 
-			photoInfo := CreatePhoto(username)
+			photoInfo := CreatePhoto(username, a)
 
 			if photoInfo.ID == 0 {
 				fmt.Println("Something went wrong to create photo")
@@ -380,7 +380,7 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 			/*               Set Last Crawl 			*/
 			/* //////////////////////////////////////// */
 
-				err = igStore.UpdateLastPull()
+				err = igStore.UpdateLastPull(a.DB)
 
 				if err != nil {
 					fmt.Printf("Could not update table\n")
@@ -399,20 +399,20 @@ func Crawl(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func CreatePhoto(username string) db.Photos {
+func CreatePhoto(username string, a globalsessionkeeper.AppContext) db.Photos {
 
 	var photoInfo db.Photos
 
 	photoInfo.Uuid = me.GenerateUuid()
 	photoInfo.Username = username
-	err := photoInfo.SetMePhoto()
+	err := photoInfo.SetMePhoto(a.DB)
 
 	if err != nil {
 		//need logging here instead of print
 		return photoInfo
 	} 
 
-	err2 := photoInfo.GetPhotoInfoByUuid()
+	err2 := photoInfo.GetPhotoInfoByUuid(a.DB)
 
 	if err2 != nil {
 		//need logging here instead of print

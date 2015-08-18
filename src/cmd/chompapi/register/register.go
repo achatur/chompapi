@@ -13,12 +13,12 @@ import (
 	"cmd/chompapi/me"
 )
 
-func DoRegister(w http.ResponseWriter, r *http.Request) {
+func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
 	case "POST":
-		// input := newUser()
+
 		input := new(db.RegisterInput)
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
@@ -29,85 +29,61 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 
 		if isValidInput(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.HttpErrorResponder(w)
-
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, myErrorResponse.Desc}
 		}
 
 		input.Hash = hex.EncodeToString(crypto.GeneratePassword(input.Username, []byte(input.Password)))
 		fmt.Printf("Hash = %s\n", input.Hash)
 
-		err := input.SetUserInfo()
+		err := input.SetUserInfo(a.DB)
 		if err != nil {
 			fmt.Println("Error! = %v\n", err)
 			if strings.Contains(err.Error(), "Error 1062") {
-				myErrorResponse.Code = http.StatusConflict
-				myErrorResponse.Desc= "Duplicate Not Allowed:-:" + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusConflict, "Duplicate Not Allowed:-:" + err.Error()}
 			}
 
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 		// set user photo now
 		var photoInfo db.Photos
 		photoInfo.Uuid = me.GenerateUuid()
 		photoInfo.Username = input.Username
-		// *photoInfo.Latitude = 0.0
-		// *photoInfo.Longitude = 0.0
-		err = photoInfo.SetMePhoto()
+
+		err = photoInfo.SetMePhoto(a.DB)
 			if err != nil {
 				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 			} 
 
-		err = photoInfo.GetPhotoInfoByUuid()
+		err = photoInfo.GetPhotoInfoByUuid(a.DB)
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 		input.Photo.ID = photoInfo.ID
-		err = photoInfo.UpdatePhotoIDUserTable()
+		err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 		igStore 	 := new(db.IgStore)
 		igStore.UserID = input.UserID
 		igStore.IgMediaID = "fake"
 		igStore.IgCreatedTime = int(time.Now().Unix())
-		err = igStore.UpdateLastPull()
+		err = igStore.UpdateLastPull(a.DB)
 		if err != nil {
 			fmt.Printf("Could not update table\n")
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "IG UpdateLastPull failed: " + err.Error()
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
 		}
 
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Invalid Method"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Invalid Method"}
 	}
 }
 
@@ -143,10 +119,6 @@ func isValidString(s string) bool {
 		return true
 	}
 }
-
-// func newUser() *db.RegisterInput {
-// 	return &db.RegisterInput{}
-// }
 
 func age(birthday time.Time) int {
 	fmt.Println("made it here")

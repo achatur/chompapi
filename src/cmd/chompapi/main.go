@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 	"cmd/chompapi/login"
-	// "cmd/chompapi/register"
+	"cmd/chompapi/register"
 	"cmd/chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
 	// "cmd/chompapi/me"
@@ -59,6 +59,15 @@ type AppHandler struct {
 	h func(*globalsessionkeeper.AppContext, http.ResponseWriter, *http.Request) (error)
 }
 
+func HttpErrorResponder(w http.ResponseWriter, errorResponse globalsessionkeeper.ErrorResponse) {
+
+	fmt.Print("Going out as: %v\n", errorResponse)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(errorResponse.Code)
+	json.NewEncoder(w).Encode(errorResponse)
+}
+
 func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
 	err := ah.h(ah.appContext, w, r)
@@ -68,16 +77,15 @@ func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 		switch status {
 		case http.StatusNotFound:
 			fmt.Printf("Error: Page not found\n")
-			http.NotFound(w, r)
+			HttpErrorResponder(w, err.(globalsessionkeeper.ErrorResponse))
 		case http.StatusInternalServerError:
 			fmt.Printf("Error: %v\n", http.StatusInternalServerError)
-			http.Error(w, http.StatusText(status), status)
+			HttpErrorResponder(w, err.(globalsessionkeeper.ErrorResponse))
 		default:
 			fmt.Printf("Error: %v\n", err)
-			http.Error(w, http.StatusText(status), status)
+			HttpErrorResponder(w, err.(globalsessionkeeper.ErrorResponse))
 		}
 	}
-
 }
 // var MyErrorResponse globalsessionkeeper.ErrorResponse
 
@@ -95,6 +103,7 @@ func main() {
 	context := &globalsessionkeeper.AppContext{DB: db}
 
 	router.HandleFunc("/login", AppHandler{context, login.DoLogin}.ServerHttp)
+	router.HandleFunc("/register", AppHandler{context, register.DoRegister}.ServerHttp)
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

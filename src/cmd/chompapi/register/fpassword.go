@@ -44,7 +44,7 @@ func ForgotPassword(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 
 		dbUserInfo.Email = input.Email
 
-		if err := dbUserInfo.GetUserInfoByEmail(); err != nil {
+		if err := dbUserInfo.GetUserInfoByEmail(a.DB); err != nil {
 			fmt.Printf("Could not find user")
 			myErrorResponse.Code = http.StatusBadRequest
 			myErrorResponse.Desc= "User Not Found " + err.Error()
