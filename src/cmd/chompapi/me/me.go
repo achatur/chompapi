@@ -27,7 +27,7 @@ type Photo struct {
 }
 
 
-func GetMe(w http.ResponseWriter, r *http.Request) {
+func GetMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -53,7 +53,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 
 	case "GET":
 
-		err = userInfo.GetUserInfo()
+		err = userInfo.GetUserInfo(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
@@ -83,7 +83,7 @@ func GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PostPhotoId(w http.ResponseWriter, r *http.Request) {
+func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -292,7 +292,7 @@ func PostPhotoId(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeleteMe(w http.ResponseWriter, r *http.Request) {
+func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
@@ -325,7 +325,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Printf("Getting user info for userid %v\n", userId)
 		userInfo.UserID =  userId
-		err = userInfo.GetUserInfo()
+		err = userInfo.GetUserInfo(a.DB)
 		if err != nil {
 	        //need logging here instead of print
 	        myErrorResponse.Code = http.StatusInternalServerError
@@ -409,7 +409,7 @@ func DeleteMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Logout(w http.ResponseWriter, r *http.Request) {
+func Logout(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -460,7 +460,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func LogoutAll(w http.ResponseWriter, r *http.Request) {
+func LogoutAll(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -507,7 +507,7 @@ func LogoutAll(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Instagram(w http.ResponseWriter, r *http.Request) {
+func Instagram(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	userInfo := new(db.UserInfo)
 	var myErrorResponse globalsessionkeeper.ErrorResponse
@@ -568,7 +568,7 @@ func Instagram(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
+func InstagramLinkClick(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
@@ -601,7 +601,7 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 		// input := new(db.UserInfo)
 		dbUserInfo := new(db.UserInfo)
 		dbUserInfo.Username = username
-		err = dbUserInfo.GetUserInfo()
+		err = dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest
@@ -634,7 +634,7 @@ func InstagramLinkClick(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func DeactivateMe(w http.ResponseWriter, r *http.Request) {
+func DeactivateMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 

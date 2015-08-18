@@ -7,7 +7,7 @@ import (
 	"reflect"
 )
 
-func UpdateAccountSetupTimestamp(w http.ResponseWriter, r *http.Request) {
+func UpdateAccountSetupTimestamp(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
@@ -40,7 +40,7 @@ func UpdateAccountSetupTimestamp(w http.ResponseWriter, r *http.Request) {
 		// input := new(db.UserInfo)
 		dbUserInfo := new(db.UserInfo)
 		dbUserInfo.Username = username
-		err = dbUserInfo.GetUserInfo()
+		err = dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			myErrorResponse.Code = http.StatusBadRequest

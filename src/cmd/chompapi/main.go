@@ -37,12 +37,12 @@ import (
 //     // MyErrorResponse globalsessionkeeper.ErrorResponse
 // }
 
-type appHandler struct { 
+type AppHandler struct { 
 	*appContext
 	h func(*appContext, http.ResponseWriter, *http.Request) (int, error)
 }
 
-func (ah globalsessionkeeper.AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
+func (ah globalsessionkeeper.AppContext) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
 	err := ah.h(ah.appContext, w, r)
 	if err != nil {
@@ -76,7 +76,7 @@ func main() {
 	router := mux.NewRouter().StrictSlash(true)
 	context := &appContext{db: db}
 
-	router.HandleFunc("/login", appHandler{context, login.DoLogin})
+	router.HandleFunc("/login", AppHandler{context, login.DoLogin})
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

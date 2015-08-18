@@ -12,7 +12,7 @@ import (
 	"cmd/chompapi/messenger"
 )
 
-func UpdatePassword(w http.ResponseWriter, r *http.Request) {
+func UpdatePassword(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
@@ -65,7 +65,7 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 
 		input.Username = username
 
-		if err := input.GetUserInfo(); err != nil {
+		if err := input.GetUserInfo(a.DB); err != nil {
 			fmt.Printf("Could not find user")
 			myErrorResponse.Code = http.StatusBadRequest
 			myErrorResponse.Desc= "User Not Found " + err.Error()
@@ -117,10 +117,10 @@ func UpdatePassword(w http.ResponseWriter, r *http.Request) {
 func isValidInputPassword(userInfo *db.UserInfo, errorResponse *globalsessionkeeper.ErrorResponse) bool {
 	if isValidString(userInfo.Password) == false {
 		fmt.Println("not valid Password = ", userInfo.Password)
-		errorResponse.Error = "Invalid Password " + userInfo.Password
+		errorResponse.Desc = "Invalid Password " + userInfo.Password
 		return false
 	} else if utf8.RuneCountInString(userInfo.Password) < 8 {
-		errorResponse.Error = "Invalid Pass. Password must be at least 8 characters"
+		errorResponse.Desc = "Invalid Pass. Password must be at least 8 characters"
 		return false
 	}
 	return true

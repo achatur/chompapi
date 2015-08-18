@@ -14,7 +14,7 @@ import (
 	"cmd/chompapi/messenger"
 )
 
-func ForgotPassword(w http.ResponseWriter, r *http.Request) {
+func ForgotPassword(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
@@ -27,7 +27,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
 			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
+			myErrorResponse.Desc = "Malformed JSON: " + err.Error()
 			myErrorResponse.HttpErrorResponder(w)
 			return
 		}
@@ -108,10 +108,10 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request) {
 func isValidInputUser(userInfo *db.UserInfo, errorResponse *globalsessionkeeper.ErrorResponse) bool {
 	if isValidString(userInfo.Email) == false {
 		fmt.Println("not valid email = ", userInfo.Email)
-		errorResponse.Error = "Invalid Email " + userInfo.Email
+		errorResponse.Desc = "Invalid Email " + userInfo.Email
 		return false
 	} else if userInfo.DOB == 0 {
-		errorResponse.Error = "Invalid DOB " + strconv.Itoa(userInfo.DOB)
+		errorResponse.Desc = "Invalid DOB " + strconv.Itoa(userInfo.DOB)
 		return false
 	}
 	return true
