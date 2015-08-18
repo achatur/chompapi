@@ -14,6 +14,7 @@ import (
 )
 
 type RegisterInput struct {
+	UserID 		 int
 	Username	 string
 	Email   	 string
 	Password	 string
@@ -190,7 +191,7 @@ func (userInfo *UserInfo) GetUserInfoByEmail() error {
 	return err
 }
 
-func (userInfo RegisterInput) SetUserInfo() error {
+func (userInfo *RegisterInput) SetUserInfo() error {
 	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		return err
@@ -205,16 +206,28 @@ func (userInfo RegisterInput) SetUserInfo() error {
 		userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	fmt.Println("Query = %v\n", query)
 
-	stmt, err := db.Prepare(query)
+	// stmt, err := db.Prepare(query)
+	// if err != nil {
+	// 	fmt.Println("Error occurd")
+	// 	return err
+	// }
+	// defer stmt.Close()
+	// _, err = stmt.Exec()
+	// if err != nil {
+	// 	return err
+	// }
+	results, err := db.Exec(`INSERT INTO chomp_users SET chomp_username=?, email=?, phone_number=?, password_hash=?, dob=?, gender=?`, 
+							userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
+
 	if err != nil {
-		fmt.Println("Error occurd")
+		fmt.Printf("Update Account Setup Time err = %v\n", err)
 		return err
 	}
-	defer stmt.Close()
-	_, err = stmt.Exec()
-	if err != nil {
-		return err
-	}
+	
+	id, err := results.LastInsertId()
+	userInfo.UserID = int(id)
+	fmt.Printf("Results = %v\n err3 = %v\n", userInfo.UserID , err)
+	fmt.Printf("Error = %v\n", err)
 	return nil
 }
 
@@ -371,11 +384,19 @@ func (photo Photos) SetMePhoto() error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", photo)
 	fmt.Printf("Type of Photo = %v\n", reflect.TypeOf(photo))
+
 	lat := 0.0
 	long := 0.0
 
+	fmt.Printf("lat = %v, long = %v\n", lat, long)
+
 	if photo.Latitude != nil {
+		fmt.Printf("Lat empty\n")
 		lat = *photo.Latitude
+	}
+
+	if photo.Longitude != nil {
+		fmt.Printf("Long empty\n")
 		long = *photo.Longitude
 	}
 
@@ -690,7 +711,8 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 	defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
-	fmt.Println("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("inside call: restaurants = %v\n", restaurant)
+	fmt.Printf("inside call: restaurant name = %v\n", restaurant.Name)
 	fmt.Printf("Type of Restaurant = %v\n\n", reflect.TypeOf(restaurant))
 	fmt.Printf(`UPDATE restaurants
 				SET latitude = %v, longitude = %v,
@@ -703,9 +725,10 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 	results, err2 := db.Exec(`UPDATE restaurants
 						 SET latitude = ?, longitude = ?,
 						 location_num = ?, source = ?,
-						 source_location_id = ?`, restaurant.Latt, restaurant.Long,
+						 source_location_id = ?
+						 WHERE id = ?`, restaurant.Latt, restaurant.Long,
 						 	  					  restaurant.LocationNum, restaurant.Source,
-						 	  					  restaurant.SourceLocID)
+						 	  					  restaurant.SourceLocID, restaurant.ID)
 	id, err2 := results.LastInsertId()
 	restaurant.ID = int(id)
 

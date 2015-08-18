@@ -18,7 +18,8 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "POST":
-		input := newUser()
+		// input := newUser()
+		input := new(db.RegisterInput)
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
@@ -85,9 +86,9 @@ func DoRegister(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		igStore 	 := new(db.IgStore)
-		igStore.UserID = int(userId)
+		igStore.UserID = input.UserID
 		igStore.IgMediaID = "fake"
-		igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[i].CreatedTime)
+		igStore.IgCreatedTime = int(time.Now().Unix())
 		err = igStore.UpdateLastPull()
 		if err != nil {
 			fmt.Printf("Could not update table\n")
@@ -143,9 +144,9 @@ func isValidString(s string) bool {
 	}
 }
 
-func newUser() *db.RegisterInput {
-	return &db.RegisterInput{}
-}
+// func newUser() *db.RegisterInput {
+// 	return &db.RegisterInput{}
+// }
 
 func age(birthday time.Time) int {
 	fmt.Println("made it here")
