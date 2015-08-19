@@ -17,12 +17,16 @@ import (
 	// _ "github.com/astaxie/beego/session/mysql"
 	"github.com/gorilla/mux"
 	// "cmd/chompapi/crypto"
-	// "encoding/base64"
+	"encoding/base64"
 	"io/ioutil"
 	"encoding/json"
-	// "cmd/chompapi/db"
-	// "reflect"
+	"cmd/chompapi/db"
+	"reflect"
+	"errors"
 )
+
+type handler func(w http.ResponseWriter, r *http.Request)
+var MyDb *sql.DB
 
 func init() {
 
@@ -36,11 +40,106 @@ func init() {
 		os.Exit(-1)
 
 	}
+	err = errors.New("")
+	MyDb, err = sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	if err != nil {
+		// return err
+		fmt.Printf("Error = %v\n", err)
+		panic(fmt.Sprintf("%v", err))
+	}
 
 	globalsessionkeeper.GlobalSessions.SetSecure(true)
 	go globalsessionkeeper.GlobalSessions.GC()
 }
 
+func BasicAuth(pass handler) handler {
+ 
+    return func(w http.ResponseWriter, r *http.Request) {
+
+    	fmt.Println("made it to basic auth")
+    	fmt.Printf("Headers = %v\n", r.Header)
+ 		fmt.Printf("Len = %v\n", len(r.Header))
+
+ 		if len(r.Header["Authorization"]) <= 0 {
+ 			http.Error(w, "bad syntax", http.StatusBadRequest)
+			return
+ 		}
+        auth := strings.SplitN(r.Header["Authorization"][0], " ", 2)
+ 		fmt.Printf("auth = %v", auth)
+        if len(auth) != 2 { 
+
+            http.Error(w, "bad syntax", http.StatusBadRequest)
+			return
+        } else if auth[0] != "Basic" {
+            	http.Error(w, "bad syntax", http.StatusBadRequest)
+				return
+		}
+ 
+        payload, _ := base64.StdEncoding.DecodeString(auth[1])
+        pair := strings.SplitN(string(payload), ":", 2)
+ 
+        if len(pair) != 2 || !Validate(pair[0], pair[1]) {
+            http.Error(w, "authorization failed", http.StatusUnauthorized)
+            return
+        }
+ 
+        pass(w, r)
+    }
+}
+
+func SessionAuth(pass handler) handler {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie := globalsessionkeeper.GetCookie(r)
+		if cookie == "" {
+			//need logging here instead of print
+			fmt.Println("Session Auth Cookie = %v", cookie)
+			// MyErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "No Cookie Present"
+			// MyErrorResponse.HttpErrorResponder(w)
+			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"})
+			return
+		}
+	
+		sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
+		if err != nil {
+			//need logging here instead of print
+			// MyErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "Session Expired"
+			// MyErrorResponse.HttpErrorResponder(w)
+			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
+			return
+		}
+	
+		sessionUser := sessionStore.Get("username")
+		fmt.Printf("Session Auth SessionUser = %v\n", sessionUser)
+		if sessionUser == nil {
+			//need logging here instead of print
+			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
+			// MyErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "Session Expired"
+			// MyErrorResponse.HttpErrorResponder(w)
+			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
+			return
+		}
+
+		fmt.Printf("Session Auth Getting user info for user %v\n", sessionUser)
+		userInfo := new(db.UserInfo)
+		userInfo.Username = reflect.ValueOf(sessionUser).String()
+		err = userInfo.GetUserInfo(MyDb)
+		if err != nil {
+			//need logging here instead of print
+			fmt.Printf("Session Auth Username not found, returning unauth, Get has %v\n", sessionStore)
+			// MyErrorResponse.Code = http.StatusUnauthorized
+			// myErrorResponse.Desc= "Session Expired"
+			// MyErrorResponse.HttpErrorResponder(w)
+			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
+			return
+		}
+		pass(w, r)
+	}
+}
+ 
 func GetConfig() error {
 	configFile, err := ioutil.ReadFile("./chomp_private/config.json")
 	if err != nil {
@@ -53,6 +152,18 @@ func GetConfig() error {
 	}
 	return nil
 }
+
+func Validate(username, password string) bool {
+    fmt.Println("Made it to validate..")
+    for _, e := range globalsessionkeeper.ChompConfig.Authorized  {
+    	if e.User == username && e.Pass == password {
+    		return true
+    	}
+    }
+
+    return false
+}
+
 
 type AppHandler struct { 
 	appContext *globalsessionkeeper.AppContext
@@ -91,19 +202,17 @@ func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		// return err
-		fmt.Printf("Error = %v\n", err)
-		panic(fmt.Sprintf("%v", err))
-	}
-	defer db.Close()
+	defer MyDb.Close()
 
 	router := mux.NewRouter().StrictSlash(true)
-	context := &globalsessionkeeper.AppContext{DB: db}
+	context := &globalsessionkeeper.AppContext{DB: MyDb}
 
 	router.HandleFunc("/login", AppHandler{context, login.DoLogin}.ServerHttp)
 	router.HandleFunc("/register", AppHandler{context, register.DoRegister}.ServerHttp)
+
+	router.HandleFunc("/admin/fp", BasicAuth(AppHandler{context, register.ForgotPassword}.ServerHttp))
+	router.HandleFunc("/admin/fu", BasicAuth(AppHandler{context, register.ForgotUsername}.ServerHttp))
+	// router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

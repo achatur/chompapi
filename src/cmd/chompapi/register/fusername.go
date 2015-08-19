@@ -9,7 +9,7 @@ import (
 	"cmd/chompapi/messenger"
 )
 
-func ForgotUsername(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func ForgotUsername(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 
 	switch r.Method {
@@ -21,10 +21,7 @@ func ForgotUsername(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
 		fmt.Printf("Json Input = %+v\n", input)
@@ -32,27 +29,19 @@ func ForgotUsername(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 
 		if isValidInputUser(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON"}
 		}
 
 		dbUserInfo.Email = input.Email
 
 		if err := dbUserInfo.GetUserInfoByEmail(a.DB); err != nil {
 			fmt.Printf("Could not find user")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "User Not Found " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "User Not Found " + err.Error()}
 		}
 		fmt.Printf("DbUserUnfo = %v\n", dbUserInfo)
 		if dbUserInfo.DOB != input.DOB {
 			fmt.Printf("DOB does not match")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "DOB Does not Match"
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "DOB Does not Match"}
 		}
 
 		// Send email
@@ -70,21 +59,15 @@ func ForgotUsername(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 	    err := context.SendGmail()
 	    if err != nil {
 	    	fmt.Printf("Something ewnt wrong %v\n", err)
-	    	myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "Could not send mail" + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not send mail" + err.Error()}
 	    }
 
 	    fmt.Printf("Mail sent")
 		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 		
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Invalid Method"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Invalid Method"}
 	}
 }
