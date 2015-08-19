@@ -16,7 +16,7 @@ import (
 	"database/sql"
 	// _ "github.com/astaxie/beego/session/mysql"
 	"github.com/gorilla/mux"
-	// "cmd/chompapi/crypto"
+	"cmd/chompapi/crypto"
 	"encoding/base64"
 	"io/ioutil"
 	"encoding/json"
@@ -212,7 +212,7 @@ func main() {
 
 	router.HandleFunc("/admin/fp", BasicAuth(AppHandler{context, register.ForgotPassword}.ServerHttp))
 	router.HandleFunc("/admin/fu", BasicAuth(AppHandler{context, register.ForgotUsername}.ServerHttp))
-	// router.HandleFunc("/admin/jwt", BasicAuth(crypto.GetJwt))
+	router.HandleFunc("/admin/jwt", BasicAuth(AppHandler{context, crypto.GetJwt}.ServerHttp))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

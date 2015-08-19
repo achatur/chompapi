@@ -24,15 +24,16 @@ type GApiInfo struct {
 
 var MyErrorResponse globalsessionkeeper.ErrorResponse
 
-func GetJwt(w http.ResponseWriter, r *http.Request) {
+func GetJwt(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
     w.Header().Set("Content-Type", "application/json")
     jwt := CreateJwt(w)
     if jwt.JWT == "" {
         fmt.Printf("Empty..jwt%v \n", jwt.JWT)
-        return
+        // return
+        return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not create JWT"}
     }
     json.NewEncoder(w).Encode(jwt)
-    return
+    return nil
 }
 
 func CreateJwt(w http.ResponseWriter) JWT {
@@ -41,33 +42,23 @@ func CreateJwt(w http.ResponseWriter) JWT {
     fileContent, err := ioutil.ReadFile("./chomp_private/Chomp.json")
     privateKey, err := ioutil.ReadFile("./chomp_private/Chomp.pem")
     if err != nil {
-        MyErrorResponse.Code = http.StatusInternalServerError
-        MyErrorResponse.Desc = err.Error()
-        MyErrorResponse.HttpErrorResponder(w)
         return JWT{}
     }
     err = json.Unmarshal(fileContent, &gApiInfo)
     if err != nil {
         fmt.Printf("Err = %v", err)
-        MyErrorResponse.Code = http.StatusBadRequest
-        MyErrorResponse.Desc = "Could not decode"
-        MyErrorResponse.HttpErrorResponder(w)
         return JWT{}
     }
-    fmt.Printf("Json = %v\n", gApiInfo)
     // Set some claims
     token.Claims["scope"] = `https://www.googleapis.com/auth/devstorage.full_control`
     token.Claims["iss"] = gApiInfo.ClientEmail
     token.Claims["iat"] = time.Now().Unix()
     token.Claims["exp"] = time.Now().Add(time.Hour * 1).Unix()
     token.Claims["aud"] = `https://www.googleapis.com/oauth2/v3/token`
-    fmt.Printf("Token Claims: %v\n", token.Claims)
     // Sign and get the complete encoded token as a string
     tokenString, err := token.SignedString(privateKey)
     if err != nil {
         fmt.Printf("Err = %v\n", err)
-        MyErrorResponse.Code = 500
-        MyErrorResponse.Desc = err.Error()
         return JWT{}
     }
     fmt.Printf("tokenString = %v\n", tokenString)
