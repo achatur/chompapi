@@ -216,7 +216,7 @@ func main() {
 
 	router.HandleFunc("/me", SessionAuth(AppHandler{context, me.GetMe}.ServerHttp))
 	router.HandleFunc("/me/logout", SessionAuth(AppHandler{context, me.Logout}.ServerHttp))
-	// router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
+	router.HandleFunc("/me/logout/all", SessionAuth(AppHandler{context, me.LogoutAll}.ServerHttp))
 	router.HandleFunc("/me/photos", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
 	router.HandleFunc("/me/photos/{photoID}", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
 	// router.HandleFunc("/me/reviews", SessionAuth(AppHandler{context, me.Reviews}.ServerHttp))
