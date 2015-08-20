@@ -7,22 +7,19 @@ import (
 	"reflect"
 )
 
-func UpdateAccountSetupTimestamp(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
-	var myErrorResponse globalsessionkeeper.ErrorResponse
+func UpdateAccountSetupTimestamp(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
 			//need logging here instead of print
 		fmt.Printf("Cookie = %v\n", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
 	}
 
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 
 	if err != nil {
 			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
 	}
 
 	sessionUser := sessionStore.Get("username")
@@ -43,35 +40,25 @@ func UpdateAccountSetupTimestamp(a globalsessionkeeper.AppContext, w http.Respon
 		err = dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		dbUserInfo.Username = username
 
 		fmt.Printf("Json Input = %+v\n", dbUserInfo)
 		fmt.Printf("pass = %v\n", dbUserInfo.Password)
 
-		err = dbUserInfo.UpdateAccountSetupTimestamp()
+		err = dbUserInfo.UpdateAccountSetupTimestamp(a.DB)
 
 		if err != nil {
 			fmt.Println("Something not valid")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 
-		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 		
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Invalid Method"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Method Not Allowed"}
 	}
 
 }

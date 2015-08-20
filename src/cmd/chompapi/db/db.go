@@ -231,12 +231,12 @@ func (userInfo *RegisterInput) SetUserInfo(db *sql.DB) error {
 	return nil
 }
 
-func (userInfo *UserInfo) UpdateAccountSetupTimestamp() error {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+func (userInfo *UserInfo) UpdateAccountSetupTimestamp(db *sql.DB) error {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return err
+	// }
+	// defer db.Close()
 
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)

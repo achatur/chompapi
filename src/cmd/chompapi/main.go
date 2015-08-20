@@ -220,12 +220,12 @@ func main() {
 	router.HandleFunc("/me/photos", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
 	router.HandleFunc("/me/photos/{photoID}", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
 	router.HandleFunc("/me/reviews", SessionAuth(AppHandler{context, me.Reviews}.ServerHttp))
-	// router.HandleFunc("/me/update/up", SessionAuth(AppHandler{context, me.UpdatePassword}.ServerHttp))
+	router.HandleFunc("/me/update/up", SessionAuth(AppHandler{context, me.UpdatePassword}.ServerHttp))
 	router.HandleFunc("/me/update/d/{userID}", SessionAuth(AppHandler{context, me.DeleteMe}.ServerHttp))
 	router.HandleFunc("/me/update/instaClick", SessionAuth(AppHandler{context, me.InstagramLinkClick}.ServerHttp))
 
-	// router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
-	// router.HandleFunc("/me/update/astu", SessionAuth(me.UpdateAccountSetupTimestamp))
+	router.HandleFunc("/me/update/da/{userID}", SessionAuth(AppHandler{context, me.DeactivateMe}.ServerHttp))
+	router.HandleFunc("/me/update/astu", SessionAuth(AppHandler{context, me.UpdateAccountSetupTimestamp}.ServerHttp))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

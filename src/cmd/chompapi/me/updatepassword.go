@@ -12,22 +12,20 @@ import (
 	"cmd/chompapi/messenger"
 )
 
-func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
 			//need logging here instead of print
 		fmt.Printf("Cookie = %v\n", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"}
 	}
 
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 
 	if err != nil {
 			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
 	}
 
 	sessionUser := sessionStore.Get("username")
@@ -48,9 +46,7 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if err := decoder.Decode(&input); err != nil {
 			fmt.Printf("something %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
 		fmt.Printf("Json Input = %+v\n", input)
@@ -58,19 +54,14 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if isValidInputPassword(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON"}
 		}
 
 		input.Username = username
 
 		if err := input.GetUserInfo(a.DB); err != nil {
 			fmt.Printf("Could not find user")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "User Not Found " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "User Not Found " + err.Error()}
 		}
 
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(input.Username, []byte(input.Password)))
@@ -78,10 +69,7 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if err := input.UpdatePassword(false); err != nil {
 			fmt.Println("Error! = %v\n", err)
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "Could not Update Password: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not Update Password: " + err.Error()}
 		}
 		// Send email
 		fmt.Println("Sending Email...")
@@ -95,21 +83,16 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 	    err := context.SendGmail()
 	    if err != nil {
 	    	fmt.Printf("Something ewnt wrong %v\n", err)
-	    	myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "Could not send mail" + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
 	    }
 
 	    fmt.Printf("Mail sent")
 		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 		
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Invalid Method"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed" + err.Error()}
 	}
 
 }
