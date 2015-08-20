@@ -740,12 +740,12 @@ func (restaurant *Restaurants) UpdateRestaurant() error {
 }
 
 
-func GetReviewsByUserID(userId int) (reviews []Review, error error) {
-	db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
-	if err != nil {
-		return reviews, errors.New("Could not connect to DB")
-	}
-	defer db.Close()
+func GetReviewsByUserID(userId int, db *sql.DB) (reviews []Review, error error) {
+	// db, err := sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// if err != nil {
+	// 	return reviews, errors.New("Could not connect to DB")
+	// }
+	// defer db.Close()
 	fmt.Printf("id = %v\n", userId)
 	fmt.Printf(`SELECT reviews.id, reviews.user_id, reviews.username,
 						reviews.dish_id, dish.name, reviews.photo_id, photos.uuid, photo.latitude, photo.longitude, restaurant_id, restaurants.name,

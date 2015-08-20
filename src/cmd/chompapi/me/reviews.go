@@ -10,20 +10,16 @@ import (
 type ReturnJson struct {
 	Reviews []db.Review `json:"reviews"`
 }
-func Reviews(w http.ResponseWriter, r *http.Request) {
-	var myErrorResponse globalsessionkeeper.ErrorResponse
+func Reviews(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
 			//need logging here instead of print
-		fmt.Printf("Cookie = %v\n", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"}
 	}
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie Provided"}
 	}
 	sessionUser := sessionStore.Get("username")
 	sessionUserID := sessionStore.Get("userId")
@@ -40,19 +36,14 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	case "GET":
-		reviews, err := db.GetReviewsByUserID(int(userId))
+		reviews, err := db.GetReviewsByUserID(int(userId), a.DB)
 		if err != nil {
 			fmt.Printf("something went while retrieving data %v\n", err)
 			fmt.Printf("Reviews list = %v\n", reviews)
 			w.Header().Set("Content-Type", "application/json")
-			// emptyList := json.RawMessage(`{"reviews" : [] }`)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
 			returnJson := reviews
-         	// json.NewEncoder(w).Encode(&emptyList)
          	json.NewEncoder(w).Encode(&returnJson)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		if reviews == nil {
 			//something bad happened
@@ -61,7 +52,7 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			emptyList := json.RawMessage(`{"reviews" : [] }`)
          	json.NewEncoder(w).Encode(&emptyList)
-			return
+			return nil
 		}
 		fmt.Printf("Reviews list = %v\n", reviews)
 		w.Header().Set("Content-Type", "application/json")
@@ -71,16 +62,12 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
          json.NewEncoder(w).Encode(returnJson)
          if err != nil {
              fmt.Printf("something went while retrieving data %v\n", err)
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-            return
+             return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
          }
-         return
+         return nil
 
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
