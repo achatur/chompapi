@@ -27,18 +27,13 @@ type Photo struct {
 }
 
 
-func GetMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func GetMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
-		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -57,10 +52,7 @@ func GetMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Username Not Found" + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Username Not Found" + err.Error()}
 		} else {
 			fmt.Println("type for userInfo = ", userInfo)
 			w.Header().Set("Content-Type", "application/json")
@@ -68,33 +60,24 @@ func GetMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 			json.NewEncoder(w).Encode(userInfo)
 	
 			if err != nil {
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Desc= "Malformed JSON " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON " + err.Error()}
 			}
-			return
+			return nil
 		}
 	default:
 
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
-		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -104,25 +87,19 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
-	// defer sessionStore.SessionRelease(w)
-	// username := reflect.ValueOf(sessionUser).String()
 	fmt.Printf("Method = %v\n", r.Method)
+
 	switch r.Method {
 
 	case "POST":
 		var photoInfo db.Photos
-		// var photoInfoInput db.Photos
 		w.Header().Set("Content-Type", "application/json")
 
-		// input := newUser()
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&photoInfo); err != nil {
 			fmt.Printf("something %v\n", err)
 			fmt.Printf("Photos = %v\n", photoInfo)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON:-:" +  err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON:-:" +  err.Error()}
 		}
 
 		photoInfo.Uuid = GenerateUuid()
@@ -132,24 +109,18 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 		err := photoInfo.SetMePhoto(a.DB)
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		} 
 		err2 := photoInfo.GetPhotoInfoByUuid(a.DB)
 		if err2 != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusCreated)
-		return
+		return nil
 
 	case "GET":
 		//variable definition
@@ -160,34 +131,24 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
     	photo_id, err := strconv.Atoi(vars["photoID"])
     	if err != nil {
     		fmt.Println("Not An Integer")
-    		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad Photo ID " + err.Error()}
     	}
     	//collect photo ID
     	photoInfo.ID =  photo_id
 
-         err = photoInfo.GetMePhotoByPhotoID()
-         if err != nil {
-             //need logging here instead of print
-             myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-             return
-         } else {
-             fmt.Println("type for userInfo = ", photoInfo)
-             w.Header().Set("Content-Type", "application/json")
-             json.NewEncoder(w).Encode(photoInfo)
-             if err != nil {
-                 myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-                 return
-             }
-             return
+        err = photoInfo.GetMePhotoByPhotoID()
+        if err != nil {
+         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+        } else {
+            fmt.Println("type for userInfo = ", photoInfo)
+            w.Header().Set("Content-Type", "application/json")
+            json.NewEncoder(w).Encode(photoInfo)
+            if err != nil {
+            	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+            }
+            return nil
          }
-         return
+         return nil
 
 	case "PUT":
 		//variable definition
@@ -197,19 +158,13 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
     	photo_id, thisErr := strconv.Atoi(vars["photoID"])
     	if thisErr != nil {
     		fmt.Println("Not An Integer")
-    		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad Photo ID " + err.Error()}
     	}
     	//collect photo info and gen uuid
     	decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&photoInfo); err != nil {
 			fmt.Printf("something %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON:-:" +  err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON:-:" +  err.Error()}
 		}
 
 		photoInfo.Username = username
@@ -218,10 +173,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
     	photoInfo.Uuid = GenerateUuid()
     	fmt.Println("uuid = ", photoInfo.Uuid)
     	if photoInfo.Uuid == "" {
-    		myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-    		return
+    		return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
     	}
     	//add username to struct
 		photoInfo.Username = username
@@ -229,24 +181,18 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
          err := photoInfo.UpdateMePhoto()
          if err != nil {
              //need logging here instead of print
-             myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-             return
+         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
          } 
          err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)
-         return
+        return nil
 
 	case "DELETE":
 		//variable definition
@@ -257,10 +203,7 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
     	photo_id, thisErr := strconv.Atoi(vars["photoID"])
     	if thisErr != nil {
     		fmt.Println("Not An Integer")
-    		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Bad Photo ID " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad Photo ID " + err.Error()}
     	}
     	//collect photo info
     	photoInfo.ID =  photo_id
@@ -268,41 +211,32 @@ func PostPhotoId(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
          err := photoInfo.DeleteMePhoto()
          if err != nil {
              //need logging here instead of print
-             myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-             return
+         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
          }
          //change userid and update table
          photoInfo.ID = 0
          err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 		w.WriteHeader(http.StatusNoContent)
+		return nil
 
 	default:
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return nil
 	}
 }
 
-func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -317,10 +251,7 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		userId, err := strconv.Atoi(vars["userID"])
 		if err != nil {
 			fmt.Println("Not An Integer")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Bad User ID " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad User ID " + err.Error()}
 		}
 
 		fmt.Printf("Getting user info for userid %v\n", userId)
@@ -328,20 +259,14 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		err = userInfo.GetUserInfo(a.DB)
 		if err != nil {
 	        //need logging here instead of print
-	        myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-	        return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 	    }
 
 	    fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)
 	    err = userInfo.AbandonAllPhotos()
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 		
 	    //change userid and update table
@@ -353,10 +278,7 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 	    	err = photoInfo.DeleteMePhoto()
 			if err != nil {
 				//need logging here instead of print
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 			}
 	    }
 
@@ -365,11 +287,7 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 	    if err != nil {
 	        //need logging here instead of print
 	        if strings.Contains("0 rows deleted", err.Error()) == false  {
-
-	        	myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-	        	return
+	        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 	        }
 	    }
 
@@ -377,10 +295,7 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 	    err = userInfo.DeleteUser()
 	    if err != nil {
 	        //need logging here instead of print
-	        myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-	        return
+	    	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 	    }
 
 		// err = userInfo.DeleteAllPhotos()
@@ -396,31 +311,25 @@ func DeleteMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 
 		if err != nil {
 			//need logging here instead of print
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
 	    w.WriteHeader(http.StatusNoContent)
+	    return nil
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return nil
 	}
 }
 
-func Logout(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func Logout(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -438,10 +347,7 @@ func Logout(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Username Not Found" + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Username Not Found" + err.Error()}
 		} else {
 			fmt.Printf("Logged out user %v, sessionId = %v\n", userInfo.Username, cookie)
 			w.Header().Set("Content-Type", "application/json")
@@ -450,28 +356,23 @@ func Logout(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 				fmt.Printf("Error = %v\n", err)
 			}
 			w.WriteHeader(http.StatusNoContent)
-			return
+			return nil
 		}
 	default:
 
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func LogoutAll(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func LogoutAll(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -489,36 +390,28 @@ func LogoutAll(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Username Not Found" + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Username Not Found" + err.Error()}
 		} else {
 			fmt.Printf("Logged out user %v, sessionId = %v\n", userInfo.Username, cookie)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNoContent)
-			return
+			return nil
 		}
 	default:
 
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func Instagram(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 	if err != nil {
 		//need logging here instead of print
-		myErrorResponse.Code = http.StatusUnauthorized
-		myErrorResponse.Desc= err.Error()
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
 	}
 	sessionUser := sessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
@@ -536,54 +429,43 @@ func Instagram(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		fmt.Printf("Query %v\n", query)
 		if query["error"] != "" {
 			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= query["error"]
-			myErrorResponse.HttpErrorResponder(w)
 			userInfo.InstaCode = ""
 			err = userInfo.UpdateInstaCode()
 			if err != nil {
 				fmt.Printf("Err updating 1 instacode %v\n", err)
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Desc= err.Error()
-				myErrorResponse.HttpErrorResponder(w)
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 			}
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		}
 		userInfo.InstaCode = query["code"]
 		err = userInfo.UpdateInstaCode()
 		if err != nil {
 			fmt.Printf("Err updating 2 instacode %v\n", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
-		return
+		return nil
 		
 	default:
 
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func InstagramLinkClick(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
-	var myErrorResponse globalsessionkeeper.ErrorResponse
+func InstagramLinkClick(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
 			//need logging here instead of print
 		fmt.Printf("Cookie = %v\n", cookie)
 		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return nil
 	}
 
 	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 
 	if err != nil {
 			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
+		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
 	}
 
 	sessionUser := sessionStore.Get("username")
@@ -598,16 +480,12 @@ func InstagramLinkClick(a globalsessionkeeper.AppContext, w http.ResponseWriter,
 	switch r.Method {
 	case "PUT":
 
-		// input := new(db.UserInfo)
 		dbUserInfo := new(db.UserInfo)
 		dbUserInfo.Username = username
 		err = dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		dbUserInfo.Username = username
 
@@ -617,30 +495,23 @@ func InstagramLinkClick(a globalsessionkeeper.AppContext, w http.ResponseWriter,
 		err = dbUserInfo.InstagramLinkClick()
 		if err != nil {
 			fmt.Println("Something not valid")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		w.WriteHeader(http.StatusNoContent)
-		return
+		return nil
 		
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Invalid Method"
-		myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func DeactivateMe(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func DeactivateMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	switch r.Method {
 
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 

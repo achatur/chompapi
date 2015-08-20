@@ -11,7 +11,7 @@ import (
 	"cmd/chompapi/register"
 	"cmd/chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
-	// "cmd/chompapi/me"
+	"cmd/chompapi/me"
 	// "cmd/chompapi/review"
 	"database/sql"
 	// _ "github.com/astaxie/beego/session/mysql"
@@ -213,6 +213,19 @@ func main() {
 	router.HandleFunc("/admin/fp", BasicAuth(AppHandler{context, register.ForgotPassword}.ServerHttp))
 	router.HandleFunc("/admin/fu", BasicAuth(AppHandler{context, register.ForgotUsername}.ServerHttp))
 	router.HandleFunc("/admin/jwt", BasicAuth(AppHandler{context, crypto.GetJwt}.ServerHttp))
+
+	router.HandleFunc("/me", SessionAuth(AppHandler{context, me.GetMe}.ServerHttp))
+	router.HandleFunc("/me/logout", SessionAuth(AppHandler{context, me.Logout}.ServerHttp))
+	// router.HandleFunc("/me/logout/all", SessionAuth(me.LogoutAll))
+	router.HandleFunc("/me/photos", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
+	router.HandleFunc("/me/photos/{photoID}", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
+	// router.HandleFunc("/me/reviews", SessionAuth(AppHandler{context, me.Reviews}.ServerHttp))
+	// router.HandleFunc("/me/update/up", SessionAuth(AppHandler{context, me.UpdatePassword}.ServerHttp))
+	router.HandleFunc("/me/update/d/{userID}", SessionAuth(AppHandler{context, me.DeleteMe}.ServerHttp))
+	router.HandleFunc("/me/update/instaClick", SessionAuth(AppHandler{context, me.InstagramLinkClick}.ServerHttp))
+
+	// router.HandleFunc("/me/update/da/{userID}", SessionAuth(me.DeactivateMe))
+	// router.HandleFunc("/me/update/astu", SessionAuth(me.UpdateAccountSetupTimestamp))
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

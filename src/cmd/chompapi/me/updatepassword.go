@@ -12,7 +12,7 @@ import (
 	"cmd/chompapi/messenger"
 )
 
-func UpdatePassword(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
 	cookie := globalsessionkeeper.GetCookie(r)
 	if cookie == "" {
