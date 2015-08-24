@@ -12,9 +12,8 @@ import (
 	"cmd/chompapi/globalsessionkeeper"
 	"github.com/astaxie/beego/session"
 	"cmd/chompapi/me"
-	// "cmd/chompapi/review"
+	"cmd/chompapi/review"
 	"database/sql"
-	// _ "github.com/astaxie/beego/session/mysql"
 	"github.com/gorilla/mux"
 	"cmd/chompapi/crypto"
 	"encoding/base64"
@@ -27,12 +26,16 @@ import (
 
 type handler func(w http.ResponseWriter, r *http.Request)
 var MyDb *sql.DB
+// var context *globalsessionkeeper.AppContext
 
 func init() {
 
 	var err error
 	GetConfig()
 	sessionConfig, _ := json.Marshal(globalsessionkeeper.ChompConfig.ManagerConfig)
+	fmt.Printf("\n\n\nIn init, new manager\n")
+	fmt.Printf("In init, new manager\n")
+	fmt.Printf("In init, new manager\n\n\n\n")
 	globalsessionkeeper.GlobalSessions, err = session.NewManager("mysql", string(sessionConfig))
 
 	if err != nil {
@@ -41,6 +44,7 @@ func init() {
 
 	}
 	err = errors.New("")
+	fmt.Printf("Opening DB connection\n")
 	MyDb, err = sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
 	if err != nil {
 		// return err
@@ -87,16 +91,13 @@ func BasicAuth(pass handler) handler {
     }
 }
 
-func SessionAuth(pass handler) handler {
+func (ah AppHandler) SessionAuth(pass handler) handler {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie := globalsessionkeeper.GetCookie(r)
 		if cookie == "" {
 			//need logging here instead of print
 			fmt.Println("Session Auth Cookie = %v", cookie)
-			// MyErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "No Cookie Present"
-			// MyErrorResponse.HttpErrorResponder(w)
 			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"})
 			return
 		}
@@ -104,21 +105,16 @@ func SessionAuth(pass handler) handler {
 		sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
 		if err != nil {
 			//need logging here instead of print
-			// MyErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "Session Expired"
-			// MyErrorResponse.HttpErrorResponder(w)
 			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
 			return
 		}
-	
+		defer sessionStore.SessionRelease(w)
+		ah.appContext.SessionStore = sessionStore
 		sessionUser := sessionStore.Get("username")
 		fmt.Printf("Session Auth SessionUser = %v\n", sessionUser)
 		if sessionUser == nil {
 			//need logging here instead of print
 			fmt.Printf("Username not found, returning unauth, Get has %v\n", sessionStore)
-			// MyErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "Session Expired"
-			// MyErrorResponse.HttpErrorResponder(w)
 			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
 			return
 		}
@@ -130,9 +126,6 @@ func SessionAuth(pass handler) handler {
 		if err != nil {
 			//need logging here instead of print
 			fmt.Printf("Session Auth Username not found, returning unauth, Get has %v\n", sessionStore)
-			// MyErrorResponse.Code = http.StatusUnauthorized
-			// myErrorResponse.Desc= "Session Expired"
-			// MyErrorResponse.HttpErrorResponder(w)
 			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Session Expired"})
 			return
 		}
@@ -181,6 +174,7 @@ func HttpErrorResponder(w http.ResponseWriter, errorResponse globalsessionkeeper
 
 func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Printf("AH Context = %v\n", ah.appContext)
 	err := ah.h(ah.appContext, w, r)
 	if err != nil {
 		// log.Printf("HTTP %d: %q", status, err)
@@ -198,7 +192,6 @@ func (ah AppHandler) ServerHttp(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-// var MyErrorResponse globalsessionkeeper.ErrorResponse
 
 func main() {
 
@@ -206,6 +199,8 @@ func main() {
 
 	router := mux.NewRouter().StrictSlash(true)
 	context := &globalsessionkeeper.AppContext{DB: MyDb}
+	fmt.Printf("Context = %v\n", context)
+
 
 	router.HandleFunc("/login", AppHandler{context, login.DoLogin}.ServerHttp)
 	router.HandleFunc("/register", AppHandler{context, register.DoRegister}.ServerHttp)
@@ -214,18 +209,30 @@ func main() {
 	router.HandleFunc("/admin/fu", BasicAuth(AppHandler{context, register.ForgotUsername}.ServerHttp))
 	router.HandleFunc("/admin/jwt", BasicAuth(AppHandler{context, crypto.GetJwt}.ServerHttp))
 
-	router.HandleFunc("/me", SessionAuth(AppHandler{context, me.GetMe}.ServerHttp))
-	router.HandleFunc("/me/logout", SessionAuth(AppHandler{context, me.Logout}.ServerHttp))
-	router.HandleFunc("/me/logout/all", SessionAuth(AppHandler{context, me.LogoutAll}.ServerHttp))
-	router.HandleFunc("/me/photos", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
-	router.HandleFunc("/me/photos/{photoID}", SessionAuth(AppHandler{context, me.PostPhotoId}.ServerHttp))
-	router.HandleFunc("/me/reviews", SessionAuth(AppHandler{context, me.Reviews}.ServerHttp))
-	router.HandleFunc("/me/update/up", SessionAuth(AppHandler{context, me.UpdatePassword}.ServerHttp))
-	router.HandleFunc("/me/update/d/{userID}", SessionAuth(AppHandler{context, me.DeleteMe}.ServerHttp))
-	router.HandleFunc("/me/update/instaClick", SessionAuth(AppHandler{context, me.InstagramLinkClick}.ServerHttp))
+	router.HandleFunc("/me", AppHandler{appContext: context, h: me.GetMe}.SessionAuth(AppHandler{appContext: context, h: me.GetMe}.ServerHttp))
+	router.Queries("code", "{code}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
+	router.Queries("error", "{error}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 
-	router.HandleFunc("/me/update/da/{userID}", SessionAuth(AppHandler{context, me.DeactivateMe}.ServerHttp))
-	router.HandleFunc("/me/update/astu", SessionAuth(AppHandler{context, me.UpdateAccountSetupTimestamp}.ServerHttp))
+	router.HandleFunc("/me/logout", AppHandler{appContext: context, h: me.Logout}.SessionAuth(AppHandler{appContext: context, h: me.Logout}.ServerHttp))
+	router.HandleFunc("/me/logout/all", AppHandler{appContext: context, h: me.LogoutAll}.SessionAuth(AppHandler{appContext: context, h: me.LogoutAll}.ServerHttp))
+
+	router.HandleFunc("/me/photos", AppHandler{appContext: context, h: me.PostPhotoId}.SessionAuth(AppHandler{appContext: context, h: me.PostPhotoId}.ServerHttp))
+	router.HandleFunc("/me/photos/{photoID}", AppHandler{appContext: context, h: me.PostPhotoId}.SessionAuth(AppHandler{appContext: context, h: me.PostPhotoId}.ServerHttp))
+
+	router.HandleFunc("/me/reviews", AppHandler{appContext: context, h: me.Reviews}.SessionAuth(AppHandler{appContext: context, h: me.Reviews}.ServerHttp))
+
+	router.HandleFunc("/me/update/up", AppHandler{appContext: context, h: me.UpdatePassword}.SessionAuth(AppHandler{appContext: context, h: me.UpdatePassword}.ServerHttp))
+	router.HandleFunc("/me/update/d/{userID}", AppHandler{appContext: context, h: me.DeleteMe}.SessionAuth(AppHandler{appContext: context, h: me.DeleteMe}.ServerHttp))
+	router.HandleFunc("/me/update/instaClick", AppHandler{appContext: context, h: me.InstagramLinkClick}.SessionAuth(AppHandler{appContext: context, h: me.InstagramLinkClick}.ServerHttp))
+
+	router.HandleFunc("/me/update/da/{userID}", AppHandler{appContext: context, h: me.DeactivateMe}.SessionAuth(AppHandler{appContext: context, h: me.DeactivateMe}.ServerHttp))
+	router.HandleFunc("/me/update/astu", AppHandler{appContext: context, h: me.UpdateAccountSetupTimestamp}.SessionAuth(AppHandler{appContext: context, h: me.UpdateAccountSetupTimestamp}.ServerHttp))
+
+	router.HandleFunc("/reviews", AppHandler{appContext: context, h: review.Reviews}.SessionAuth(AppHandler{appContext: context, h: review.Reviews}.ServerHttp))
+	router.HandleFunc("/reviews/{reviewID}", AppHandler{appContext: context, h: review.Reviews}.SessionAuth(AppHandler{appContext: context, h: review.Reviews}.ServerHttp))
+	
+	router.HandleFunc("/insta/crawl", AppHandler{appContext: context, h: review.Crawl}.SessionAuth(AppHandler{appContext: context, h: review.Crawl}.ServerHttp))
+
 
 	port := "8000"
 	if os.Getenv("PORT") != "" {

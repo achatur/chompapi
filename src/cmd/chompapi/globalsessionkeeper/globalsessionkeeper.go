@@ -15,6 +15,8 @@ import (
 type AppContext struct {
     DB        *sql.DB
     // store     *sessions.CookieStore
+    SessionStore session.SessionStore
+    Manager 	*session.Manager
     // templates map[string]*template.Template
     // decoder   *schema.Decoder
     // store     *redistore.RediStore

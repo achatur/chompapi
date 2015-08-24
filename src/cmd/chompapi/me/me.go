@@ -30,16 +30,8 @@ type Photo struct {
 func GetMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
-	//need logging here instead of print
-	//extend session time by GC time
-	defer sessionStore.SessionRelease(w)
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
@@ -48,7 +40,7 @@ func GetMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 
 	case "GET":
 
-		err = userInfo.GetUserInfo(a.DB)
+		err := userInfo.GetUserInfo(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
@@ -74,16 +66,10 @@ func GetMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
-	//need logging here instead of print
-	//extend session time by GC time
-	defer sessionStore.SessionRelease(w)
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))	
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
@@ -136,7 +122,7 @@ func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
     	//collect photo ID
     	photoInfo.ID =  photo_id
 
-        err = photoInfo.GetMePhotoByPhotoID()
+        err = photoInfo.GetMePhotoByPhotoID(a.DB)
         if err != nil {
          	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         } else {
@@ -155,14 +141,14 @@ func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
 		var photoInfo db.Photos
 
 		vars := mux.Vars(r)
-    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    	if thisErr != nil {
+    	photo_id, err := strconv.Atoi(vars["photoID"])
+    	if err != nil {
     		fmt.Println("Not An Integer")
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad Photo ID " + err.Error()}
     	}
     	//collect photo info and gen uuid
     	decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&photoInfo); err != nil {
+		if err = decoder.Decode(&photoInfo); err != nil {
 			fmt.Printf("something %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON:-:" +  err.Error()}
 		}
@@ -178,7 +164,7 @@ func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
     	//add username to struct
 		photoInfo.Username = username
 	
-         err := photoInfo.UpdateMePhoto()
+         err = photoInfo.UpdateMePhoto(a.DB)
          if err != nil {
              //need logging here instead of print
          	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
@@ -200,22 +186,22 @@ func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
 		photoInfo.Username = username
 		vars := mux.Vars(r)
 
-    	photo_id, thisErr := strconv.Atoi(vars["photoID"])
-    	if thisErr != nil {
+    	photo_id, err := strconv.Atoi(vars["photoID"])
+    	if err != nil {
     		fmt.Println("Not An Integer")
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Bad Photo ID " + err.Error()}
     	}
     	//collect photo info
     	photoInfo.ID =  photo_id
 
-         err := photoInfo.DeleteMePhoto()
-         if err != nil {
-             //need logging here instead of print
-         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
-         }
-         //change userid and update table
-         photoInfo.ID = 0
-         err = photoInfo.UpdatePhotoIDUserTable(a.DB)
+        err = photoInfo.DeleteMePhoto(a.DB)
+        if err != nil {
+            //need logging here instead of print
+        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+        }
+        //change userid and update table
+        photoInfo.ID = 0
+        err = photoInfo.UpdatePhotoIDUserTable(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
@@ -232,14 +218,10 @@ func PostPhotoId(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
 
 func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
-	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	switch r.Method {
 
 	case "DELETE":
@@ -263,7 +245,7 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	    }
 
 	    fmt.Printf("Abandinging all photos for user %v\n", userInfo.Username)
-	    err = userInfo.AbandonAllPhotos()
+	    err = userInfo.AbandonAllPhotos(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
@@ -275,7 +257,7 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	    photoInfo := new(db.Photos)
 	    photoInfo.ID = userInfo.Photo.ID
 	    if userInfo.Photo.ID != 0 {
-	    	err = photoInfo.DeleteMePhoto()
+	    	err = photoInfo.DeleteMePhoto(a.DB)
 			if err != nil {
 				//need logging here instead of print
 				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
@@ -283,7 +265,16 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	    }
 
 	    fmt.Printf("Deleting reviews for user %v\n", userInfo.Username)
-		err = userInfo.DeleteAllReviewsByUser()
+		err = userInfo.DeleteAllReviewsByUser(a.DB)
+	    if err != nil {
+	        //need logging here instead of print
+	        if strings.Contains("0 rows deleted", err.Error()) == false  {
+	        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+	        }
+	    }
+
+	    fmt.Printf("Deleting crawl info for user %v\n", userInfo.Username)
+		err = userInfo.DeleteCrawlInfo(a.DB)
 	    if err != nil {
 	        //need logging here instead of print
 	        if strings.Contains("0 rows deleted", err.Error()) == false  {
@@ -292,7 +283,7 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	    }
 
 	    fmt.Printf("Deleting user %v\n", userInfo.Username)
-	    err = userInfo.DeleteUser()
+	    err = userInfo.DeleteUser(a.DB)
 	    if err != nil {
 	        //need logging here instead of print
 	    	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
@@ -307,7 +298,7 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		// 	return
 		// }
 		fmt.Printf("Logging all sessions out for user %v\n", userInfo.Username)
-		err = db.LogoutAllSessions(userInfo.Username)
+		err = db.LogoutAllSessions(userInfo.Username, a.DB)
 
 		if err != nil {
 			//need logging here instead of print
@@ -326,15 +317,8 @@ func Logout(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Re
 
 	userInfo := new(db.UserInfo)
 	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
-	//need logging here instead of print
-	//extend session time by GC time
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
@@ -343,7 +327,7 @@ func Logout(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Re
 
 	case "POST":
 
-		err = db.Logout(cookie)
+		err := db.Logout(cookie, a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
@@ -369,15 +353,8 @@ func LogoutAll(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 
 	userInfo := new(db.UserInfo)
 	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
-	//need logging here instead of print
-	//extend session time by GC time
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
@@ -386,7 +363,7 @@ func LogoutAll(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 
 	case "POST":
 
-		err = db.LogoutAllSessions(username)
+		err := db.LogoutAllSessions(username, a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", userInfo.Username)
@@ -407,16 +384,8 @@ func LogoutAll(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
 	userInfo := new(db.UserInfo)
-	cookie := globalsessionkeeper.GetCookie(r)
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-		//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, err.Error()}
-	}
-	sessionUser := sessionStore.Get("username")
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
-	//need logging here instead of print
-	//extend session time by GC time
 	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
 	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	userInfo.Username = username
@@ -430,7 +399,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		if query["error"] != "" {
 			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
 			userInfo.InstaCode = ""
-			err = userInfo.UpdateInstaCode()
+			err := userInfo.UpdateInstaCode(a.DB)
 			if err != nil {
 				fmt.Printf("Err updating 1 instacode %v\n", err)
 				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
@@ -438,7 +407,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		}
 		userInfo.InstaCode = query["code"]
-		err = userInfo.UpdateInstaCode()
+		err := userInfo.UpdateInstaCode(a.DB)
 		if err != nil {
 			fmt.Printf("Err updating 2 instacode %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
@@ -453,36 +422,16 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 }
 
 func InstagramLinkClick(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
-	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Printf("Cookie = %v\n", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return nil
-	}
-
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-
-	if err != nil {
-			//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
-	}
-
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
-	fmt.Printf("SessionUser = %v\n", sessionUser)
-	fmt.Printf("This SessionId = %v\n", sessionUserID)
-
-
-	defer sessionStore.SessionRelease(w)
-	//create variables
+	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
 	switch r.Method {
 	case "PUT":
 
 		dbUserInfo := new(db.UserInfo)
 		dbUserInfo.Username = username
-		err = dbUserInfo.GetUserInfo(a.DB)
+		err := dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
@@ -492,7 +441,7 @@ func InstagramLinkClick(a *globalsessionkeeper.AppContext, w http.ResponseWriter
 		fmt.Printf("Json Input = %+v\n", dbUserInfo)
 		fmt.Printf("pass = %v\n", dbUserInfo.Password)
 
-		err = dbUserInfo.InstagramLinkClick()
+		err = dbUserInfo.InstagramLinkClick(a.DB)
 		if err != nil {
 			fmt.Println("Something not valid")
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}

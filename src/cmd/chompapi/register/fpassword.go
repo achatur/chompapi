@@ -34,7 +34,7 @@ func ForgotPassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if isValidInputUser(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON:"}
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, myErrorResponse.Desc}
 		}
 
 		dbUserInfo.Email = input.Email
@@ -56,7 +56,7 @@ func ForgotPassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 		fmt.Printf("Hash = %s\n", input.PasswordHash)
 		input.UserID = dbUserInfo.UserID
 
-		if err := input.UpdatePassword(true); err != nil {
+		if err := input.UpdatePassword(true, a.DB); err != nil {
 			fmt.Println("Error! = %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not Update Password: " + err.Error()}
 		}

@@ -11,25 +11,10 @@ type ReturnJson struct {
 	Reviews []db.Review `json:"reviews"`
 }
 func Reviews(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
-	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-			//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"}
-	}
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-			//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie Provided"}
-	}
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Printf("SessionUser = %v\n", sessionUser)
 	fmt.Printf("This SessionUserID = %v\n", sessionUserID)
-
-
-	//reset time to time.now() + maxlifetime
-	defer sessionStore.SessionRelease(w)
-
 	//create variables
 	userId := reflect.ValueOf(sessionUserID).Int()
 

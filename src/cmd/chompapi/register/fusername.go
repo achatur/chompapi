@@ -29,7 +29,7 @@ func ForgotUsername(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if isValidInputUser(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON"}
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, myErrorResponse.Desc}
 		}
 
 		dbUserInfo.Email = input.Email

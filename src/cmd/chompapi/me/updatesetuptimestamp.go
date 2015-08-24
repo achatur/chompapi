@@ -8,27 +8,11 @@ import (
 )
 
 func UpdateAccountSetupTimestamp(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
-	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Printf("Cookie = %v\n", cookie)
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
-	}
-
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-
-	if err != nil {
-			//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
-	}
-
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Printf("SessionUser = %v\n", sessionUser)
 	fmt.Printf("This SessionId = %v\n", sessionUserID)
 
-
-	defer sessionStore.SessionRelease(w)
 	//create variables
 	username := reflect.ValueOf(sessionUser).String()
 	switch r.Method {
@@ -37,7 +21,7 @@ func UpdateAccountSetupTimestamp(a *globalsessionkeeper.AppContext, w http.Respo
 		// input := new(db.UserInfo)
 		dbUserInfo := new(db.UserInfo)
 		dbUserInfo.Username = username
-		err = dbUserInfo.GetUserInfo(a.DB)
+		err := dbUserInfo.GetUserInfo(a.DB)
 		if err != nil {
 			fmt.Printf("Failed to get userinfo, err = %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}

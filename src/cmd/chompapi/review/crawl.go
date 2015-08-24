@@ -118,32 +118,12 @@ type ConfigFile struct {
 
 var FileDownload ConfigFile
 
-func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) {
+func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
-	var myErrorResponse globalsessionkeeper.ErrorResponse
-	cookie := globalsessionkeeper.GetCookie(r)
 
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Println("Cookie = %v", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-	if err != nil {
-			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-	}
-
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
-
-	//reset time to time.now() + maxlifetime
-	defer sessionStore.SessionRelease(w)
-
 	//create variables
 	username 	 := reflect.ValueOf(sessionUser).String()
 	userId 	 	 := reflect.ValueOf(sessionUserID).Int()
@@ -166,25 +146,16 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 		if err := decoder.Decode(&crawl); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in login %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 		fileContent, err := ioutil.ReadFile("./chomp_private/file_download.json")
 		if err != nil {
-    	    myErrorResponse.Code = http.StatusInternalServerError
-    	    myErrorResponse.Desc= err.Error()
-    	    myErrorResponse.HttpErrorResponder(w)
-    	    return
+    	    return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
     	}
     	err = json.Unmarshal(fileContent, &FileDownload)
     	if err != nil {
     	    fmt.Printf("Err = %v", err)
-    	    myErrorResponse.Code = http.StatusBadRequest
-    	    myErrorResponse.Desc= "Could not decode"
-    	    myErrorResponse.HttpErrorResponder(w)
-    	    return
+    	    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
     	}
 
     	/* //////////////////////////////////////// */
@@ -192,12 +163,10 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 		/* //////////////////////////////////////// */
 
 		fmt.Println("=======================================")
-		igStore.GetLastPull()
+		igStore.GetLastPull(a.DB)
 		if err != nil {
 			fmt.Printf("Error = %v\n")
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Could not set last crawl: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not set last crawl: " + err.Error()}
 		}
 		fmt.Printf("\nigStore Pull = %v\n", igStore)
 		fmt.Println("=======================================")
@@ -208,27 +177,19 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 
 		if errs != nil {
 			fmt.Printf("something went wrong in get %v", err)
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
           err = json.Unmarshal([]byte(body), &instaData)
 
 		if err != nil {
 			fmt.Printf("Err = %v", err)
-			myErrorResponse.Code = http.StatusServiceUnavailable
-			myErrorResponse.Desc= "Communication Issues:IG: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
+			return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, "Communication Issues:IG: " + err.Error()}
 		}
 
 		if len(instaData.Data) == 0 {
 			fmt.Println("No New Photos")
-			myErrorResponse.Code = http.StatusNoContent
-			myErrorResponse.Desc = "Nothing to update"
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
 
 		fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
@@ -262,17 +223,11 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 		fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
 		if len(reviewsToWrite) == 0 {
 			fmt.Println("No New Photos")
-			myErrorResponse.Code = http.StatusNoContent
-			myErrorResponse.Desc = "Nothing to update"
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
 
 		if err != nil {
-			myErrorResponse.Code = http.StatusServiceUnavailable
-			myErrorResponse.Desc= "Communication Issues:Google: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, "Communication Issues:Google: " + err.Error()}
 		}
 
 		googConfig := new(jwt.Config)
@@ -280,18 +235,12 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
     	fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
 
     	if err != nil {
-    	    myErrorResponse.Code = http.StatusInternalServerError
-    	    myErrorResponse.Desc= err.Error()
-    	    myErrorResponse.HttpErrorResponder(w)
-    	    return
+    	    return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
     	}
     	err = json.Unmarshal(fileContent, &gApiInfo)
     	if err != nil {
     	    fmt.Printf("Err = %v", err)
-    	    myErrorResponse.Code = http.StatusBadRequest
-    	    myErrorResponse.Desc= "Could not decode"
-    	    myErrorResponse.HttpErrorResponder(w)
-    	    return
+    	    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
     	}
 
     	googConfig.Email = gApiInfo.ClientEmail
@@ -302,6 +251,8 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 		storageReq := new(StorageReq)
 		ctx := context.Background()
 		client := googConfig.Client(ctx)
+		code := 200
+		desc := ""
 
 		for i, elem := range reviewsToWrite {
 
@@ -313,8 +264,8 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 
 			if err != nil {
 				fmt.Printf("No Review Created for %v\n", elem)
-				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
+				code = http.StatusPartialContent
+				desc = "Not all reviews added: " + err.Error()
 				continue
 			}
 
@@ -326,8 +277,8 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 
 			if photoInfo.ID == 0 {
 				fmt.Println("Something went wrong to create photo")
-				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
+				code =  http.StatusPartialContent
+				desc = "Not all reviews added: " + err.Error()
 			}
 
 			/* //////////////////////////////////////// */
@@ -342,8 +293,8 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 
 			if err != nil {
 				fmt.Println("Something went wrong storing photo")
-				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Desc= "Not all photos added: " + err.Error()
+				code =  http.StatusPartialContent
+				desc = "Not all photos added: " + err.Error()
 				continue
 			}
 
@@ -351,15 +302,15 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 			/*                Create Review   		    */
 			/* //////////////////////////////////////// */
 
-			err = instaData.Data[elem].CreateReview(photoInfo)
+			err = instaData.Data[elem].CreateReview(photoInfo, a)
 			if err == nil {
 
 				fmt.Printf("Review %v added\n", elem)
 			} else {
 
 				fmt.Printf("No Review Created for %v\n", elem)
-				myErrorResponse.Code = http.StatusPartialContent
-				myErrorResponse.Desc= "Not all reviews added: " + err.Error()
+				code =  http.StatusPartialContent
+				desc = "Not all reviews added: " + err.Error()
 				continue
 			}
 
@@ -371,9 +322,8 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 				if err != nil {
 
 					fmt.Printf("Cound't convert string%v\n", err)
-					myErrorResponse.Code = http.StatusServiceUnavailable
-					myErrorResponse.Desc= "Communication Issues:IG: " + err.Error()
-					myErrorResponse.HttpErrorResponder(w)
+					code =  http.StatusPartialContent
+					desc = "Not all reviews added: " + err.Error()
 				}
 
 			/* //////////////////////////////////////// */
@@ -384,22 +334,19 @@ func Crawl(a globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Requ
 
 				if err != nil {
 					fmt.Printf("Could not update table\n")
-					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Desc= "Not all reviews added: " + err.Error()
-					return
+					return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
 				}
 			}
 		}
+		return globalsessionkeeper.ErrorResponse{code, desc}
 
 	default:
 
-		myErrorResponse.Code = http.StatusMethodNotAllowed
-		myErrorResponse.Desc= "Method Not Allowed"
-		myErrorResponse.HttpErrorResponder(w)
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
 
-func CreatePhoto(username string, a globalsessionkeeper.AppContext) db.Photos {
+func CreatePhoto(username string, a *globalsessionkeeper.AppContext) db.Photos {
 
 	var photoInfo db.Photos
 
@@ -423,7 +370,7 @@ func CreatePhoto(username string, a globalsessionkeeper.AppContext) db.Photos {
 	return photoInfo
 }
 
-func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
+func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionkeeper.AppContext) error {
 
 	review := new(db.Review)
 	dbRestaurant := new(db.Restaurants)
@@ -438,7 +385,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 	review.Restaurant.SourceLocID = strconv.FormatInt(instaData.Location.ID, 10)
 
 	dbRestaurant.Name = instaData.Location.Name
-	err := dbRestaurant.GetRestaurantInfoByName()
+	err := dbRestaurant.GetRestaurantInfoByName(a.DB)
 	if err != nil && err != sql.ErrNoRows{
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v\n", err)
@@ -448,7 +395,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 		if review.Restaurant.Name != "" {
 			fmt.Println("Restaurant Not found in DB, creating new entry")
 
-			err = review.Restaurant.CreateRestaurant()
+			err = review.Restaurant.CreateRestaurant(a.DB)
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
@@ -471,7 +418,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				//creaet new restaurant with +1 to location_num
 				fmt.Println("location id !=")
 				review.Restaurant.LocationNum = dbRestaurant.LocationNum + 1
-				err = review.Restaurant.CreateRestaurant()
+				err = review.Restaurant.CreateRestaurant(a.DB)
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
@@ -496,7 +443,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 				  review.Restaurant.Source == "factual" {
 			fmt.Println("New restaurant instagram or factual, updating db")
 			if dbRestaurant.LocationNum == 0 {
-				review.Restaurant.UpdateRestaurant()
+				review.Restaurant.UpdateRestaurant(a.DB)
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
@@ -505,7 +452,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 			} else {
 				fmt.Println("location id !=")
 				review.Restaurant.LocationNum = dbRestaurant.LocationNum + 1
-				err = review.Restaurant.CreateRestaurant()
+				err = review.Restaurant.CreateRestaurant(a.DB)
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
@@ -529,7 +476,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos) error {
 
 	// create review
 	fmt.Printf("Creating reviews.. liked = %v\n", review.Liked)
-	err = review.CreateReview()
+	err = review.CreateReview(a.DB)
 	if err != nil {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v", err)

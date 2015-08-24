@@ -14,34 +14,17 @@ import (
 
 func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	var myErrorResponse globalsessionkeeper.ErrorResponse
-	cookie := globalsessionkeeper.GetCookie(r)
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Printf("Cookie = %v\n", cookie)
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"}
-	}
-
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-
-	if err != nil {
-			//need logging here instead of print
-		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Expired Cookie"}
-	}
-
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Printf("SessionUser = %v\n", sessionUser)
 	fmt.Printf("This SessionId = %v\n", sessionUserID)
 
-
-	defer sessionStore.SessionRelease(w)
 	//create variables
 	username := reflect.ValueOf(sessionUser).String()
 	switch r.Method {
 	case "PUT":
 
 		input := new(db.UserInfo)
-		// dbUserInfo := new(db.UserInfo)
 		decoder := json.NewDecoder(r.Body)
 
 		if err := decoder.Decode(&input); err != nil {
@@ -54,7 +37,7 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 
 		if isValidInputPassword(input, &myErrorResponse) == false {
 			fmt.Println("Something not valid")
-			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON"}
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, myErrorResponse.Desc}
 		}
 
 		input.Username = username
@@ -67,7 +50,7 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(input.Username, []byte(input.Password)))
 		fmt.Printf("Hash = %s\n", input.PasswordHash)
 
-		if err := input.UpdatePassword(false); err != nil {
+		if err := input.UpdatePassword(false, a.DB); err != nil {
 			fmt.Println("Error! = %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not Update Password: " + err.Error()}
 		}
@@ -92,7 +75,7 @@ func UpdatePassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 		
 	default:
 
-		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed" + err.Error()}
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 
 }

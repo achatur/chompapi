@@ -13,33 +13,11 @@ import (
 )
 
 
-func Reviews(w http.ResponseWriter, r *http.Request) {
+func Reviews(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 
-	var myErrorResponse globalsessionkeeper.ErrorResponse
-	cookie := globalsessionkeeper.GetCookie(r)
-
-	if cookie == "" {
-			//need logging here instead of print
-		fmt.Println("Cookie = %v", cookie)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
-
-	if err != nil {
-			//need logging here instead of print
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-	}
-
-	sessionUser := sessionStore.Get("username")
-	sessionUserID := sessionStore.Get("userId")
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
-
-	//reset time to time.now() + maxlifetime
-	defer sessionStore.SessionRelease(w)
-
 	//create variables
 	username 	 := reflect.ValueOf(sessionUser).String()
 	userId 	 	 := reflect.ValueOf(sessionUserID).Int()
@@ -58,35 +36,26 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		if err := decoder.Decode(&review); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in reviews %v\n", err.Error())
-			myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Malformed JSON: " + err.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
 		fmt.Printf("Dishtags = %v\n", review.DishTags)
 		fmt.Printf("Review = %v\n", review)
 		dbRestaurant.Name = review.Restaurant.Name
-		err2 := dbRestaurant.GetRestaurantInfoByName()
-		if err2 != nil && err2 != sql.ErrNoRows{
+		err := dbRestaurant.GetRestaurantInfoByName(a.DB)
+		if err != nil && err != sql.ErrNoRows{
 			//something bad happened
 			fmt.Printf("something went while retrieving data %v", err)
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "something went while retrieving data:-:" + err2.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
-		} else if err2 == sql.ErrNoRows || dbRestaurant.ID == 0 {
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
+		} else if err == sql.ErrNoRows || dbRestaurant.ID == 0 {
 			// not found in DB
 			if review.Restaurant.Name != "" {
 				fmt.Println("Restaurant Not found in DB, creating new entry")
-				err = review.Restaurant.CreateRestaurant()
+				err = review.Restaurant.CreateRestaurant(a.DB)
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Desc= "something went while retrieving data:-:" + err.Error()
-					myErrorResponse.HttpErrorResponder(w)	
-					return
+					return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
 				}
 			} else {
 				// Restaurant Value Blank
@@ -106,14 +75,11 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 					//creaet new restaurant with +1 to location_num
 					fmt.Println("location id !=")
 					review.Restaurant.LocationNum = dbRestaurant.LocationNum + 1
-					err = review.Restaurant.CreateRestaurant()
+					err = review.Restaurant.CreateRestaurant(a.DB)
 					if err != nil {
 						//something bad happened
 						fmt.Printf("something went while retrieving data %v", err)
-						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.Desc= "something went while retrieving data:-:" + err.Error()
-						myErrorResponse.HttpErrorResponder(w)
-						return	
+						return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
 					}
 				} else {
 					//use existing DB values
@@ -135,26 +101,20 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 				fmt.Printf("New restaurant %v, updating db\n", review.Restaurant.Source)
 				if dbRestaurant.LocationNum == 0 {
 					review.Restaurant.ID = dbRestaurant.ID
-					review.Restaurant.UpdateRestaurant()
+					review.Restaurant.UpdateRestaurant(a.DB)
 					if err != nil {
 						//something bad happened
 						fmt.Printf("something went while retrieving data %v", err)
-						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.Desc= "something went while retrieving data:-:" + err.Error()
-						myErrorResponse.HttpErrorResponder(w)
-						return	
+						return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
 					}
 				} else {
 					fmt.Println("location id !=")
 					review.Restaurant.LocationNum = dbRestaurant.LocationNum + 1
-					err = review.Restaurant.CreateRestaurant()
+					err = review.Restaurant.CreateRestaurant(a.DB)
 					if err != nil {
 						//something bad happened
 						fmt.Printf("something went while retrieving data %v", err)
-						myErrorResponse.Code = http.StatusInternalServerError
-						myErrorResponse.Desc= "something went while retrieving data:-:" + err.Error()
-						myErrorResponse.HttpErrorResponder(w)
-						return	
+						return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
 					}
 				}
 			}  
@@ -162,25 +122,19 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		// all other cases
 		//Validate dish
 		dbDish.Name = review.Dish.Name
-		err3 := dbDish.GetDishInfoByName()
-		if err3 != nil && err3 != sql.ErrNoRows{
+		err = dbDish.GetDishInfoByName(a.DB)
+		if err != nil && err != sql.ErrNoRows{
 			//something bad happened
 			fmt.Printf("something went while retrieving data %v", err)
-			myErrorResponse.Code = http.StatusInternalServerError
-			myErrorResponse.Desc= "something went while retrieving data:-:" + err3.Error()
-			myErrorResponse.HttpErrorResponder(w)
-			return
-		} else if err3 == sql.ErrNoRows {
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
+		} else if err == sql.ErrNoRows {
 			// not found in DB
 			fmt.Println("Not found in DB, creating new entry")
-			err = review.Dish.CreateDish()
+			err = review.Dish.CreateDish(a.DB)
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= "something went while retrieving data:-:" + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "something went while retrieving data:-:" + err.Error()}
 			}
 		} else {
 			fmt.Println("Found Dish ", dbDish)
@@ -189,60 +143,51 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("writing to db!")
 
 		if r.Method == "PUT" {
+
 			vars := mux.Vars(r)
-   		review_id, thisErr := strconv.Atoi(vars["reviewID"])
-   		if thisErr != nil {
-   			fmt.Println("Not An Integer")
-   			myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Desc= "Invalid Review ID"
-				myErrorResponse.HttpErrorResponder(w)
-			return
-   		}
-   		review.ID = review_id
-			err = review.UpdateReview()
+   			review_id, thisErr := strconv.Atoi(vars["reviewID"])
+   			if thisErr != nil {
+   				fmt.Println("Not An Integer")
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Invalid Review ID"}
+   			}
+   			review.ID = review_id
+			err = review.UpdateReview(a.DB)
 			if err != nil {
 				//something bad happened
 				if err.Error() == "0 rows updated" {
 					fmt.Printf("something went while retrieving data %v", err)
-					myErrorResponse.Code = http.StatusBadRequest
-					myErrorResponse.Desc= err.Error()
-					myErrorResponse.HttpErrorResponder(w)
+					return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 				} else {
 					fmt.Printf("something went while retrieving data %v", err)
-					myErrorResponse.Code = http.StatusInternalServerError
-					myErrorResponse.Desc= "could not update review:-:" + err.Error()
-					myErrorResponse.HttpErrorResponder(w)
+					return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "could not update review:-:" + err.Error()}
 				}
 			} else {
-				review.GetReviewLastTimeStamp(review.ID)
+				review.GetReviewLastTimeStamp(review.ID, a.DB)
 				lastUpdate := strconv.Itoa(review.LastUpdated)
 				w.Header().Set("LastUpdated", lastUpdate)
 				w.WriteHeader(http.StatusNoContent)
 			}
 		} else {
-			err = review.CreateReview()
+			err = review.CreateReview(a.DB)
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Desc= "could not create review:-:" + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
-				return
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "could not create review:-:" + err.Error()}
 			} else {
-				review.GetReviewLastTimeStamp(review.ID)
-				review.GetReviewLastTimeStamp(review.ID)
+				review.GetReviewLastTimeStamp(review.ID, a.DB)
 				lastUpdate := strconv.Itoa(review.LastUpdated)
 				w.Header().Set("LastUpdated", lastUpdate)
 				w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/reviews/%d", review.ID))
 				w.WriteHeader(http.StatusCreated)
 			}
 		}
-		return
+		// return
+		return nil
 
 	case "GET":
 
 		fmt.Println("Working Skel ")
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 
 	case "DELETE":
 
@@ -250,34 +195,24 @@ func Reviews(w http.ResponseWriter, r *http.Request) {
    	review_id, thisErr := strconv.Atoi(vars["reviewID"])
    	if thisErr != nil {
    		fmt.Println("Not An Integer")
-   		myErrorResponse.Code = http.StatusBadRequest
-			myErrorResponse.Desc= "Invalid Review ID"
-			myErrorResponse.HttpErrorResponder(w)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Invalid Review ID"}
    	}
    	review.ID = review_id
-		err = review.DeleteReview()
+		err := review.DeleteReview(a.DB)
 		if err != nil {
 			//something bad happened
 			if err.Error() == "0 rows deleted" {
 				fmt.Printf("something went while retrieving data %v", err)
-				myErrorResponse.Code = http.StatusBadRequest
-				myErrorResponse.Desc= "Error: " + err.Error()
-				myErrorResponse.HttpErrorResponder(w)
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Error: " + err.Error()}
 			} else {
 				fmt.Printf("something went while retrieving data %v", err)
-				myErrorResponse.Code = http.StatusInternalServerError
-				myErrorResponse.Desc= "could not create review"
-				myErrorResponse.HttpErrorResponder(w)
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "could not create review"}
 			}
-			
-			return
 		}
        w.WriteHeader(http.StatusNoContent)
-       return
+       return nil
 
 	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
 }
