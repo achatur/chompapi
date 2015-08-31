@@ -54,7 +54,14 @@ body,.wrapper,.emb-editor-canvas{background-color:#f2f2f2}.border{background-col
 {{if .Pass}}
 <strong>No worries, we have reset your Chomp password at your request:</strong><br>
 <br>
-<div style="background-color:blue; color:white; padding:20px;"><strong>{{.Pass}}<br><br></strong></div>
+<div><strong>
+                                <SPAN ID="copytext" style="height:150;width:162;background-color:pink">
+                                  {{.Pass}}
+                                </SPAN> 
+                                <TEXTAREA ID="holdtext" style="display:none;">
+                                </TEXTAREA>
+                                <BUTTON onClick="ClipBoard();">Copy Password</BUTTON><br><br>
+                              </strong></div>
 <h2>This password will expire for 24 hours.</h2>  
 {{else if .Username}}
 We recently recieved word that you forgot your username. &nbsp;Here's your username:<br><br>
