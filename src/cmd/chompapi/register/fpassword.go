@@ -49,7 +49,8 @@ func ForgotPassword(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r 
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "DOB Does not Match"}
 		}
 
-		randomPass := GeneratePassword(13)
+		// randomPass := GeneratePassword(13)
+		randomPass := PickPassword()
 		fmt.Printf("RandomPass = %v\n", randomPass)
 
 		input.PasswordHash = hex.EncodeToString(crypto.GeneratePassword(dbUserInfo.Username, []byte(randomPass)))
@@ -105,6 +106,22 @@ func GeneratePassword(n int) string {
         b[i] = letters[rand.Intn(len(letters))]
     }
     return string(b)
+}
+
+func PickPassword() string {
+	var words = []string{"taste",
+							 "bacon",
+							 "flour",
+							 "bagel",
+							 "cream",
+							 "cheese",
+							 "maple",
+							 "sugar",
+							 "sauce",
+							 "dishes"}
+
+        
+    return words[rand.Intn(len(words))]
 }
 
 func init() {

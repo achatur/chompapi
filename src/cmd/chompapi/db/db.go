@@ -289,7 +289,7 @@ func (userInfo UserInfo) UpdatePassword(temp bool, db *sql.DB) error {
 
 		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
 							  WHERE chomp_user_id=?`, userInfo.PasswordHash, true, 
-							  time.Now().Unix() + 86400, userInfo.UserID)
+							  time.Now().Unix() + 300, userInfo.UserID)
 	} else {
 
 		results, err2 = db.Exec(`UPDATE chomp_users SET password_hash=?, is_password_temp = ?, password_expiry = ?
