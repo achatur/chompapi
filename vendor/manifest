@@ -2,11 +2,10 @@
 	"version": 0,
 	"dependencies": [
 		{
-			"importpath": "github.com/astaxie/beego/session",
-			"repository": "https://github.com/astaxie/beego",
-			"revision": "a89f14d80dab442927bdc11d641aa1250ab8ad71",
-			"branch": "master",
-			"path": "/session"
+			"importpath": "github.com/achatur/beego",
+			"repository": "https://github.com/achatur/beego",
+			"revision": "3a5055349074042b5a06c237599ebb0390e7d165",
+			"branch": "master"
 		},
 		{
 			"importpath": "github.com/astaxie/beego/utils",
