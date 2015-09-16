@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"errors"
 	"time"
-	"github.com/astaxie/beego/session"
+	"github.com/achatur/beego/session"
 	"cmd/chompapi/globalsessionkeeper"
 	"strings"
 	"strconv"

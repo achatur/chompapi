@@ -10,7 +10,7 @@ import (
 	"cmd/chompapi/login"
 	"cmd/chompapi/register"
 	"cmd/chompapi/globalsessionkeeper"
-	"github.com/astaxie/beego/session"
+	"github.com/achatur/beego/session"
 	"cmd/chompapi/me"
 	"cmd/chompapi/review"
 	"database/sql"
