@@ -33,6 +33,7 @@ func init() {
 	var err error
 	GetConfig()
 	sessionConfig, _ := json.Marshal(globalsessionkeeper.ChompConfig.ManagerConfig)
+	dbConfig := globalsessionkeeper.ChompConfig.DbConfig
 	fmt.Printf("\n\n\nIn init, new manager\n")
 	fmt.Printf("In init, new manager\n")
 	fmt.Printf("In init, new manager\n\n\n\n")
@@ -45,7 +46,11 @@ func init() {
 	}
 	err = errors.New("")
 	fmt.Printf("Opening DB connection\n")
-	MyDb, err = sql.Open("mysql", "root@tcp(172.16.0.1:3306)/chomp")
+	// Connection string looks as the following
+	//MyDb, err = sql.Open("service", "user@tcp(ip:port)/database")
+	connString := fmt.Sprintf("%s@tcp(%s:%s)/%s", dbConfig.User, dbConfig.Host,dbConfig.Port, dbConfig.Db)
+	fmt.Printf("ConnString = %s\n", connString)
+	MyDb, err = sql.Open("mysql", connString) 
 	if err != nil {
 		// return err
 		fmt.Printf("Error = %v\n", err)
