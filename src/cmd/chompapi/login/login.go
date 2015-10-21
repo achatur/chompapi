@@ -38,7 +38,7 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Invalid Username"}
+			return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Username"}
 		}
 		fmt.Println("return from db = %v", userInfo)
 
