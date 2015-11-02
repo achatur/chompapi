@@ -104,7 +104,7 @@ func (ah AppHandler) SessionAuth(pass handler) handler {
 			//need logging here instead of print
 			fmt.Println("Session Auth Cookie = %v", cookie)
 			query := mux.Vars(r)
-			fmt.Printf("Query %v\n", query)
+			fmt.Printf("Query here.. %v\n", query)
 			if query["token"] != "" {
 				fmt.Printf("Error not nil, updating error instacode %v\n", query["token"])
 				cookie = query["token"]
