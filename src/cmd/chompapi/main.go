@@ -225,7 +225,7 @@ func main() {
 
 	//this is how you write a query parameter capture uri
 	// router.Queries("token", "{token}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
-	router.Queries("token", "{token}", "code", "{code:.*").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
+	router.Queries("token", "code", "{code:.*").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 	router.Queries("token", "{token}", "error", "{error").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 	// router.Queries("code", "{code}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 	router.Queries("error", "{error}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
