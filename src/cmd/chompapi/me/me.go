@@ -421,6 +421,47 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 	}
 }
 
+func InstagramGetAccessToken(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
+
+	userInfo := new(db.UserInfo)
+	sessionUser := a.SessionStore.Get("username")
+	username := reflect.ValueOf(sessionUser).String()
+	fmt.Printf("Found Session! Session username = %v\n", sessionUser)
+	fmt.Printf("values = %v\n", reflect.TypeOf(sessionUser))
+	userInfo.Username = username
+
+	switch r.Method {
+
+	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		// query := mux.Vars(r)
+		// fmt.Printf("Query %v\n", query)
+		// if query["error"] != "" {
+		// 	fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
+		// 	userInfo.InstaCode = ""
+		// 	err := userInfo.UpdateInstaCode(a.DB)
+		// 	if err != nil {
+		// 		fmt.Printf("Err updating 1 instacode %v\n", err)
+		// 		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		// 	}
+		// 	return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
+		// }
+		// userInfo.InstaCode = query["code"]
+		err := userInfo.GetInstagramAccessToken(a.DB)
+		if err != nil {
+			fmt.Printf("Err getting instagram token %v\n", err)
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		}
+		return nil
+		
+	default:
+
+		fmt.Printf("Non supported method called in InstagramGetAccessToken = %v\n", r.Method)
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
+	}
+}
+
+
 func InstagramLinkClick(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
 	sessionUser := a.SessionStore.Get("username")
 	username := reflect.ValueOf(sessionUser).String()

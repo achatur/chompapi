@@ -278,6 +278,21 @@ func (userInfo *UserInfo) SetUserInactive(db *sql.DB) error {
 	return err
 }
 
+func (userInfo *UserInfo) GetInstagramAccessToken(db *sql.DB) error {
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	err := db.QueryRow(`SELECT insta_code from chomp_users
+						WHERE chomp_user_id = ?`, userInfo.UserID).Scan(&userInfo.InstaCode)
+
+	if err != nil {
+		fmt.Printf("Error getting instagram code = %v\n", err)
+		return err
+	}
+
+	return nil
+}
 func (userInfo UserInfo) UpdatePassword(temp bool, db *sql.DB) error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
@@ -761,7 +776,6 @@ func (review *Review) GetReviewLastTimeStamp(reviewId int, db *sql.DB) error {
 	}
 	return err
 }
-
 
 func (review *Review) AddDishTags(db *sql.DB) ([]int, error) {
 	// Prepare statement

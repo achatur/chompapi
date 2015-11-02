@@ -103,8 +103,15 @@ func (ah AppHandler) SessionAuth(pass handler) handler {
 		if cookie == "" {
 			//need logging here instead of print
 			fmt.Println("Session Auth Cookie = %v", cookie)
-			HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"})
-			return
+			query := mux.Vars(r)
+			fmt.Printf("Query %v\n", query)
+			if query["token"] != "" {
+				fmt.Printf("Error not nil, updating error instacode %v\n", query["token"])
+				cookie = query["token"]
+			} else {
+				HttpErrorResponder(w, globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "No Cookie Present"})
+				return
+			}
 		}
 	
 		sessionStore, err := globalsessionkeeper.GlobalSessions.GetSessionStore(cookie)
@@ -215,6 +222,10 @@ func main() {
 	router.HandleFunc("/admin/jwt", BasicAuth(AppHandler{context, crypto.GetJwt}.ServerHttp))
 
 	router.HandleFunc("/me", AppHandler{appContext: context, h: me.GetMe}.SessionAuth(AppHandler{appContext: context, h: me.GetMe}.ServerHttp))
+
+	//this is how you write a query parameter capture uri
+	router.Queries("token", "{token}", "code", "{code").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
+	router.Queries("token", "{token}", "error", "{error").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 	router.Queries("code", "{code}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 	router.Queries("error", "{error}").HandlerFunc(AppHandler{appContext: context, h: me.Instagram}.SessionAuth(AppHandler{context, me.Instagram}.ServerHttp))
 
