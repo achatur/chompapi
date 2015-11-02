@@ -48,7 +48,7 @@ func init() {
 	fmt.Printf("Opening DB connection\n")
 	// Connection string looks as the following
 	//MyDb, err = sql.Open("service", "user@tcp(ip:port)/database")
-	connString := fmt.Sprintf("%s@tcp(%s:%s)/%s", dbConfig.User, dbConfig.Host,dbConfig.Port, dbConfig.Db)
+	connString := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", dbConfig.User, dbConfig.Pass, dbConfig.Host,dbConfig.Port, dbConfig.Db)
 	fmt.Printf("ConnString = %s\n", connString)
 	MyDb, err = sql.Open("mysql", connString) 
 	if err != nil {
