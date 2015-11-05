@@ -418,14 +418,16 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 	case "GET":
 		w.Header().Set("Content-Type", "application/json")
 		//instagram config 
+		fmt.Printf("Made it to get...\n")
 		instaConfig := new(InstagramTokenRequest)
 		instaConfigFile, err := ioutil.ReadFile("./chomp_private/instagram_auth.conf")
 		if err != nil {
+			fmt.Printf("Error getting file\n")
 		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		err = json.Unmarshal(instaConfigFile, &instaConfig)
 		if err != nil {
-		    fmt.Printf("Err = %v", err)
+		    fmt.Printf("Err marshalling instaConfigFile = %v", err)
 		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
 		fmt.Printf("Config File = %v\n", instaConfigFile)
