@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 	"strings"
+	"github.com/parnurzeal/gorequest"
 )
 
 type UserInfo struct {
@@ -24,6 +25,27 @@ type UserInfo struct {
 
 type Photo struct {
 	ID			string 		`json:"id"`
+}
+
+type InstagramTokenRequest struct {
+	ClientId 				string 	`json:"client_id"`
+	ClientSecret 			string 	`json:"client_secret"`
+	RedirectUri 			string 	`json:"redirect_uri"`
+	Code 					string 	`json:"code"`
+}
+
+type InstagramTokenReturn struct {
+	AccessToken 			string `json:"access_token"`
+	User 					InstaUser 	`json:"user"`
+
+}
+
+type InstaUser struct {
+	Id						int 	`json:"id"`
+	Username				string 	`json:"string"`
+	FullName 				string 	`json:"full_name"`
+	ProfilePicture 			string  `json:"profile_picture"`
+
 }
 
 
@@ -394,6 +416,17 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 
 	case "GET":
 		w.Header().Set("Content-Type", "application/json")
+		//instagram config 
+		instaConfig := new(InstagramTokenRequest)
+		instaConfigFile, err := ioutil.ReadFile("./chomp_private/instagram_auth.conf")
+		if err != nil {
+		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		}
+		err = json.Unmarshal(instaConfigFile, &instaConfig)
+		if err != nil {
+		    fmt.Printf("Err = %v", err)
+		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		}
 		query := mux.Vars(r)
 		fmt.Printf("Query %v\n", query)
 		if query["error"] != "" {
@@ -406,6 +439,8 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 			}
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		}
+		instaConfig.Code = query["code"]
+		userInfo.InstaToken = getInstagramToken(instaConfig)
 		userInfo.InstaCode = query["code"]
 		err := userInfo.UpdateInstaCode(a.DB)
 		if err != nil {
@@ -419,6 +454,19 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		fmt.Printf("Made it here.. method = %v\n", r.Method)
 		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
 	}
+}
+
+func getInstagramToken(instagramTokenReq InstagramTokenRequest) (string, error) {
+	iurl :=  "https://api.instagram.com/oauth/access_token"
+	// instagramTokenReq := new(InstagramTokenRequest)
+
+	instagramTokenReq.ClientId
+	request := gorequest.New()
+	resp, body, errs := request.Post(iurl).Send(InstagramTokenReq).End()
+	if errs != nil {
+		fmt.Printf("something went wrong in get %v", err)
+	}
+	return body.access_token, errs
 }
 
 func InstagramGetAccessToken(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {

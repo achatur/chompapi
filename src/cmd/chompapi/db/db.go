@@ -42,6 +42,7 @@ type UserInfo struct {
 	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
 	PasswordExpiry 	int 			`josn:"passwordExpiry"`
 	InstaCode 		string 			`json:"instaCode,omitempty"`
+	InstaToken 		string 			`json:"instaToken,omitempty"`
 }
 
 // Plurals are names of tables in DB
@@ -140,7 +141,7 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err := db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
 						phone_number, password_hash, dob, gender, photo_id, photos.uuid, photos.latitude, photos.longitude,
-						is_password_temp, password_expiry, fname, lname, insta_code
+						is_password_temp, password_expiry, fname, lname, insta_code, insta_token
 					   FROM chomp_users
 					   JOIN photos on photos.id = chomp_users.photo_id
 					   WHERE chomp_username=?`, 
@@ -150,7 +151,7 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
 					   							    &userInfo.Photo.Latitude, &userInfo.Photo.Longitude,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
-					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode)
+					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode, &userInfo.InstaToken)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
