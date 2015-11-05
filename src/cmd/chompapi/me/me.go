@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/parnurzeal/gorequest"
+	"io/ioutil"
 )
 
 type UserInfo struct {
@@ -456,7 +457,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 	}
 }
 
-func getInstagramToken(instagramTokenReq InstagramTokenRequest) (string, error) {
+func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error) {
 	iurl :=  "https://api.instagram.com/oauth/access_token"
 	// instagramTokenReq := new(InstagramTokenRequest)
 
