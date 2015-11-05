@@ -468,13 +468,14 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	// instagramTokenReq := new(InstagramTokenRequest)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	request := gorequest.New()
-	resp, body, errs := request.Post(iurl).Send(instagramTokenReq).End()
+	resp, body, errs := request.Post(iurl).Send(*instagramTokenReq).End()
 	if errs != nil {
 		fmt.Printf("something went wrong in get %v", errs)
+		return "nil", errs[0]
 	}
 	fmt.Printf("Body = %v\n", body)
 	fmt.Printf("resp = %v\n", resp)
-	return "access_token", errs[0]
+	return "access_token", nil
 }
 
 func InstagramGetAccessToken(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
