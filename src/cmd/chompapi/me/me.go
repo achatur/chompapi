@@ -441,7 +441,10 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		}
 		instaConfig.Code = query["code"]
-		userInfo.InstaToken = getInstagramToken(instaConfig)
+		userInfo.InstaToken, err = getInstagramToken(instaConfig)
+		if err != nil {
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		}
 		userInfo.InstaCode = query["code"]
 		err := userInfo.UpdateInstaCode(a.DB)
 		if err != nil {
@@ -461,11 +464,10 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	iurl :=  "https://api.instagram.com/oauth/access_token"
 	// instagramTokenReq := new(InstagramTokenRequest)
 
-	instagramTokenReq.ClientId
 	request := gorequest.New()
 	resp, body, errs := request.Post(iurl).Send(InstagramTokenReq).End()
 	if errs != nil {
-		fmt.Printf("something went wrong in get %v", err)
+		fmt.Printf("something went wrong in get %v", errs)
 	}
 	return body.access_token, errs
 }
