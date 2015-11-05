@@ -428,18 +428,19 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		    fmt.Printf("Err = %v", err)
 		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
+		fmt.Printf("Config File = %v\n", instaConfigFile)
 		query := mux.Vars(r)
-		fmt.Printf("Query %v\n", query)
-		if query["error"] != "" {
-			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
-			userInfo.InstaCode = ""
-			err := userInfo.UpdateInstaCode(a.DB)
-			if err != nil {
-				fmt.Printf("Err updating 1 instacode %v\n", err)
-				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
-			}
-			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
-		}
+		fmt.Printf("\n\nQuery NOW %v\n", query)
+		// if query["error"] != "" {
+		// 	fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
+		// 	userInfo.InstaCode = ""
+		// 	err := userInfo.UpdateInstaCode(a.DB)
+		// 	if err != nil {
+		// 		fmt.Printf("Err updating 1 instacode %v\n", err)
+		// 		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+		// 	}
+		// 	return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
+		// }
 		instaConfig.Code = query["code"]
 		userInfo.InstaToken, err = getInstagramToken(instaConfig)
 		if err != nil {
@@ -463,7 +464,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error) {
 	iurl :=  "https://api.instagram.com/oauth/access_token"
 	// instagramTokenReq := new(InstagramTokenRequest)
-
+	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	request := gorequest.New()
 	resp, body, errs := request.Post(iurl).Send(instagramTokenReq).End()
 	if errs != nil {
