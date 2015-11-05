@@ -469,7 +469,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	if errs != nil {
 		fmt.Printf("something went wrong in get %v", errs)
 	}
-	return body.access_token, errs[0]
+	return body["access_token"], errs[0]
 }
 
 func InstagramGetAccessToken(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
