@@ -430,9 +430,9 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		    fmt.Printf("Err marshalling instaConfigFile = %v", err)
 		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
-		fmt.Printf("Config File = %v\n", instaConfigFile)
+		fmt.Printf("\n\nConfig File = %v\n\n", instaConfig)
 		query := mux.Vars(r)
-		fmt.Printf("\n\nQuery NOW %v\n", query)
+		fmt.Printf("\n\nQuery NOW %v\n\n", query)
 		// if query["error"] != "" {
 		// 	fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
 		// 	userInfo.InstaCode = ""
