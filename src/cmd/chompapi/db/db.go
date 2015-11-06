@@ -284,7 +284,7 @@ func (userInfo *UserInfo) GetInstagramAccessToken(db *sql.DB) error {
 	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
 
 	err := db.QueryRow(`SELECT insta_code from chomp_users
-						WHERE chomp_user_id = ?`, userInfo.UserID).Scan(&userInfo.InstaCode)
+						WHERE chomp_user_id = ?`, userInfo.UserID).Scan(&userInfo.InstaToken)
 
 	if err != nil {
 		fmt.Printf("Error getting instagram code = %v\n", err)
