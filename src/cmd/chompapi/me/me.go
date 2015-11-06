@@ -11,8 +11,9 @@ import (
 	"github.com/gorilla/mux"
 	"strconv"
 	"strings"
-	"github.com/parnurzeal/gorequest"
+	// "github.com/parnurzeal/gorequest"
 	"io/ioutil"
+	"net/url"
 )
 
 type UserInfo struct {
