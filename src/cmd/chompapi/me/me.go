@@ -489,6 +489,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	v.Set("grant_type", "authorization_code")
 	v.Set("redirect_uri", instagramTokenReq.RedirectUri)
 	v.Set("code", instagramTokenReq.Code)
+	fmt.Printf("instagram Token = %v\n", instagramTokenReq.Code)
 
 	resp, errs := http.PostForm("https://api.instagram.com/oauth/access_token", v)
 	if errs != nil {
