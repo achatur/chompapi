@@ -466,14 +466,14 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 }
 
 func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error) {
-	iurl :=  "https://api.instagram.com/oauth/access_token"
+	// iurl :=  "https://api.instagram.com/oauth/access_token"
 	// instagramTokenReq := new(InstagramTokenRequest)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	// send := InstagramTokenRequest{ ClientId: instagramTokenReq.ClientId, ClientSecret: instagramTokenReq.ClientSecret, GrantType:"authorization_code", RedirectUri: instagramTokenReq.RedirectUri, Code: instagramTokenReq.Code}
 	// request := gorequest.New()
 	// resp, body, errs := request.Post(iurl).Set("Accept", "application/json").Send(instagramTokenReq).End()
 	// resp, body, errs := request.Post(iurl).Send(send).End()
-	resp, errs := http.PostForm(iurl,
+	resp, errs := http.PostForm("https://api.instagram.com/oauth/access_token",
     url.Values{"client_id": {"%s", instagramTokenReq.ClientId},
     			"client_secret": {"%s", instagramTokenReq.ClientSecret},
     			"grant_type":{"authorization_code"}, "redirect_uri": {"%s", instagramTokenReq.RedirectUri},
