@@ -33,6 +33,7 @@ type InstagramTokenRequest struct {
 	ClientSecret 			string 	`json:"client_secret"`
 	RedirectUri 			string 	`json:"redirect_uri"`
 	Code 					string 	`json:"code"`
+	GrantType	 			string  `json:"grant_type"`
 }
 
 type InstagramTokenReturn struct {
@@ -468,7 +469,8 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	// instagramTokenReq := new(InstagramTokenRequest)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	request := gorequest.New()
-	resp, body, errs := request.Post(iurl).Send(&instagramTokenReq).End()
+	resp, body, errs := request.Post(iurl).Send(*instagramTokenReq).End()
+	// resp, body, errs := request.Post(iurl).Send(`{"client_id":"%s", "client_secret":"%s", "g"}`).End()
 	if errs != nil {
 		fmt.Printf("something went wrong in get %v", errs)
 		return "nil", errs[0]
