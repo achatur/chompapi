@@ -447,7 +447,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		// 	return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		// }
 		instaConfig.Code = query["code"]
-		instaConfig.ChompToken = globalsessionkeeper.GetCookie(r)
+		instaConfig.ChompToken = query["token"]
 		userInfo.InstaToken, err = getInstagramToken(instaConfig)
 		if err != nil {
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
