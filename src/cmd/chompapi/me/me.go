@@ -470,12 +470,14 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error) {
 
 	igTokenReturn := new(InstagramTokenReturn)
+	redirect := fmt.Sprintf("%s%s", instagramTokenReq.RedirectUri, instagramTokenReq.ChompToken)
+	fmt.Printf("Redirect = %v\n", redirect)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	v := url.Values{}
 	v.Set("client_id", instagramTokenReq.ClientId)
 	v.Set("client_secret", instagramTokenReq.ClientSecret)
 	v.Set("grant_type", "authorization_code")
-	v.Set("redirect_uri", fmt.Sprintf(instagramTokenReq.RedirectUri, instagramTokenReq.ChompToken))
+	v.Set("redirect_uri", )
 	v.Set("code", instagramTokenReq.Code)
 	fmt.Printf("instagram Token = %v\n", instagramTokenReq.Code)
 
