@@ -470,7 +470,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
 	// send := InstagramTokenRequest{ ClientId: instagramTokenReq.ClientId, ClientSecret: instagramTokenReq.ClientSecret, GrantType:"authorization_code", RedirectUri: instagramTokenReq.RedirectUri, Code: instagramTokenReq.Code}
 	request := gorequest.New()
-	resp, body, errs := request.Post(iurl).SendStruct(*instagramTokenReq).End()
+	resp, body, errs := request.Post(iurl).Set("Accept", "application/json").Send(instagramTokenReq).End()
 	// resp, body, errs := request.Post(iurl).Send(send).End()
 	if errs != nil {
 		fmt.Printf("something went wrong in get %v", errs)
