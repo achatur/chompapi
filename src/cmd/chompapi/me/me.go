@@ -35,6 +35,7 @@ type InstagramTokenRequest struct {
 	RedirectUri 			string 	`json:"redirect_uri"`
 	Code 					string 	`json:"code"`
 	GrantType	 			string  `json:"grant_type"`
+	ChompToken				string
 }
 
 type InstagramTokenReturn struct {
@@ -446,6 +447,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		// 	return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
 		// }
 		instaConfig.Code = query["code"]
+		instaConfig.ChompToken = globalsessionkeeper.GetCookie(r)
 		userInfo.InstaToken, err = getInstagramToken(instaConfig)
 		if err != nil {
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
@@ -466,28 +468,14 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 }
 
 func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error) {
-	// iurl :=  "https://api.instagram.com/oauth/access_token"
-	// instagramTokenReq := new(InstagramTokenRequest)
+
+	igTokenReturn := new(InstagramTokenReturn)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
-	// send := InstagramTokenRequest{ ClientId: instagramTokenReq.ClientId, ClientSecret: instagramTokenReq.ClientSecret, GrantType:"authorization_code", RedirectUri: instagramTokenReq.RedirectUri, Code: instagramTokenReq.Code}
-	// request := gorequest.New()
-	// resp, body, errs := request.Post(iurl).Set("Accept", "application/json").Send(instagramTokenReq).End()
-	// resp, body, errs := request.Post(iurl).Send(send).End()
-	// resp, errs := http.PostForm("https://api.instagram.com/oauth/access_token",
- //    url.Values{"client_id": {instagramTokenReq.ClientId},
- //    			"client_secret": {instagramTokenReq.ClientSecret},
- //    			"grant_type":{"authorization_code"}, "redirect_uri": {instagramTokenReq.RedirectUri},
- //    			"code":{instagramTokenReq.Code}})
-	// if errs != nil {
-	// 	fmt.Printf("something went wrong in get %v", errs)
-	// 	return "nil", errs
-	// }
-	// // fmt.Printf("Body = %v\n", re)
 	v := url.Values{}
 	v.Set("client_id", instagramTokenReq.ClientId)
 	v.Set("client_secret", instagramTokenReq.ClientSecret)
 	v.Set("grant_type", "authorization_code")
-	v.Set("redirect_uri", instagramTokenReq.RedirectUri)
+	v.Set("redirect_uri", strings.Join(instagramTokenReq.RedirectUri))
 	v.Set("code", instagramTokenReq.Code)
 	fmt.Printf("instagram Token = %v\n", instagramTokenReq.Code)
 
@@ -497,9 +485,12 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	  return "nil", errs
 	}
 	fmt.Printf("resp = %v\n", resp)
-	content, _ := ioutil.ReadAll(resp.Body)
-	fmt.Printf("Body = %v\n", string(content))
-	return "access_token", nil
+	err := Unmarshal(ioutil.ReadAll(resp.Body), &igTokenReturn)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Body = %v\n", igTokenReturn)
+	return igTokenReturn.AccessToken, nil
 }
 
 func InstagramGetAccessToken(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
