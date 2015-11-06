@@ -488,7 +488,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	content, _ := ioutil.ReadAll(resp.Body)
 	err := json.Unmarshal(content, &igTokenReturn)
 	if err != nil {
-		return err
+		return "", err
 	}
 	fmt.Printf("Body = %v\n", igTokenReturn)
 	return igTokenReturn.AccessToken, nil
