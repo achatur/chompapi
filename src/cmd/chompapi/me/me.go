@@ -475,7 +475,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	v.Set("client_id", instagramTokenReq.ClientId)
 	v.Set("client_secret", instagramTokenReq.ClientSecret)
 	v.Set("grant_type", "authorization_code")
-	v.Set("redirect_uri", strings.Join(instagramTokenReq.RedirectUri))
+	v.Set("redirect_uri", strings.Join(instagramTokenReq.RedirectUri, instagramTokenReq.ChompToken))
 	v.Set("code", instagramTokenReq.Code)
 	fmt.Printf("instagram Token = %v\n", instagramTokenReq.Code)
 
