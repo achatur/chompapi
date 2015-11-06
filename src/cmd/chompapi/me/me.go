@@ -421,7 +421,7 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 	case "GET":
 		w.Header().Set("Content-Type", "application/json")
 		//instagram config 
-		fmt.Printf("Made it to get...\n")
+		fmt.Printf("Made it to get instaToken...\n")
 		instaConfig := new(InstagramTokenRequest)
 		instaConfigFile, err := ioutil.ReadFile("./chomp_private/instagram_auth.conf")
 		if err != nil {
@@ -433,31 +433,36 @@ func Instagram(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http
 		    fmt.Printf("Err marshalling instaConfigFile = %v", err)
 		    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
+
 		fmt.Printf("\n\nConfig File = %v\n\n", instaConfig)
 		query := mux.Vars(r)
 		fmt.Printf("\n\nQuery NOW %v\n\n", query)
-		// if query["error"] != "" {
-		// 	fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
-		// 	userInfo.InstaCode = ""
-		// 	err := userInfo.UpdateInstaCode(a.DB)
-		// 	if err != nil {
-		// 		fmt.Printf("Err updating 1 instacode %v\n", err)
-		// 		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
-		// 	}
-		// 	return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
-		// }
+
+		if query["error"] != "" {
+			fmt.Printf("Error not nil, updating error instacode %v\n", query["error"])
+			userInfo.InstaToken = ""
+			err := userInfo.UpdateInstaCode(a.DB)
+			if err != nil {
+				fmt.Printf("Err updating 1 instacode %v\n", err)
+				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
+			}
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, query["error"]}
+		}
+
 		instaConfig.Code = query["code"]
 		instaConfig.ChompToken = query["token"]
+
 		userInfo.InstaToken, err = getInstagramToken(instaConfig)
 		if err != nil {
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
-		userInfo.InstaCode = query["code"]
+
 		err = userInfo.UpdateInstaCode(a.DB)
 		if err != nil {
-			fmt.Printf("Err updating 2 instacode %v\n", err)
+			fmt.Printf("Err updating 2 instaToken %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, err.Error()}
 		}
+
 		return nil
 		
 	default:
@@ -473,6 +478,7 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	redirect := fmt.Sprintf("%s%s", instagramTokenReq.RedirectUri, instagramTokenReq.ChompToken)
 	fmt.Printf("Redirect = %v\n", redirect)
 	fmt.Printf("InstaTokReq = %v\n", instagramTokenReq)
+	
 	v := url.Values{}
 	v.Set("client_id", instagramTokenReq.ClientId)
 	v.Set("client_secret", instagramTokenReq.ClientSecret)
@@ -486,13 +492,20 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	  fmt.Printf("something went wrong in get %v", errs)
 	  return "nil", errs
 	}
+
 	fmt.Printf("resp = %v\n", resp)
-	content, _ := ioutil.ReadAll(resp.Body)
+
+	content, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	fmt.Printf("content = %v\n", string(content))
+
 	err := json.Unmarshal(content, &igTokenReturn)
 	if err != nil {
 		return "", err
 	}
+
 	fmt.Printf("Body = %v\n", igTokenReturn)
 	return igTokenReturn.AccessToken, nil
 }

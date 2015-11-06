@@ -41,7 +41,6 @@ type UserInfo struct {
 	Lname 			string 		 	`json:"lname"`
 	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
 	PasswordExpiry 	int 			`josn:"passwordExpiry"`
-	InstaCode 		string 			`json:"instaCode,omitempty"`
 	InstaToken 		string 			`json:"instaToken,omitempty"`
 }
 
@@ -141,7 +140,7 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
 	err := db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
 						phone_number, password_hash, dob, gender, photo_id, photos.uuid, photos.latitude, photos.longitude,
-						is_password_temp, password_expiry, fname, lname, insta_code, insta_token
+						is_password_temp, password_expiry, fname, lname, insta_token
 					   FROM chomp_users
 					   JOIN photos on photos.id = chomp_users.photo_id
 					   WHERE chomp_username=?`, 
@@ -151,7 +150,7 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
 					   							    &userInfo.Photo.Latitude, &userInfo.Photo.Longitude,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
-					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaCode, &userInfo.InstaToken)
+					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaToken)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err
@@ -324,8 +323,8 @@ func (userInfo UserInfo) UpdateInstaCode(db *sql.DB) error {
 	var results sql.Result
 	var err2 error
 
-	results, err2 = db.Exec(`UPDATE chomp_users SET insta_code=?, insta_token=?
-							  WHERE chomp_username=?`, userInfo.InstaCode, userInfo.InstaToken, userInfo.Username)
+	results, err2 = db.Exec(`UPDATE chomp_users SET insta_token=?
+							  WHERE chomp_username=?`, userInfo.InstaToken, userInfo.Username)
 
 	if err2 != nil {
 		fmt.Printf("Err = %v\n", err2)
