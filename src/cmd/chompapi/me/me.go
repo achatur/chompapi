@@ -45,7 +45,7 @@ type InstagramTokenReturn struct {
 }
 
 type InstaUser struct {
-	Id						int 	`json:"id"`
+	Id						string 	`json:"id"`
 	Username				string 	`json:"string"`
 	FullName 				string 	`json:"full_name"`
 	ProfilePicture 			string  `json:"profile_picture"`

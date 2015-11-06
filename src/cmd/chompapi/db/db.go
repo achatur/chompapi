@@ -324,8 +324,8 @@ func (userInfo UserInfo) UpdateInstaCode(db *sql.DB) error {
 	var results sql.Result
 	var err2 error
 
-	results, err2 = db.Exec(`UPDATE chomp_users SET insta_code=?
-							  WHERE chomp_username=?`, userInfo.InstaCode, userInfo.Username)
+	results, err2 = db.Exec(`UPDATE chomp_users SET insta_code=?, insta_token=?
+							  WHERE chomp_username=?`, userInfo.InstaCode, userInfo.InstaToken, userInfo.Username)
 
 	if err2 != nil {
 		fmt.Printf("Err = %v\n", err2)
