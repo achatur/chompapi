@@ -496,7 +496,8 @@ func getInstagramToken(instagramTokenReq *InstagramTokenRequest) (string, error)
 	  return "nil", errs
 	}
 	fmt.Printf("resp = %v\n", resp)
-	fmt.Printf("Body = %v\n", ioutil.ReadAll(resp.Body))
+	content, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf("Body = %v\n", string(content))
 	return "access_token", nil
 }
 
