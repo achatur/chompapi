@@ -386,28 +386,30 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	review.Restaurant.SourceLocID = strconv.FormatInt(instaData.Location.ID, 10)
 
 	// Find Price 
-	fmt.Printf("/* //////////////////////////////////////// */\n")
+	fmt.Printf("\n\n/* //////////////////////////////////////// */\n")
 	fmt.Printf("/*                PRICE SEARCH  			*/\n")
 	fmt.Printf("/* //////////////////////////////////////// */\n")
-	priceRe := regexp.MustCompile(`.*\$(\d+(\.\d+)?).*`)
-	price := priceRe.FindString(instaData.Caption.Text)
+	priceRe := regexp.MustCompile(`\$(\d+(\.\d+)?)`)
+	price := priceRe.FindStringSubmatch(instaData.Caption.Text)
 	fmt.Printf("Price = %v\n", price)
-	if price != "" {
-		fmt.Printf("Here = %v\n", price)
-		f, err :=  strconv.ParseFloat(price, 32)
-		if err == nil {
-			fmt.Printf("Error = NIL\n")
-			review.Price = float32(f)
+	if len(price) >= 2 {
+		if price[1] != "" {
+			fmt.Printf("Here = %v\n", price[1])
+			f, err :=  strconv.ParseFloat(price[1, 32)
+			if err == nil {
+				fmt.Printf("Error = NIL\n")
+				review.Price = float32(f)
+			} else {
+				fmt.Printf("convert failed to float\n")
+			}
 		} else {
-			fmt.Printf("convert failed to float\n")
+			fmt.Printf("Price = Blank")
 		}
-	} else {
-		fmt.Printf("Price = Blank")
 	}
 
 	dbRestaurant.Name = instaData.Location.Name
 	err := dbRestaurant.GetRestaurantInfoByName(a.DB)
-	if err != nil && err != sql.ErrNoRows{
+	if err != nil && err != sql.ErrNoRows {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v\n", err)
 		return err
