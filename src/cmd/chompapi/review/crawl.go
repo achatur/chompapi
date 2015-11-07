@@ -389,7 +389,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	fmt.Printf("/* //////////////////////////////////////// */\n")
 	fmt.Printf("/*                PRICE SEARCH  			*/\n")
 	fmt.Printf("/* //////////////////////////////////////// */\n")
-	priceRe := regexp.MustCompile(".*\\$(\\d+(\\.\\d+)?).*")
+	priceRe := regexp.MustCompile(`.*\$(\d+(\.\d+)?).*`)
 	price := priceRe.FindString(instaData.Caption.Text)
 	fmt.Printf("Price = %v\n", price)
 	if price != "" {
