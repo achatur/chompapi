@@ -44,7 +44,6 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 				//need logging here instead of print
 				fmt.Println("Email not found..", input.Username)
 				fmt.Println("Email not found..", input.Password)
-				err := userInfo.GetUserInfoByEmailForLogin(a.DB)
 				return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Username"}
 			}
 		}
