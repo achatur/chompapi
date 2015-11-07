@@ -60,7 +60,7 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 
 		dbPassword := userInfo.PasswordHash
 
-		validated := crypto.ValidatePassword(input.Username, []byte(input.Password), dbPassword)
+		validated := crypto.ValidatePassword(userInfo.Username, []byte(input.Password), dbPassword)
 		//need logging here instead of print or get rid of this statement in full once final
 		fmt.Printf("answer = %v\n", validated)
 
