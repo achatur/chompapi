@@ -33,12 +33,20 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 		fmt.Printf("input = %v\n", input)
 		fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
 		userInfo.Username = input.Username
+		userInfo.Email = input.Username
 		err := userInfo.GetUserInfo(a.DB)
 		if err != nil {
 			//need logging here instead of print
 			fmt.Println("Username not found..", input.Username)
 			fmt.Println("Username not found..", input.Password)
-			return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Username"}
+			err := userInfo.GetUserInfoByEmailForLogin(a.DB)
+			if err != nil {
+				//need logging here instead of print
+				fmt.Println("Email not found..", input.Username)
+				fmt.Println("Email not found..", input.Password)
+				err := userInfo.GetUserInfoByEmailForLogin(a.DB)
+				return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Invalid Username"}
+			}
 		}
 		fmt.Println("return from db = %v", userInfo)
 

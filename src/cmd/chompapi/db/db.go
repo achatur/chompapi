@@ -158,6 +158,29 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 	return err
 }
 
+func (userInfo *UserInfo) GetUserInfoByEmailForLogin(db *sql.DB) error {
+	// Prepare statement for reading chomp_users table data
+	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
+	err := db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
+						phone_number, password_hash, dob, gender, photo_id, photos.uuid, photos.latitude, photos.longitude,
+						is_password_temp, password_expiry, fname, lname, insta_token
+					   FROM chomp_users
+					   JOIN photos on photos.id = chomp_users.photo_id
+					   WHERE email=?`, 
+					   userInfo.Email).Scan(&userInfo.UserID, &userInfo.Email,
+					   							    &userInfo.Username, &userInfo.PhoneNumber,
+					   							    &userInfo.PasswordHash,&userInfo.DOB,
+					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
+					   							    &userInfo.Photo.Latitude, &userInfo.Photo.Longitude,
+					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
+					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaToken)
+	if err != nil {
+		fmt.Printf("err = %v", err)
+		return err
+	}
+	return err
+}
+
 func (userInfo *UserInfo) GetUserInfoByEmail(db *sql.DB) error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT chomp_user_id, email, chomp_username,phone_number, password_hash, dob, gender, photo_id,fname = ?, lname = ? FROM chomp_users WHERE email=%s\n", userInfo.Email)
