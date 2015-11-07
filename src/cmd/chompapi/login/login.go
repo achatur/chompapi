@@ -79,7 +79,7 @@ func DoLogin(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.R
 				//need logging here instead of print
 				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore)
 				fmt.Printf("Username not found, Saving Session, Get has %v\n", sessionStore.Get("usernamestring"))
-				err = sessionStore.Set("username", input.Username)
+				err = sessionStore.Set("username", userInfo.Username)
 				if err != nil {
 					//need logging here instead of print
 					fmt.Printf("Error while writing to DB, %v\n", err)
