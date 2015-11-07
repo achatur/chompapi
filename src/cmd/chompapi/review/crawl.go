@@ -386,16 +386,23 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	review.Restaurant.SourceLocID = strconv.FormatInt(instaData.Location.ID, 10)
 
 	// Find Price 
+	fmt.Printf("/* //////////////////////////////////////// */\n")
+	fmt.Printf("/*                PRICE SEARCH  			*/\n")
+	fmt.Printf("/* //////////////////////////////////////// */\n")
 	priceRe := regexp.MustCompile(".*\\$(\\d+(\\.\\d+)?).*")
 	price := priceRe.FindString(instaData.Caption.Text)
+	fmt.Printf("Price = %v\n", price)
 	if price != "" {
+		fmt.Printf("Here = %v\n", price)
 		f, err :=  strconv.ParseFloat(price, 32)
 		if err == nil {
+			fmt.Printf("Error = NIL\n")
 			review.Price = float32(f)
 		} else {
 			fmt.Printf("convert failed to float\n")
 		}
-		
+	} else {
+		fmt.Printf("Price = Blank")
 	}
 
 	dbRestaurant.Name = instaData.Location.Name
