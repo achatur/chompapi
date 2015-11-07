@@ -391,7 +391,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	if price != "" {
 		f, err :=  strconv.ParseFloat(price, 64)
 		if err == nil {
-			review.Price
+			review.Price = f
 		} else {
 			fmt.Printf("convert failed to float\n")
 		}
