@@ -389,7 +389,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	priceRe := regexp.MustCompile(".*\\$(\\d+(\\.\\d+)?).*")
 	price := priceRe.FindString(instaData.Caption.Text)
 	if price != "" {
-		f, err :=  = strconv.ParseFloat(price, 64)
+		f, err :=  strconv.ParseFloat(price, 64)
 		if err == nil {
 			review.Price
 		} else {
