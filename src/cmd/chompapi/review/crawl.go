@@ -730,7 +730,7 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		}
 	}
 
-	for elem := range len(instaData.Data) {
+	for elem := 0; elem < len(instaData.Data); elem++ {
 		/* //////////////////////////////////////// */
 		/*                Create UUID   		    */
 		/* //////////////////////////////////////// */
