@@ -700,7 +700,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
 	
 		desc, code, err := DoCrawl(a, instaData)
-		if != nil {
+		if err != nil {
 			fmt.Printf("something went wrong in login %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
 		}
