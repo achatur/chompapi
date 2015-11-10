@@ -693,7 +693,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
 		
-		fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
+		// fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
 		fmt.Printf("instaData = %v\n", instaData.Data[0])
 		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
