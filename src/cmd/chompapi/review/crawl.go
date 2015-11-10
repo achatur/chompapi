@@ -756,6 +756,7 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 			/*                Store File    		    */
 			/* //////////////////////////////////////// */
 
+			storageReq := new(StorageReq)
 			storageReq.Bucket = FileDownload.Bucket
 			storageReq.FileName = FileDownload.FileLoc + fileName
 			storageReq.FileUuid = photoInfo.Uuid
