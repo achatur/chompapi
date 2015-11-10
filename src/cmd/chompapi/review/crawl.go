@@ -711,7 +711,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	}
 }
 
-func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *ParentData, photoUpload bool) (string, int) {
+func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *ParentData, photoUpload bool) (string, int, error) {
 	
 	fmt.Printf("doCrawl: Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
 	fmt.Printf("doCrawl: instaData = %v\n", instaData.Data[0])
