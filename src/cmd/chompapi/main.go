@@ -249,6 +249,7 @@ func main() {
 	router.HandleFunc("/reviews/{reviewID}", AppHandler{appContext: context, h: review.Reviews}.SessionAuth(AppHandler{appContext: context, h: review.Reviews}.ServerHttp))
 	
 	router.HandleFunc("/insta/crawl", AppHandler{appContext: context, h: review.Crawl}.SessionAuth(AppHandler{appContext: context, h: review.Crawl}.ServerHttp))
+	router.HandleFunc("/insta/import", AppHandler{appContext: context, h: review.Crawl}.SessionAuth(AppHandler{appContext: context, h: review.AppCrawl}.ServerHttp))
 
 
 	port := "8000"

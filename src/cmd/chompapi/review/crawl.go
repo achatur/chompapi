@@ -252,6 +252,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		storageReq := new(StorageReq)
 		ctx := context.Background()
 		client := googConfig.Client(ctx)
+
+		/* Initilize Code and desc*/
 		code := 200
 		desc := ""
 
@@ -655,4 +657,165 @@ func downloadFile(rawUrl string) (string, error) {
 	return fileName, nil
 }
 
+func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
+	
+	sessionUser := a.SessionStore.Get("username")
+	sessionUserID := a.SessionStore.Get("userId")
+	fmt.Println("SessionUser = %v", sessionUser)
+	//create variables
+	username 	 := reflect.ValueOf(sessionUser).String()
+	userId 	 	 := reflect.ValueOf(sessionUserID).Int()
 
+	crawl 	 	 := new(db.Crawl)
+	instaData 	 := new(ParentData)
+	igStore 	 := new(db.IgStore)
+
+	crawl.Username = username
+	crawl.UserID = int(userId)
+	igStore.UserID = int(userId)
+
+	switch r.Method {
+
+	case "POST":
+
+		/* Initilize Variables*/
+		instaData 	:= new(ParentData)
+		decoder 	:= json.NewDecoder(r.Body)
+	
+		if err := decoder.Decode(&instaData); err != nil {
+			//need logging here instead of print
+			fmt.Printf("something went wrong in login %v", err)
+			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
+		}
+	
+		if len(instaData.Data) == 0 {
+			fmt.Println("No New Photos")
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
+		}
+		
+		fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
+		fmt.Printf("instaData = %v\n", instaData.Data[0])
+		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
+		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
+		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
+	
+		desc, code, err := DoCrawl(a, instaData)
+		if != nil {
+			fmt.Printf("something went wrong in login %v", err)
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
+		}
+		return globalsessionkeeper.ErrorResponse{code, desc}
+
+	default:
+		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
+	}
+}
+
+func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *ParentData, photoUpload bool) (string, int) {
+	
+	fmt.Printf("doCrawl: Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
+	fmt.Printf("doCrawl: instaData = %v\n", instaData.Data[0])
+	fmt.Printf("doCrawl: instaData images = %v\n", instaData.Data[0].Images)
+	fmt.Printf("doCrawl: instaData comments = %v\n", instaData.Data[0].Comments)
+	fmt.Printf("doCrawl: instaData tags = %v\n", instaData.Data[0].Tags)
+
+	code 		:= 200
+	desc 		:= ""
+	var err error
+
+	if photoUpload == true {
+		client, err := GetGoogleClient()
+		if err != nil {
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+		}
+	}
+
+	for elem := range len(instaData.Data) {
+		/* //////////////////////////////////////// */
+		/*                Create UUID   		    */
+		/* //////////////////////////////////////// */
+		photoInfo := CreatePhoto(username, a)
+		if photoInfo.ID == 0 {
+			fmt.Println("Something went wrong to create photo")
+			code =  http.StatusPartialContent
+			desc = "Not all reviews added: " + err.Error()
+		}
+		if photoUpload == true {
+			/* //////////////////////////////////////// */
+			/*                Download File 			*/
+			/* //////////////////////////////////////// */
+			fileName, err := downloadFile(instaData.Data[elem].Images.StandardRes.Url)
+			if err != nil {
+				fmt.Printf("No Review Created for %v\n", elem)
+				code = http.StatusPartialContent
+				desc = "Not all reviews added: " + err.Error()
+				continue
+			}
+	
+			/* //////////////////////////////////////// */
+			/*                Store File    		    */
+			/* //////////////////////////////////////// */
+
+			storageReq.Bucket = FileDownload.Bucket
+			storageReq.FileName = FileDownload.FileLoc + fileName
+			storageReq.FileUuid = photoInfo.Uuid
+			err = storageReq.StorePhoto(client)
+			if err != nil {
+				fmt.Println("Something went wrong storing photo")
+				code =  http.StatusPartialContent
+				desc = "Not all photos added: " + err.Error()
+				continue
+			}
+		}
+		/* //////////////////////////////////////// */
+		/*                Create Review   		    */
+		/* //////////////////////////////////////// */
+		err = instaData.Data[elem].CreateReview(photoInfo, a)
+		if err == nil {
+			fmt.Printf("Review %v added\n", elem)
+		} else {
+			fmt.Printf("No Review Created for %v\n", elem)
+			code =  http.StatusPartialContent
+			desc = "Not all reviews added: " + err.Error()
+			continue
+		}
+		if i == 0 {
+			igStore.IgMediaID = instaData.Data[elem].ID
+			igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[elem].CreatedTime)
+			if err != nil {
+				fmt.Printf("Cound't convert string%v\n", err)
+				code =  http.StatusPartialContent
+				desc = "Not all reviews added: " + err.Error()
+			}
+		}
+	}
+	return code, desc err
+}
+
+func GetGoogleClient() (*http.Client, error) {
+
+	googConfig := new(jwt.Config)
+	gApiInfo := new(crypto.GApiInfo)
+    
+    fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
+    if err != nil {
+        // return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+        return *http.Client, err
+    }
+    
+    err = json.Unmarshal(fileContent, &gApiInfo)
+    if err != nil {
+        fmt.Printf("Err = %v", err)
+        // return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
+        return *http.Client, err
+    }
+
+    googConfig.Email = gApiInfo.ClientEmail
+    googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
+    googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
+    googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
+
+	storageReq := new(StorageReq)
+	ctx := context.Background()
+	return googConfig.Client(ctx), nil
+}
