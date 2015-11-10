@@ -725,7 +725,8 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 	if photoUpload == true {
 		client, err := GetGoogleClient()
 		if err != nil {
-			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+			// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+			"", 500, err
 		}
 	}
 
