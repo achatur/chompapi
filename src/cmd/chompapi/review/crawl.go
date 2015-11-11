@@ -683,7 +683,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	
 		if err := decoder.Decode(&instaData); err != nil {
 			//need logging here instead of print
-			fmt.Printf("something went wrong in login %v", err)
+			fmt.Printf("something went wrong in app crawl decode %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 	
@@ -700,7 +700,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	
 		desc, code, err := DoCrawl(a, username, instaData, true)
 		if err != nil {
-			fmt.Printf("something went wrong in login %v", err)
+			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
 		}
 		return globalsessionkeeper.ErrorResponse{code, desc}
