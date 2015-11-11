@@ -793,14 +793,14 @@ func GetGoogleClient() (*http.Client, error) {
     fileContent, err := ioutil.ReadFile("./chomp_private/Chomp.json")
     if err != nil {
         // return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
-        return *http.Client, err
+        return new(http.Client), err
     }
     
     err = json.Unmarshal(fileContent, &gApiInfo)
     if err != nil {
         fmt.Printf("Err = %v", err)
         // return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
-        return *http.Client, err
+        return new(http.Client), err
     }
 
     googConfig.Email = gApiInfo.ClientEmail
