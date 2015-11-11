@@ -680,6 +680,8 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		/* Initilize Variables*/
 		instaData 	:= new(ParentData)
 		decoder 	:= json.NewDecoder(r.Body)
+
+		fmt.Printf("Body = %v\n", r.Body)
 	
 		if err := decoder.Decode(&instaData); err != nil {
 			//need logging here instead of print
