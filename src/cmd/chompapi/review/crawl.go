@@ -28,30 +28,30 @@ import (
 )
 
 type ParentData struct {
-	Data 		[]InstaData
+	Data 		[]InstaData `json:"data"`
 }
 
 type InstaData struct {
-	Tags			[]string
-	Type 			string
-	Location 		Location
-	Comments 		Comments
-	filter 			string
-	CreatedTime 	string 	`json:"created_time"`
-	Link			string
-	Likes 			Likes
-	Images 			Images
-	Caption 		Caption
-	UserHasLiked	bool 	`json:"user_has_liked"`
-	ID 				string
-	User 			User
+	Tags			[]string 	`json:"tags"`
+	Type 			string 		`json:"type"`
+	Location 		Location 	`json:"location"`
+	Comments 		Comments 	`json:"comments"`
+	filter 			string 		`json:"filter"`
+	CreatedTime 	string 		`json:"created_time"`
+	Link			string 		`json:"link"`
+	Likes 			Likes 		`json:"likes"`
+	Images 			Images 		`json:"images"`
+	Caption 		Caption 	`json:"caption"`
+	UserHasLiked	bool 		`json:"user_has_liked"`
+	ID 				string 		`json:"id"`
+	User 			User 		`json:"user"`
 }
 
 type Location struct {
-	ID 				int64
-	Latitude		float64
-	Name 			string
-	Longitude 		float64
+	ID 				int64 		`json:"id"`
+	Latitude		float64 	`json:"latitude"`
+	Name 			string 		`json:"name"`
+	Longitude 		float64 	`json:"longitude"`
 }
 
 type Images struct {
@@ -61,39 +61,39 @@ type Images struct {
 }
 
 type Res struct {
-	Url 		string
-	Width 		int
-	Height 		int
+	Url 		string 	`json:"url"`
+	Width 		int 	`json:"width"`
+	Height 		int 	`json:"height"`
 }
 
 type Caption struct {
-	ID 				string
-	Created_Time 	string
-	Text 			string
-	From			User
+	ID 				string 	`json:"id"`
+	Created_Time 	string 	`json:"created_time"`
+	Text 			string 	`json:"text"`
+	From			User 	`json:"from"`
 }
 
 type Likes struct {
-	Count			int
-	Data 			[]User
+	Count			int 	`json:"count"`
+	Data 			[]User 	`json:"data"`
 }
 
 type Comments struct {
-	Count 			int
-	Data 			[]Data
+	Count 			int 	`json:"count"`
+	Data 			[]Data 	`json:"data"`
 }
 
 type Data struct {
-	ID 				string
-	Text 			string
-	From 			User
+	ID 				string 	`json:"id"`
+	Text 			string 	`json:"text"`
+	From 			User 	`json:"fron"`
 }
 
 type User struct {
-	ID 				string
-	Username 		string
-	ProfilePicture	string
-	FullName 		string
+	ID 				string 	`json:"id"`
+	Username 		string 	`json:"username"`
+	ProfilePicture	string 	`json:"profile_picture"`
+	FullName 		string 	`json:"full_name"`
 }
 
 type GoogToken struct {
