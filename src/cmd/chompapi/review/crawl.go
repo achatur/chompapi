@@ -36,7 +36,7 @@ type InstaData struct {
 	Type 			string 		`json:"type"`
 	Location 		Location 	`json:"location"`
 	Comments 		Comments 	`json:"comments"`
-	filter 			string 		`json:"filter"`
+	Filter 			string 		`json:"filter"`
 	CreatedTime 	string 		`json:"created_time"`
 	Link			string 		`json:"link"`
 	Likes 			Likes 		`json:"likes"`
@@ -679,13 +679,14 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 
 		/* Initilize Variables*/
 		instaData 	:= new(ParentData)
-		decoder 	:= json.NewDecoder(r.Body)
+		// decoder 	:= json.NewDecoder(r.Body)
 
 		content, _ := ioutil.ReadAll(r.Body)
 		fmt.Printf("Body = %v\n", string(content))
 
 	
-		if err := decoder.Decode(&instaData); err != nil {
+		// if err := decoder.Decode(&instaData); err != nil {
+		if err = json.Unmarshal([]byte(r.body), &instaData); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in app crawl decode %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
