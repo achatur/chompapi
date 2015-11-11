@@ -86,7 +86,7 @@ type Comments struct {
 type Data struct {
 	ID 				string 	`json:"id"`
 	Text 			string 	`json:"text"`
-	From 			User 	`json:"fron"`
+	From 			User 	`json:"from"`
 }
 
 type User struct {
