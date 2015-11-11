@@ -781,15 +781,6 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 			desc = "Not all reviews added: " + err.Error()
 			continue
 		}
-		if i == 0 {
-			igStore.IgMediaID = instaData.Data[elem].ID
-			igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[elem].CreatedTime)
-			if err != nil {
-				fmt.Printf("Cound't convert string%v\n", err)
-				code =  http.StatusPartialContent
-				desc = "Not all reviews added: " + err.Error()
-			}
-		}
 	}
 	return code, desc, err
 }
