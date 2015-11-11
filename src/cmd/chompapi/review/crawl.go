@@ -790,7 +790,7 @@ func GetGoogleClient() (*http.Client, error) {
 	googConfig := new(jwt.Config)
 	gApiInfo := new(crypto.GApiInfo)
     
-    fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
+    fileContent, err := ioutil.ReadFile("./chomp_private/Chomp.json")
     if err != nil {
         // return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         return *http.Client, err
