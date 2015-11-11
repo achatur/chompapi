@@ -181,7 +181,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
 
-          err = json.Unmarshal([]byte(body), &instaData)
+        err = json.Unmarshal([]byte(body), &instaData)
 
 		if err != nil {
 			fmt.Printf("Err = %v", err)
@@ -194,6 +194,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		}
 
 		fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
+		fmt.Printf("instaData Full = %v\n", instaData)
 		fmt.Printf("instaData = %v\n", instaData.Data[0])
 		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
