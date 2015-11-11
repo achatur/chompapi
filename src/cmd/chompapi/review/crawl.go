@@ -782,7 +782,7 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 			continue
 		}
 	}
-	return code, desc, err
+	return desc, code, err
 }
 
 func GetGoogleClient() (*http.Client, error) {
