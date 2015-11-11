@@ -686,7 +686,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 
 	
 		// if err := decoder.Decode(&instaData); err != nil {
-		if err = json.Unmarshal([]byte(r.body), &instaData); err != nil {
+		if err := json.Unmarshal([]byte(r.Body), &instaData); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in app crawl decode %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
