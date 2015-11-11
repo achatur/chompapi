@@ -667,7 +667,6 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	userId 	 	 := reflect.ValueOf(sessionUserID).Int()
 
 	crawl 	 	 := new(db.Crawl)
-	instaData 	 := new(ParentData)
 	igStore 	 := new(db.IgStore)
 
 	crawl.Username = username
