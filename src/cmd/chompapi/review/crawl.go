@@ -808,7 +808,6 @@ func GetGoogleClient() (*http.Client, error) {
     googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
     googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
 
-	storageReq := new(StorageReq)
 	ctx := context.Background()
 	return googConfig.Client(ctx), nil
 }
