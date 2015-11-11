@@ -681,10 +681,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		instaData 	:= new(ParentData)
 		decoder 	:= json.NewDecoder(r.Body)
 
-		content, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			return "", err
-		}
+		content, _ := ioutil.ReadAll(r.Body)
 		fmt.Printf("Body = %v\n", string(content))
 
 	
