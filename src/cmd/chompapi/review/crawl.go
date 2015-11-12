@@ -200,11 +200,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
 		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
 
-		// var reviewsToWrite []int
 		var instaDataList []InstaData
-
 		for _, tag_word := range crawl.Tags {
-
 			fmt.Printf("-----Tag----- = %v\n", tag_word)
 			for index, each := range instaData.Data {
 
@@ -217,18 +214,14 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 						fmt.Printf("\n\nContains %v\n", tag_word)
 						fmt.Printf("Adding %v\n\n", index)
 						// add to unique slice
-						// reviewsToWrite = AppendIfMissing(reviewsToWrite, index)
 						instaDataList = append(instaDataList, each)
-
 					}
 				}
 			}
 		}
-
-
 		/*******************************************************************/
-		 /*                   SEND CRAWL TO DoCrawl()                    */
-		  /**************************************************************/
+		/*                   SEND CRAWL TO DoCrawl()                       */
+		/*******************************************************************/
 		desc, code, reviews, err := DoCrawl(a, username, &ParentData{instaDataList}, true)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
@@ -242,130 +235,6 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         fmt.Printf("Reviews = %v\n", reviews)
         w.WriteHeader(http.StatusOK)
 		return nil
-
-		/******************************************************************/
-
-		// fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
-		// if len(reviewsToWrite) == 0 {
-		// 	fmt.Println("No New Photos")
-		// 	return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
-		// }
-
-		// if err != nil {
-		// 	return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, "Communication Issues:Google: " + err.Error()}
-		// }
-
-		// googConfig := new(jwt.Config)
-		// gApiInfo := new(crypto.GApiInfo)
-  //   	fileContent, err = ioutil.ReadFile("./chomp_private/Chomp.json")
-
-  //   	if err != nil {
-  //   	    return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
-  //   	}
-  //   	err = json.Unmarshal(fileContent, &gApiInfo)
-  //   	if err != nil {
-  //   	    fmt.Printf("Err = %v", err)
-  //   	    return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
-  //   	}
-
-  //   	googConfig.Email = gApiInfo.ClientEmail
-  //   	googConfig.PrivateKey = []byte(gApiInfo.PrivateKey)
-  //   	googConfig.Scopes = []string{`https://www.googleapis.com/auth/devstorage.full_control`}
-  //   	googConfig.TokenURL = `https://www.googleapis.com/oauth2/v3/token`
-
-		// storageReq := new(StorageReq)
-		// ctx := context.Background()
-		// client := googConfig.Client(ctx)
-
-		// /* Initilize Code and desc*/
-		// code := 200
-		// desc := ""
-
-		// for i, elem := range reviewsToWrite {
-
-		// 	/* //////////////////////////////////////// */
-		// 	/*                Download File 			*/
-		// 	/* //////////////////////////////////////// */
-
-		// 	fileName, err := downloadFile(instaData.Data[elem].Images.StandardRes.Url)
-
-		// 	if err != nil {
-		// 		fmt.Printf("No Review Created for %v\n", elem)
-		// 		code = http.StatusPartialContent
-		// 		desc = "Not all reviews added: " + err.Error()
-		// 		continue
-		// 	}
-
-		// 	/* //////////////////////////////////////// */
-		// 	/*                Create UUID   		    */
-		// 	/* //////////////////////////////////////// */
-
-		// 	photoInfo := CreatePhoto(username, a)
-
-		// 	if photoInfo.ID == 0 {
-		// 		fmt.Println("Something went wrong to create photo")
-		// 		code =  http.StatusPartialContent
-		// 		desc = "Not all reviews added: " + err.Error()
-		// 	}
-
-		// 	/* //////////////////////////////////////// */
-		// 	/*                Store File    		    */
-		// 	/* //////////////////////////////////////// */
-
-		// 	storageReq.Bucket = FileDownload.Bucket
-		// 	storageReq.FileName = FileDownload.FileLoc + fileName
-		// 	storageReq.FileUuid = photoInfo.Uuid
-
-		// 	err = storageReq.StorePhoto(client)
-
-		// 	if err != nil {
-		// 		fmt.Println("Something went wrong storing photo")
-		// 		code =  http.StatusPartialContent
-		// 		desc = "Not all photos added: " + err.Error()
-		// 		continue
-		// 	}
-
-		// 	/* //////////////////////////////////////// */
-		// 	/*                Create Review   		    */
-		// 	/* //////////////////////////////////////// */
-
-		// 	_, err = instaData.Data[elem].CreateReview(photoInfo, a)
-		// 	if err == nil {
-
-		// 		fmt.Printf("Review %v added\n", elem)
-		// 	} else {
-
-		// 		fmt.Printf("No Review Created for %v\n", elem)
-		// 		code =  http.StatusPartialContent
-		// 		desc = "Not all reviews added: " + err.Error()
-		// 		continue
-		// 	}
-
-		// 	if i == 0 {
-
-		// 		igStore.IgMediaID = instaData.Data[elem].ID
-		// 		igStore.IgCreatedTime, err = strconv.Atoi(instaData.Data[elem].CreatedTime)
-
-		// 		if err != nil {
-
-		// 			fmt.Printf("Cound't convert string%v\n", err)
-		// 			code =  http.StatusPartialContent
-		// 			desc = "Not all reviews added: " + err.Error()
-		// 		}
-
-		// 	/* //////////////////////////////////////// */
-		// 	/*               Set Last Crawl 			*/
-		// 	/* //////////////////////////////////////// */
-
-		// 		err = igStore.UpdateLastPull(a.DB)
-
-		// 		if err != nil {
-		// 			fmt.Printf("Could not update table\n")
-		// 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
-		// 		}
-		// 	}
-		// }
-		// return globalsessionkeeper.ErrorResponse{code, desc}
 
 	default:
 
@@ -589,8 +458,9 @@ func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, erro
 	}
 
 	raw := make(map[string]interface{})
-	json.Unmarshal(body, &raw) // no error checks for optional fields
-	token = token.WithExtra(raw)
+	if err := json.Unmarshal(body, &raw); err == nil {
+		token = token.WithExtra(raw)
+	} 
 
 	if secs := tokenRes.ExpiresIn; secs > 0 {
 		token.Expiry = time.Now().Add(time.Duration(secs) * time.Second)
@@ -710,9 +580,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 
 		content, _ := ioutil.ReadAll(r.Body)
 		fmt.Printf("Body = %v\n", string(content))
-
 	
-		// if err := decoder.Decode(&instaData); err != nil {
 		if err := json.Unmarshal([]byte(content), &instaData); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in app crawl decode %v", err)
@@ -724,7 +592,6 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
 		
-		// fmt.Printf("Resp:%v \nbody: %v\n, errs: %v\n", resp, body, errs)
 		fmt.Printf("instaData = %v\n", instaData.Data[0])
 		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
@@ -766,7 +633,6 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 	if photoUpload == true {
 		client, err = GetGoogleClient()
 		if err != nil {
-			// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 			return "", 500, nil, err
 		}
 	}
@@ -833,14 +699,12 @@ func GetGoogleClient() (*http.Client, error) {
     
     fileContent, err := ioutil.ReadFile("./chomp_private/Chomp.json")
     if err != nil {
-        // return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         return new(http.Client), err
     }
     
     err = json.Unmarshal(fileContent, &gApiInfo)
     if err != nil {
         fmt.Printf("Err = %v", err)
-        // return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not decode"}
         return new(http.Client), err
     }
 
