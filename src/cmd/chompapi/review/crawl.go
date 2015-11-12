@@ -201,7 +201,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
 
 		// var reviewsToWrite []int
-		var instaDataList []instaData
+		var instaDataList []InstaData
 
 		for _, tag_word := range crawl.Tags {
 
