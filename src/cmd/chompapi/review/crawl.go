@@ -707,7 +707,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		desc, code, reviews, err := DoCrawl(a, username, instaData, false)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
-			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
+			return globalsessionkeeper.ErrorResponse{code, desc}
 		}
 		err = json.NewEncoder(w).Encode(reviews)
         if err != nil {
