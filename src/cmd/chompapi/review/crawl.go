@@ -502,7 +502,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 
 	// create review
 	fmt.Printf("Creating reviews.. liked = %v\n", review.Liked)
-	_, err = review.CreateReview(a.DB)
+	err = review.CreateReview(a.DB)
 	if err != nil {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v", err)
