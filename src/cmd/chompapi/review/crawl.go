@@ -738,7 +738,7 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		client, err = GetGoogleClient()
 		if err != nil {
 			// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
-			return "", 500, err
+			return "", 500, nil, err
 		}
 	}
 
