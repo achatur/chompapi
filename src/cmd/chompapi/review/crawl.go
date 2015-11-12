@@ -673,7 +673,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	crawl.Username = username
 	crawl.UserID = int(userId)
 	igStore.UserID = int(userId)
-	var reviews []*db.Reviews
+	// var reviews []*db.Reviews
 
 	switch r.Method {
 
