@@ -713,7 +713,8 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
         if err != nil {
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
-		return w.WriteHeader(http.StatusOK)
+        w.WriteHeader(http.StatusOK)
+		return nil
 
 	default:
 		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Method Not Allowed"}
