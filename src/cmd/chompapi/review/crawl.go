@@ -709,12 +709,12 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{code, desc}
 		}
+		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(reviews)
         if err != nil {
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
         fmt.Printf("Reviews = %v\n", reviews)
-        w.Header().Set("Content-Type", "application/json")
         w.WriteHeader(http.StatusOK)
 		return nil
 
