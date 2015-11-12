@@ -788,11 +788,11 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		review, err = instaData.Data[elem].CreateReview(photoInfo, a)
 		if err == nil {
 			fmt.Printf("Review %v added\n", elem)
+			reviews = append(reviews, review)
 		} else {
 			fmt.Printf("No Review Created for %v\n", elem)
 			code =  http.StatusPartialContent
 			desc = "Not all reviews added: " + err.Error()
-			reviews = append(reviews, review)
 			continue
 		}
 	}
