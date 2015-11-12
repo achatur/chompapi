@@ -713,6 +713,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
         if err != nil {
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
+        fmt.Printf("Reviews = %v\n", reviews)
         w.WriteHeader(http.StatusOK)
 		return nil
 
