@@ -306,7 +306,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 			/*                Create Review   		    */
 			/* //////////////////////////////////////// */
 
-			err = instaData.Data[elem].CreateReview(photoInfo, a)
+			_, err = instaData.Data[elem].CreateReview(photoInfo, a)
 			if err == nil {
 
 				fmt.Printf("Review %v added\n", elem)
@@ -374,7 +374,7 @@ func CreatePhoto(username string, a *globalsessionkeeper.AppContext) db.Photos {
 	return photoInfo
 }
 
-func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionkeeper.AppContext) error {
+func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionkeeper.AppContext) (*db.Review, error) {
 
 	review := new(db.Review)
 	dbRestaurant := new(db.Restaurants)
@@ -415,7 +415,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	if err != nil && err != sql.ErrNoRows {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v\n", err)
-		return err
+		return nil, err
 	} else if err == sql.ErrNoRows || dbRestaurant.ID == 0 {
 		// not found in DB
 		if review.Restaurant.Name != "" {
@@ -425,7 +425,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 			if err != nil {
 				//something bad happened
 				fmt.Printf("something went while retrieving data %v", err)
-				return err
+				return nil, err
 			}
 		} else {
 			// Restaurant Value Blank
@@ -448,7 +448,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					return err
+					return nil, err
 				}
 			} else {
 				//use existing DB values
@@ -473,7 +473,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					return err
+					return nil, err
 				}
 			} else {
 				fmt.Println("location id !=")
@@ -482,7 +482,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 				if err != nil {
 					//something bad happened
 					fmt.Printf("something went while retrieving data %v", err)
-					return err
+					return nil, err
 				}
 			}
 		} 
@@ -502,13 +502,13 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 
 	// create review
 	fmt.Printf("Creating reviews.. liked = %v\n", review.Liked)
-	err = review.CreateReview(a.DB)
+	_, err = review.CreateReview(a.DB)
 	if err != nil {
 		//something bad happened
 		fmt.Printf("something went while retrieving data %v", err)
-		return err
+		return nil, err
 	}
-	return nil
+	return review, nil
 }
 
 func AppendIfMissing(slice []int, i int) []int {
@@ -673,6 +673,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	crawl.Username = username
 	crawl.UserID = int(userId)
 	igStore.UserID = int(userId)
+	var reviews []*db.Reviews
 
 	switch r.Method {
 
@@ -680,7 +681,6 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 
 		/* Initilize Variables*/
 		instaData 	:= new(ParentData)
-		// decoder 	:= json.NewDecoder(r.Body)
 
 		content, _ := ioutil.ReadAll(r.Body)
 		fmt.Printf("Body = %v\n", string(content))
@@ -704,11 +704,15 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
 		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
 	
-		desc, code, err := DoCrawl(a, username, instaData, false)
+		desc, code, reviews, err := DoCrawl(a, username, instaData, false)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
 		}
+		err = json.NewEncoder(w).Encode(photoInfo)
+        if err != nil {
+        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+        }
 		return globalsessionkeeper.ErrorResponse{code, desc}
 
 	default:
@@ -727,6 +731,8 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 	desc 		:= ""
 	var err error
 	var client *http.Client
+	var reviews []*db.Review
+	var review *db.Review
 
 	if photoUpload == true {
 		client, err = GetGoogleClient()
@@ -777,17 +783,18 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		/* //////////////////////////////////////// */
 		/*                Create Review   		    */
 		/* //////////////////////////////////////// */
-		err = instaData.Data[elem].CreateReview(photoInfo, a)
+		review, err = instaData.Data[elem].CreateReview(photoInfo, a)
 		if err == nil {
 			fmt.Printf("Review %v added\n", elem)
 		} else {
 			fmt.Printf("No Review Created for %v\n", elem)
 			code =  http.StatusPartialContent
 			desc = "Not all reviews added: " + err.Error()
+			reviews = append(reviews, review)
 			continue
 		}
 	}
-	return desc, code, err
+	return desc, code, reviews, err
 }
 
 func GetGoogleClient() (*http.Client, error) {
