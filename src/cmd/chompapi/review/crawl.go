@@ -383,8 +383,8 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	review.Username = photoInfo.Username
 	review.Photo.ID = photoInfo.ID
 	review.Photo.Uuid = &photoInfo.Uuid
-	review.Photo.Latitude = &photoInfo.Latitude
-	review.Photo.Longitude = &photoInfo.Longitude
+	review.Photo.Latitude = photoInfo.Latitude
+	review.Photo.Longitude = photoInfo.Longitude
 	review.Restaurant.Name = instaData.Location.Name
 	review.Restaurant.Latt = instaData.Location.Latitude
 	review.Restaurant.Long = instaData.Location.Longitude
