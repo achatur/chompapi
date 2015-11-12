@@ -709,7 +709,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not process appCrawl: " + err.Error()}
 		}
-		err = json.NewEncoder(w).Encode(photoInfo)
+		err = json.NewEncoder(w).Encode(reviews)
         if err != nil {
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
