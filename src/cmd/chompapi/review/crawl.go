@@ -229,7 +229,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*******************************************************************/
 		 /*                   SEND CRAWL TO DoCrawl()                    */
 		  /**************************************************************/
-		desc, code, reviews, err := DoCrawl(a, username, ParentData{instaDataList}, true)
+		desc, code, reviews, err := DoCrawl(a, username, &ParentData{instaDataList}, true)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{code, desc}
