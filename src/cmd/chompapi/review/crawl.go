@@ -243,7 +243,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         w.WriteHeader(http.StatusOK)
 		return nil
 
-		/*****************************************************************/*
+		/******************************************************************/
 
 		// fmt.Printf("\n\n\nreviewsToWrite = %v\n\n\n", reviewsToWrite)
 		// if len(reviewsToWrite) == 0 {
