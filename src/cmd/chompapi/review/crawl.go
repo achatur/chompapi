@@ -253,7 +253,7 @@ func CreatePhoto(username string, a *globalsessionkeeper.AppContext) db.Photos {
 	if err != nil {
 		//need logging here instead of print
 		return photoInfo
-	} 
+	}
 
 	err2 := photoInfo.GetPhotoInfoByUuid(a.DB)
 
@@ -283,7 +283,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 	review.Restaurant.Source = "instagram"
 	review.Restaurant.SourceLocID = strconv.FormatInt(instaData.Location.ID, 10)
 
-	// Find Price 
+	// Find Price
 	fmt.Printf("\n\n/* //////////////////////////////////////// */\n")
 	fmt.Printf("/*                PRICE SEARCH  			*/\n")
 	fmt.Printf("/* //////////////////////////////////////// */\n")
@@ -360,7 +360,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 			fmt.Println("Source not same, DB == insta")
 			review.Restaurant = *dbRestaurant
 
-		} else if review.Restaurant.Source == "instagram" || 
+		} else if review.Restaurant.Source == "instagram" ||
 				  review.Restaurant.Source == "factual" {
 			fmt.Println("New restaurant instagram or factual, updating db")
 			if dbRestaurant.LocationNum == 0 {
@@ -380,7 +380,7 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 					return nil, err
 				}
 			}
-		} 
+		}
 	}
 
 	for _, tag := range instaData.Tags {
@@ -460,7 +460,7 @@ func (googToken *GoogToken) GetToken(w http.ResponseWriter) (*oauth2.Token, erro
 	raw := make(map[string]interface{})
 	if err := json.Unmarshal(body, &raw); err == nil {
 		token = token.WithExtra(raw)
-	} 
+	}
 
 	if secs := tokenRes.ExpiresIn; secs > 0 {
 		token.Expiry = time.Now().Add(time.Duration(secs) * time.Second)
@@ -555,7 +555,7 @@ func downloadFile(rawUrl string) (string, error) {
 }
 
 func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
-	
+
 	sessionUser := a.SessionStore.Get("username")
 	sessionUserID := a.SessionStore.Get("userId")
 	fmt.Println("SessionUser = %v", sessionUser)
@@ -580,23 +580,23 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 
 		content, _ := ioutil.ReadAll(r.Body)
 		fmt.Printf("Body = %v\n", string(content))
-	
+
 		if err := json.Unmarshal([]byte(content), &instaData); err != nil {
 			//need logging here instead of print
 			fmt.Printf("something went wrong in app crawl decode %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 		}
-	
+
 		if len(instaData.Data) == 0 {
 			fmt.Println("No New Photos")
 			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
-		
+
 		fmt.Printf("instaData = %v\n", instaData.Data[0])
 		fmt.Printf("instaData images = %v\n", instaData.Data[0].Images)
 		fmt.Printf("instaData comments = %v\n", instaData.Data[0].Comments)
 		fmt.Printf("instaData tags = %v\n", instaData.Data[0].Tags)
-	
+
 		desc, code, reviews, err := DoCrawl(a, username, instaData, false)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
@@ -617,7 +617,7 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 }
 
 func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *ParentData, photoUpload bool) (string, int, []*db.Review, error) {
-	
+
 	fmt.Printf("doCrawl: instaData = %v\n", instaData.Data[0])
 	fmt.Printf("doCrawl: instaData images = %v\n", instaData.Data[0].Images)
 	fmt.Printf("doCrawl: instaData comments = %v\n", instaData.Data[0].Comments)
@@ -658,7 +658,7 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 				desc = "Not all reviews added: " + err.Error()
 				continue
 			}
-	
+
 			/* //////////////////////////////////////// */
 			/*                Store File    		    */
 			/* //////////////////////////////////////// */
@@ -696,12 +696,12 @@ func GetGoogleClient() (*http.Client, error) {
 
 	googConfig := new(jwt.Config)
 	gApiInfo := new(crypto.GApiInfo)
-    
+
     fileContent, err := ioutil.ReadFile("./chomp_private/Chomp.json")
     if err != nil {
         return new(http.Client), err
     }
-    
+
     err = json.Unmarshal(fileContent, &gApiInfo)
     if err != nil {
         fmt.Printf("Err = %v", err)
