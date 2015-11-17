@@ -622,7 +622,6 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 	var err error
 	var client *http.Client
 	var reviews []*db.Review
-	var review *db.Review
 
 	if photoUpload == true {
 		client, err = GetGoogleClient()
