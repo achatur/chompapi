@@ -397,12 +397,6 @@ func (instaData *InstaData) CreateReview(photoInfo db.Photos, a *globalsessionke
 
 	// create review
 	fmt.Printf("Creating reviews.. liked = %v\n", review.Liked)
-	err = review.CreateReview(a.DB)
-	if err != nil {
-		//something bad happened
-		fmt.Printf("something went while retrieving data %v", err)
-		return nil, err
-	}
 	return review, nil
 }
 
@@ -678,8 +672,16 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		/* //////////////////////////////////////// */
 		/*                Create Review   		    */
 		/* //////////////////////////////////////// */
-		review, err = instaData.Data[elem].CreateReview(photoInfo, a)
-		if err == nil {
+		review, err1 = instaData.Data[elem].CreateReview(photoInfo, a)
+		if photoUpload {
+			review.Source = "InstaCrawl"
+		} else {
+			review.Source = "InstaImport"
+		}
+
+		err2 = review.CreateReview(a.DB)
+
+		if err1 == nil && err2 == nil {
 			fmt.Printf("Review %v added\n", elem)
 			reviews = append(reviews, review)
 		} else {
