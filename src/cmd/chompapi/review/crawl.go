@@ -672,14 +672,14 @@ func DoCrawl(a *globalsessionkeeper.AppContext, username string, instaData *Pare
 		/* //////////////////////////////////////// */
 		/*                Create Review   		    */
 		/* //////////////////////////////////////// */
-		review, err1 = instaData.Data[elem].CreateReview(photoInfo, a)
+		review, err1 := instaData.Data[elem].CreateReview(photoInfo, a)
 		if photoUpload {
 			review.Source = "InstaCrawl"
 		} else {
 			review.Source = "InstaImport"
 		}
 
-		err2 = review.CreateReview(a.DB)
+		err2 := review.CreateReview(a.DB)
 
 		if err1 == nil && err2 == nil {
 			fmt.Printf("Review %v added\n", elem)
