@@ -143,6 +143,11 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 
 	case "POST":
 
+		myErrorResponse.Code = http.StatusBadRequest
+    	myErrorResponse.Error = "Temporarily down"
+    	myErrorResponse.HttpErrorResponder(w)
+    	return
+
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&crawl); err != nil {
 			//need logging here instead of print
