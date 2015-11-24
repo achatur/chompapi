@@ -250,7 +250,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Last Crawl not Saved: " + err.Error()}
 			}
 			// igStore.IgCreatedTime = int(timeStamp.Unix())
-			igStore.IgCreatedTime = int32(timeEpoch)
+			igStore.IgCreatedTime = int(timeEpoch)
 
 			err = igStore.UpdateLastPull(a.DB)
 	
@@ -642,12 +642,12 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		// 	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
 		// }
 		// igStore.IgCreatedTime = int(timeStamp.Unix())
-		timeEpoch, err := strconv.ParseInt(instaDataList[0].CreatedTime, 10, 64)
+		timeEpoch, err := strconv.ParseInt(instaData.Data[0].CreatedTime, 10, 64)
 		if err != nil {
 			fmt.Println(err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Last Crawl not Saved: " + err.Error()}
 		}
-		igStore.IgCreatedTime = int32(timeEpoch)
+		igStore.IgCreatedTime = int(timeEpoch)
 
 		err = igStore.UpdateLastPull(a.DB)
 	
