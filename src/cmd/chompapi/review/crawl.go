@@ -234,7 +234,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*               Set Last Crawl 			*/
 		/* //////////////////////////////////////// */
 
-		if len(&instaDataList) > 1 {
+		if len(instaDataList) > 1 {
 
 			igStore.IgMediaID = instaDataList[0].ID
 			igStore.IgCreatedTime = time.Now().Unix()
