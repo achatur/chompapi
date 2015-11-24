@@ -238,6 +238,10 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*******************************************************************/
 		/*                   SEND CRAWL TO DoCrawl()                       */
 		/*******************************************************************/
+		if len(instaDataList) == 0 {
+			fmt.Println("No New Photos")
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
+		} 
 		desc, code, reviews, err := DoCrawl(a, username, &ParentData{instaDataList}, true)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
