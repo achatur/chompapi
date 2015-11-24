@@ -234,9 +234,12 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*               Set Last Crawl 			*/
 		/* //////////////////////////////////////// */
 
-		if len(igStore) > 1 {
+		if len(&instaDataList) > 1 {
 
-			err := igStore[0].UpdateLastPull(a.DB)
+			igStore.IgMediaID = instaDataList[0].ID
+			igStore.IgCreatedTime = time.Now().Unix()
+
+			err := igStore.UpdateLastPull(a.DB)
 	
 			if err != nil {
 				fmt.Printf("Could not update table\n")
