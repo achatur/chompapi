@@ -177,12 +177,12 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 
 		igMediaId := strings.Split(igStore.IgMediaID, "_")
 		igMediaIdInt, err := strconv.ParseInt(igMediaId[0], 10, 64)
-		if errs != nil {
+		if err != nil {
 			fmt.Printf("something went wrong while parsing ig media id %v", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, err.Error()}
 		}
 
-		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, strings.Join([]string{strings.Itoa(igMediaIdInt + 1), igMediaId[1]}, "_"))
+		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, strings.Join([]string{strconv.Itoa(igMediaIdInt + 1), igMediaId[1]}, "_"))
 		fmt.Printf("Media full = %v\n", igStore.IgMediaID)
 		fmt.Printf("Media id p1 = %v\n", igMediaId[0])
 		fmt.Printf("Media id p2 = %v\n", igMediaId[1])
