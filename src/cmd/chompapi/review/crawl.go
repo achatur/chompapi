@@ -133,7 +133,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 	instaData 	 := new(ParentData)
 	igStore 	 := new(db.IgStore)
 
-	instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+	// instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+	instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_id=%v"
 
 	crawl.Username = username
 	crawl.UserID = int(userId)
@@ -174,7 +175,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		fmt.Printf("\nigStore Pull = %v\n", igStore)
 		fmt.Println("=======================================")
 
-		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
+		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgMediaID)
 		request := gorequest.New()
 		resp, body, errs := request.Get(iurl).End()
 
