@@ -182,7 +182,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 			return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, err.Error()}
 		}
 
-		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, strings.Join([]string{strings.Itoa(igMediaIdInt + 1), igMediaId[1]}, "_")
+		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, strings.Join([]string{strings.Itoa(igMediaIdInt + 1), igMediaId[1]}, "_"))
 		fmt.Printf("Media full = %v\n", igStore.IgMediaID)
 		fmt.Printf("Media id p1 = %v\n", igMediaId[0])
 		fmt.Printf("Media id p2 = %v\n", igMediaId[1])
