@@ -234,9 +234,9 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*               Set Last Crawl 			*/
 		/* //////////////////////////////////////// */
 
-		if len(instaData) > 1 {
+		if len(igStore) > 1 {
 
-			err := instaDataList[0].UpdateLastPull(a.DB)
+			err := igStore[0].UpdateLastPull(a.DB)
 	
 			if err != nil {
 				fmt.Printf("Could not update table\n")
@@ -611,6 +611,19 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{code, desc}
+		}
+		* //////////////////////////////////////// */
+		/*               Set Last Crawl 			*/
+		/* //////////////////////////////////////// */
+
+		if len(igStore) > 1 {
+
+			err := igStore[0].UpdateLastPull(a.DB)
+	
+			if err != nil {
+				fmt.Printf("Could not update table\n")
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
+			}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(reviews)
