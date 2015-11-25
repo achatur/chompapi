@@ -251,7 +251,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*               Set Last Crawl 			*/
 		/* //////////////////////////////////////// */
 
-		if len(instaDataList) > 1 {
+		if len(instaDataList) > 0 {
 
 			igStore.IgMediaID = instaDataList[0].ID
 			// layOut := "Jan 2, 2006 at 3:04pm (MST)"
