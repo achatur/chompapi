@@ -133,7 +133,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 	instaData 	 := new(ParentData)
 	igStore 	 := new(db.IgStore)
 
-	instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+	// instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_timestamp=%v"
+	instaRMediaUrl 	:= "https://api.instagram.com/v1/users/self/media/recent/?access_token=%v&min_id=%v"
 
 	crawl.Username = username
 	crawl.UserID = int(userId)
@@ -142,6 +143,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 	switch r.Method {
 
 	case "POST":
+
+		// return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Temporarily Down"}
 
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&crawl); err != nil {
@@ -170,9 +173,32 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 			return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Could not set last crawl: " + err.Error()}
 		}
 		fmt.Printf("\nigStore Pull = %v\n", igStore)
-		fmt.Println("=======================================")
+		// fmt.Println("=======================================")
 
-		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igStore.IgCreatedTime +1)
+		var igMediaIdInt int64
+		var igMediaId []string
+		igMediaIdJoined := ""
+		firstCrawl := true
+		if igStore.IgMediaID != "fake" {
+			firstCrawl = false
+			igMediaId = strings.Split(igStore.IgMediaID, "_")
+			fmt.Printf("What's in igMediaId now? %v\n", igMediaId)
+			igMediaIdInt, err = strconv.ParseInt(igMediaId[0], 10, 64)
+	
+			if err != nil {
+				fmt.Printf("something went wrong while parsing ig media id %v", err)
+				return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, err.Error()}
+			}
+			igMediaIdJoined = strings.Join([]string{strconv.Itoa(int(igMediaIdInt + 1)), igMediaId[1]}, "_")
+		} else {
+			igMediaIdInt = 0
+		}
+
+		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igMediaIdJoined)
+		fmt.Printf("Media full = %v\n", igStore.IgMediaID)
+		fmt.Printf("Media id joined = %v\n", igMediaIdJoined)
+		fmt.Printf("Media url = %v\n", iurl)
+		fmt.Println("=======================================")
 		request := gorequest.New()
 		resp, body, errs := request.Get(iurl).End()
 
@@ -222,10 +248,57 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*******************************************************************/
 		/*                   SEND CRAWL TO DoCrawl()                       */
 		/*******************************************************************/
-		desc, code, reviews, err := DoCrawl(a, username, &ParentData{instaDataList}, true)
+		var reviews []*db.Review
+		desc := "First Crawl"
+		code := http.StatusNoContent
+		if firstCrawl == true {
+			igStore.IgMediaID = instaData.Data[0].ID
+			fmt.Println("Last Crawl update")
+			timeEpoch, err := strconv.ParseInt(instaData.Data[0].CreatedTime, 10, 64)
+			if err != nil {
+				fmt.Println(err)
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Last Crawl not Saved: " + err.Error()}
+			}
+			// igStore.IgCreatedTime = int(timeStamp.Unix())
+			igStore.IgCreatedTime = int(timeEpoch)
+	
+			err = igStore.UpdateLastPull(a.DB)
+		
+			if err != nil {
+				fmt.Printf("Could not update table\n")
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
+			}
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update - First Crawl"}
+		} else if len(instaDataList) <= 0 {
+			fmt.Println("No New Photos")
+			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
+		}
+		fmt.Println("First crawl == false")
+		desc, code, reviews, err = DoCrawl(a, username, &ParentData{instaDataList}, true)
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{code, desc}
+		}
+		/* //////////////////////////////////////// */
+		/*               Set Last Crawl 			*/
+		/* //////////////////////////////////////// */
+
+
+		igStore.IgMediaID = instaDataList[0].ID
+		fmt.Println("Last Crawl update")
+		timeEpoch, err := strconv.ParseInt(instaDataList[0].CreatedTime, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Last Crawl not Saved: " + err.Error()}
+		}
+		// igStore.IgCreatedTime = int(timeStamp.Unix())
+		igStore.IgCreatedTime = int(timeEpoch)
+
+		err = igStore.UpdateLastPull(a.DB)
+	
+		if err != nil {
+			fmt.Printf("Could not update table\n")
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(reviews)
@@ -233,7 +306,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
         fmt.Printf("Reviews = %v\n", reviews)
-        w.WriteHeader(http.StatusOK)
+        fmt.Printf("Code = %v\n", code)
+        w.WriteHeader(code)
 		return nil
 
 	default:
@@ -595,6 +669,33 @@ func AppCrawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 		if err != nil {
 			fmt.Printf("something went wrong in do crawl %v", err)
 			return globalsessionkeeper.ErrorResponse{code, desc}
+		}
+		/* //////////////////////////////////////// */
+		/*               Set Last Crawl 			*/
+		/* //////////////////////////////////////// */
+
+		igStore.IgMediaID = instaData.Data[0].ID
+		// layOut := "Jan 2, 2006 at 3:04pm (MST)"
+		// timeStamp, err := time.Parse(layOut, instaData.Data[0].CreatedTime)
+		// // timeStamp, err := time.Parse(instaData.Data[0].CreatedTime, timeStampString)
+
+		// if err != nil {
+		// 	fmt.Println(err)
+		// 	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
+		// }
+		// igStore.IgCreatedTime = int(timeStamp.Unix())
+		timeEpoch, err := strconv.ParseInt(instaData.Data[0].CreatedTime, 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Last Crawl not Saved: " + err.Error()}
+		}
+		igStore.IgCreatedTime = int(timeEpoch)
+
+		err = igStore.UpdateLastPull(a.DB)
+	
+		if err != nil {
+			fmt.Printf("Could not update table\n")
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
 		}
 		w.Header().Set("Content-Type", "application/json")
 		err = json.NewEncoder(w).Encode(reviews)
