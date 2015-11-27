@@ -66,7 +66,7 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			//need logging here instead of print
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 		}
-		igStore 	 := new(db.IgStore)
+		igStore := new(db.IgStore)
 		igStore.UserID = input.UserID
 		igStore.IgMediaID = "fake"
 		igStore.IgCreatedTime = int(time.Now().Unix())

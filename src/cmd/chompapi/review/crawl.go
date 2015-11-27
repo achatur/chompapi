@@ -175,12 +175,19 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		fmt.Printf("\nigStore Pull = %v\n", igStore)
 		// fmt.Println("=======================================")
 
-		igMediaId := strings.Split(igStore.IgMediaID, "_")
-		igMediaIdInt, err := strconv.ParseInt(igMediaId[0], 10, 64)
-
-		if err != nil {
-			fmt.Printf("something went wrong while parsing ig media id %v", err)
-			return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, err.Error()}
+		var igMediaIdInt int64
+		firstCrawl := true
+		if igStore.IgMediaID != "fake" {
+			firstCrawl := false
+			igMediaId := strings.Split(igStore.IgMediaID, "_")
+			igMediaIdInt, err = strconv.ParseInt(igMediaId[0], 10, 64)
+	
+			if err != nil {
+				fmt.Printf("something went wrong while parsing ig media id %v", err)
+				return globalsessionkeeper.ErrorResponse{http.StatusServiceUnavailable, err.Error()}
+			}
+		} else {
+			igMediaIdInt = 0
 		}
 
 		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, strings.Join([]string{strconv.Itoa(int(igMediaIdInt + 1)), igMediaId[1]}, "_"))
@@ -238,14 +245,19 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*******************************************************************/
 		/*                   SEND CRAWL TO DoCrawl()                       */
 		/*******************************************************************/
+		var reviews []review
+		desc := "First Crawl"
+		code := http.StatusNoContent
 		if len(instaDataList) == 0 {
 			fmt.Println("No New Photos")
 			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
-		} 
-		desc, code, reviews, err := DoCrawl(a, username, &ParentData{instaDataList}, true)
-		if err != nil {
-			fmt.Printf("something went wrong in do crawl %v", err)
-			return globalsessionkeeper.ErrorResponse{code, desc}
+		}
+		if firstCrawl == false {
+			desc, code, reviews, err = DoCrawl(a, username, &ParentData{instaDataList}, true)
+			if err != nil {
+				fmt.Printf("something went wrong in do crawl %v", err)
+				return globalsessionkeeper.ErrorResponse{code, desc}
+			}
 		}
 		/* //////////////////////////////////////// */
 		/*               Set Last Crawl 			*/
