@@ -195,8 +195,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 
 		iurl :=  fmt.Sprintf(instaRMediaUrl, crawl.InstaTok, igMediaIdJoined)
 		fmt.Printf("Media full = %v\n", igStore.IgMediaID)
-		fmt.Printf("Media id p1 = %v\n", igMediaId[0])
-		fmt.Printf("Media id p2 = %v\n", igMediaId[1])
+		fmt.Printf("Media id joined = %v\n", igMediaIdJoined)
 		fmt.Printf("Media url = %v\n", iurl)
 		fmt.Println("=======================================")
 		request := gorequest.New()
