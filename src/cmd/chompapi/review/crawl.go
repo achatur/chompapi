@@ -246,7 +246,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		/*******************************************************************/
 		/*                   SEND CRAWL TO DoCrawl()                       */
 		/*******************************************************************/
-		var reviews []review
+		var reviews []db.Review
 		desc := "First Crawl"
 		code := http.StatusNoContent
 		if len(instaDataList) == 0 {
