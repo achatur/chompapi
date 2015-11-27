@@ -180,7 +180,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		firstCrawl := true
 		if igStore.IgMediaID != "fake" {
 			firstCrawl := false
-			igMediaId = append(igMediaId, strings.Split(igStore.IgMediaID, "_"))
+			igMediaId = copy(igMediaId, strings.Split(igStore.IgMediaID, "_"))
 			igMediaIdInt, err = strconv.ParseInt(igMediaId[0], 10, 64)
 	
 			if err != nil {
