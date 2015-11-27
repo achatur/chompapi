@@ -256,6 +256,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 			return globalsessionkeeper.ErrorResponse{http.StatusNoContent, "Nothing to update"}
 		}
 		if firstCrawl == false {
+			fmt.Println("First crawl == false")
 			desc, code, reviews, err = DoCrawl(a, username, &ParentData{instaDataList}, true)
 			if err != nil {
 				fmt.Printf("something went wrong in do crawl %v", err)
@@ -269,13 +270,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		if len(instaDataList) > 0 {
 
 			igStore.IgMediaID = instaDataList[0].ID
-			// layOut := "Jan 2, 2006 at 3:04pm (MST)"
-			// timeStamp, err := time.Parse(layOut, instaDataList[0].CreatedTime)
-
-			// if err != nil {
-			// 	fmt.Println(err)
-			// 	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Not all reviews added: " + err.Error()}
-			// }
+			fmt.Println("Last Crawl update")
 			timeEpoch, err := strconv.ParseInt(instaDataList[0].CreatedTime, 10, 64)
 			if err != nil {
 				fmt.Println(err)
@@ -297,6 +292,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
         fmt.Printf("Reviews = %v\n", reviews)
+        fmt.Printf("Code = %v\n", code)
         w.WriteHeader(code)
 		return nil
 
