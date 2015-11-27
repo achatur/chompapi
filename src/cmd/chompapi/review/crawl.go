@@ -297,7 +297,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
         }
         fmt.Printf("Reviews = %v\n", reviews)
-        w.WriteHeader(http.StatusOK)
+        w.WriteHeader(code)
 		return nil
 
 	default:
