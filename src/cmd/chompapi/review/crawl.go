@@ -181,7 +181,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 		firstCrawl := true
 		if igStore.IgMediaID != "fake" {
 			firstCrawl = false
-			copy(igMediaId, strings.Split(igStore.IgMediaID, "_"))
+			igMediaId = strings.Split(igStore.IgMediaID, "_")
+			fmt.Printf("What's in igMediaId now? %v\n", igMediaId)
 			igMediaIdInt, err = strconv.ParseInt(igMediaId[0], 10, 64)
 	
 			if err != nil {
