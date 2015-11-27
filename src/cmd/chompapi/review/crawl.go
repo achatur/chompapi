@@ -293,8 +293,8 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
         }
         fmt.Printf("Reviews = %v\n", reviews)
         fmt.Printf("Code = %v\n", code)
-        w.WriteHeader(code)
-		return nil
+        // w.WriteHeader(code)
+		return globalsessionkeeper.ErrorResponse{code, desc}
 
 	default:
 
