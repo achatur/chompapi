@@ -15,6 +15,31 @@
 			"path": "/utils"
 		},
 		{
+			"importpath": "github.com/cenkalti/backoff",
+			"repository": "https://github.com/cenkalti/backoff",
+			"revision": "4dc77674aceaabba2c7e3da25d4c823edfb73f99",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/coopernurse/gorp",
+			"repository": "https://github.com/coopernurse/gorp",
+			"revision": "9cd2b5ef5b82fde4e7c51776ac3f94398b8af076",
+			"branch": "develop"
+		},
+		{
+			"importpath": "github.com/dghubble/go-twitter/twitter",
+			"repository": "https://github.com/dghubble/go-twitter",
+			"revision": "71501a7304049a626b2cb5bd0f84bf5da23ca992",
+			"branch": "master",
+			"path": "/twitter"
+		},
+		{
+			"importpath": "github.com/dghubble/sling",
+			"repository": "https://github.com/dghubble/sling",
+			"revision": "0918290c504fd29c93f63df7755ed5c00edd5315",
+			"branch": "master"
+		},
+		{
 			"importpath": "github.com/dgrijalva/jwt-go",
 			"repository": "https://github.com/dgrijalva/jwt-go",
 			"revision": "9fe8afe96d32468fba230b8b22acea86251f0506",
@@ -27,6 +52,13 @@
 			"branch": "master"
 		},
 		{
+			"importpath": "github.com/google/go-querystring/query",
+			"repository": "https://github.com/google/go-querystring",
+			"revision": "2a60fc2ba6c19de80291203597d752e9ba58e4c0",
+			"branch": "master",
+			"path": "/query"
+		},
+		{
 			"importpath": "github.com/gorilla/context",
 			"repository": "https://github.com/gorilla/context",
 			"revision": "215affda49addc4c8ef7e2534915df2c8c35c6cd",
@@ -36,6 +68,12 @@
 			"importpath": "github.com/gorilla/mux",
 			"repository": "https://github.com/gorilla/mux",
 			"revision": "ffb3f683aad4dcbc2bb65177799563252585dd22",
+			"branch": "master"
+		},
+		{
+			"importpath": "github.com/guregu/null",
+			"repository": "https://github.com/guregu/null",
+			"revision": "79c5bd36b615db4c06132321189f579c8a5fca98",
 			"branch": "master"
 		},
 		{
