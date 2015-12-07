@@ -120,6 +120,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 	case "POST":
 	// Collect URL params
 		params := r.URL.Query()
+		fmt.Printf("params = %v\n", params)
 		userId := params.Get("uid")
 		userToken := params.Get("token")
 		user := new(User)
@@ -140,13 +141,14 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 
 		// fmt.Printf("input = %v\n", user)
 		// // fmt.Printf("Number of active sessions: %v\n", globalsessionkeeper.GlobalSessions.GetActiveSession())
-
+		fmt.Printf("Raw query = %v\n", r.URL.RawQuery)
 		fmt.Printf("UserId = %v\nUserToken = %v\n", userId, userToken)
 	
 		if userId != "" && userToken != "" {
 			userId, err := strconv.ParseInt(userId, 0, 64)
 			if err != nil {
 				// doResponse()
+				fmt.Printf("Error converting..%v\n", err)
 				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
 				// return
 			}
@@ -154,6 +156,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 			// err := user.GetUserInfo(a.DB)
 			if err := user.GetUserInfo(a.DB); err == nil {
 				// user := user.(*User)
+				fmt.Printf("No errors, user = %v\n", user)
 				if user.IsValidToken(userToken) {
 					// Valid token, log user in
 					// Login(user, w, r)
@@ -165,6 +168,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 				}
 			}
 		}
+		fmt.Printf("We got empties... returning 401\n")
 		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}
 	default:
 		return globalsessionkeeper.ErrorResponse{http.StatusUnauthorized, "Unauthorized"}

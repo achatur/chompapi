@@ -11,6 +11,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
+	// "github.com/pborman/uuid"
 )
 
 const (
@@ -50,12 +51,13 @@ func (user *User) GetUserInfo(db *sql.DB) error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf(`SELECT id, email, token, ttl, original_url
 				FROM signup_verification
-				WHERE id=%s\n`, user.Id)
-	err := db.QueryRow(`SELECT id, email, token, ttl, original_url
-					   WHERE id=?`, user.Id).Scan(&user.Id, &user.Email, &user.Token,
+				WHERE id=%s`, user.Id, "\n")
+	err := db.QueryRow(`SELECT id, email, token, ttl, origin_url
+						FROM signup_verification
+						WHERE id=?`, user.Id).Scan(&user.Id, &user.Email, &user.Token,
 					   	&user.OriginUrl)
 	if err != nil {
-		fmt.Printf("err = %v", err)
+		fmt.Printf("\nSQL err = %v\n", err)
 		return err
 	}
 	return err
@@ -69,10 +71,13 @@ func (user *User) SetUserInfo(db *sql.DB) error {
 	// query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", 
 	// 	userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
 	// fmt.Println("Query = %v\n", query)
+	// myUuid := uuid.NewRandom()
+	// fmt.Printf("Udid = %v\n", myUuid.String())
+	// user.Token = myUuid.String()
 
-	results, err := db.Exec(`INSERT INTO signup_verification 
-							 SET user=?, email=?, ttl=?, original_url=`, 
-							user.Id, user.Email, user.Ttl, user.OriginUrl)
+	results, err := db.Exec(`INSERT INTO signup_verification
+							SET id=?, token=?, email=?, ttl=?, origin_url=?`, 
+							user.Id, user.Token, user.Email, time.Now().Unix() + 1776600, "user.OriginUrl")
 
 	if err != nil {
 		fmt.Printf("Update Account Setup Time err = %v\n", err)

@@ -316,6 +316,7 @@ func (userInfo *UserInfo) GetInstagramAccessToken(db *sql.DB) error {
 
 	return nil
 }
+
 func (userInfo UserInfo) UpdatePassword(temp bool, db *sql.DB) error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", userInfo)
@@ -334,6 +335,24 @@ func (userInfo UserInfo) UpdatePassword(temp bool, db *sql.DB) error {
 							  WHERE chomp_user_id=?`, userInfo.PasswordHash, false, 0, userInfo.UserID)
 	}
 	
+	id, err2 := results.LastInsertId()
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
+	return err2
+}
+
+func (userInfo UserInfo) UpdateEmail(db *sql.DB) error {
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+	var results sql.Result
+	var err2 error
+
+	// if temp == true {
+
+	results, err2 = db.Exec(`UPDATE chomp_users 
+							SET email=?
+							WHERE chomp_user_id=?`, userInfo.Email, userInfo.UserID)
+	// }
 	id, err2 := results.LastInsertId()
 	fmt.Printf("Results = %v\n err3 = %v\n", id , err2)
 	return err2

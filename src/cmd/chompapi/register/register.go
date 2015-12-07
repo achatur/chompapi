@@ -11,6 +11,7 @@ import (
 	"time"
 	"cmd/chompapi/globalsessionkeeper"
 	"cmd/chompapi/me"
+	"cmd/chompapi/auth"
 )
 
 func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
@@ -75,14 +76,20 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			fmt.Printf("Could not update table\n")
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
 		}
-
+		verifyUser := new(auth.User)
+		verifyUser.Id = int64(input.UserID)
+		// verifyUser.token = me.GenerateUuid()
+		err = verifyUser.SetUserInfo(a.DB)
+		if err != nil {
+			fmt.Printf("Could not add Verify User Info\n")
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
+		}
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 
 	default:
-
 		return globalsessionkeeper.ErrorResponse{http.StatusMethodNotAllowed, "Invalid Method"}
 	}
 }
