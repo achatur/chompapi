@@ -10,6 +10,7 @@ import (
 	// "encoding/hex"
 	// "cmd/chompapi/crypto"
 	// "cmd/chompapi/messenger"
+	"cmd/chompapi/auth"
 )
 
 func UpdateEmail(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
@@ -56,22 +57,16 @@ func UpdateEmail(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *ht
 			fmt.Println("Error! = %v\n", err)
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not Update Password: " + err.Error()}
 		}
-		// Send email
-		// fmt.Println("Sending Email...")
-		// body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
-		// context := new(messenger.SmtpTemplateData)
-	 //    context.From = "The Chomp Team"
-	 //    context.To = input.Email
-	 //    context.Subject = "Password Changed"
-	 //    context.Body = body
-
-	 //    err := context.SendGmail()
-	 //    if err != nil {
-	 //    	fmt.Printf("Something ewnt wrong %v\n", err)
-		// 	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
-	 //    }
-
-	    // fmt.Printf("Mail sent")
+		verifyUser := new(auth.User)
+		verifyUser.Id = int64(input.UserID)
+		verifyUser.Token = GenerateUuid()
+		verifyUser.Email = input.Email
+		// err = verifyUser.SetUserInfo(a.DB)
+		err := verifyUser.SetOrUpdateEmailVerify(a.DB)
+		if err != nil {
+			fmt.Printf("Could not add Verify User Info\n")
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
+		}
 		w.WriteHeader(http.StatusNoContent)
 		return nil
 	default:

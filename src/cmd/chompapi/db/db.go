@@ -42,6 +42,7 @@ type UserInfo struct {
 	IsPasswordTemp 	bool 			`josn:"isPasswordTemp"`
 	PasswordExpiry 	int 			`josn:"passwordExpiry"`
 	InstaToken 		string 			`json:"instaToken,omitempty"`
+	Verified 		bool 			`json:"verified"`
 }
 
 // Plurals are names of tables in DB
@@ -138,11 +139,12 @@ type IgStore struct {
 func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 	// Prepare statement for reading chomp_users table data
 	fmt.Printf("SELECT * FROM chomp_users WHERE chomp_username=%s\n", userInfo.Username)
-	err := db.QueryRow(`SELECT chomp_users.chomp_user_id, email, chomp_username,
+	err := db.QueryRow(`SELECT chomp_users.chomp_user_id, chomp_users.email, chomp_username,
 						phone_number, password_hash, dob, gender, photo_id, photos.uuid, photos.latitude, photos.longitude,
-						is_password_temp, password_expiry, fname, lname, insta_token
+						is_password_temp, password_expiry, fname, lname, insta_token, signup_verification.verified
 					   FROM chomp_users
 					   JOIN photos on photos.id = chomp_users.photo_id
+					   JOIN signup_verification on signup_verification.id = chomp_users.chomp_user_id
 					   WHERE chomp_username=?`, 
 					   userInfo.Username).Scan(&userInfo.UserID, &userInfo.Email,
 					   							    &userInfo.Username, &userInfo.PhoneNumber,
@@ -150,7 +152,7 @@ func (userInfo *UserInfo) GetUserInfo(db *sql.DB) error {
 					   							    &userInfo.Gender, &userInfo.Photo.ID, &userInfo.Photo.Uuid,
 					   							    &userInfo.Photo.Latitude, &userInfo.Photo.Longitude,
 					   							    &userInfo.IsPasswordTemp, &userInfo.PasswordExpiry,
-					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaToken)
+					   							    &userInfo.Fname, &userInfo.Lname, &userInfo.InstaToken, &userInfo.Verified)
 	if err != nil {
 		fmt.Printf("err = %v", err)
 		return err

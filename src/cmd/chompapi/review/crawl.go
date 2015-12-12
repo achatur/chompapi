@@ -144,7 +144,7 @@ func Crawl(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Req
 
 	case "POST":
 
-		// return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Temporarily Down"}
+		return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Temporarily Removed"}
 
 		decoder := json.NewDecoder(r.Body)
 		if err := decoder.Decode(&crawl); err != nil {

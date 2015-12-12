@@ -78,12 +78,30 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 		}
 		verifyUser := new(auth.User)
 		verifyUser.Id = int64(input.UserID)
-		// verifyUser.token = me.GenerateUuid()
-		err = verifyUser.SetUserInfo(a.DB)
+		verifyUser.Token = me.GenerateUuid()
+		verifyUser.Email = input.Email
+		// err = verifyUser.SetUserInfo(a.DB)
+		err = verifyUser.SetOrUpdateEmailVerify(a.DB)
 		if err != nil {
 			fmt.Printf("Could not add Verify User Info\n")
-			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
+			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
 		}
+		// fmt.Println("Sending Email...")
+		// body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
+		// context := new(messenger.SmtpTemplateData)
+	 //    context.From = "The Chomp Team"
+	 //    context.To = input.Email
+	 //    context.Subject = "Verify Email"
+	 //    context.Body = body
+
+	 //    err := context.SendGmail()
+	 //    if err != nil {
+	 //    	fmt.Printf("Something ewnt wrong %v\n", err)
+		// 	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
+	 //    }
+
+	    fmt.Printf("Mail sent")
+		w.WriteHeader(http.StatusNoContent)
 		w.Header().Set("Location", fmt.Sprintf("https://chompapi.com/me/photos/%v",  photoInfo.ID))
 		w.Header().Set("UUID", photoInfo.Uuid)
 		w.WriteHeader(http.StatusNoContent)

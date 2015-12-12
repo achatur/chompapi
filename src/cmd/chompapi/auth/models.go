@@ -149,7 +149,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 			if err != nil {
 				// doResponse()
 				fmt.Printf("Error converting..%v\n", err)
-				return globalsessionkeeper.ErrorResponse{http.StatusBadRequest, "Malformed JSON: " + err.Error()}
+				return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 				// return
 			}
 			user.Id = userId
@@ -157,6 +157,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 			if err := user.GetUserInfo(a.DB); err == nil {
 				// user := user.(*User)
 				fmt.Printf("No errors, user = %v\n", user)
+				fmt.Printf("is ValidToken? = %v\n", user.IsValidToken(userToken))
 				if user.IsValidToken(userToken) {
 					// Valid token, log user in
 					// Login(user, w, r)
@@ -164,6 +165,10 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 					// Do redirect
 					// redirectToOrigin(user, w, r)
 					fmt.Printf("everything is valid..%v\n", user)
+					err := user.UpdateVerifed(a.DB)
+					if err != nil {
+						return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+					}
 					return nil
 				}
 			}

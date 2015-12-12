@@ -12,6 +12,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"reflect"
 	// "github.com/pborman/uuid"
+	"cmd/chompapi/messenger"
 )
 
 const (
@@ -23,7 +24,8 @@ type User struct {
 	Id        int64       `db:"id"`
 	Email     string      `db:"email"`
 	Token     string      `db:"token"`
-	Ttl       time.Time   `db:"ttl"`
+	// Ttl       time.Time   `db:"ttl"`
+	Ttl       int64		   `db:"ttl"`
 	OriginUrl null.String `db:"originurl"`
 }
 
@@ -34,14 +36,19 @@ func (u *User) RefreshToken() error {
 		return err
 	}
 	u.Token = base64.URLEncoding.EncodeToString(token)
-	u.Ttl = time.Now().UTC().Add(TtlDuration)
+	// u.Ttl = time.Now().UTC().Add(TtlDuration)
+	u.Ttl = time.Now().Unix() + 1776600
 	return nil
 }
 
 // IsValidToken returns a bool indicating that the User's current token hasn't
 // expired and that the provided token is valid.
 func (u *User) IsValidToken(token string) bool {
-	if u.Ttl.Before(time.Now().UTC()) {
+	// if u.Ttl.Before(time.Now().UTC()) {
+	fmt.Printf("TTL = %v\n", u.Ttl)
+	fmt.Printf("time now = %v\n", time.Now().Unix())
+	if time.Now().Unix() >= u.Ttl {
+		fmt.Println("Token Expired")
 		return false
 	}
 	return subtle.ConstantTimeCompare([]byte(u.Token), []byte(token)) == 1
@@ -54,26 +61,80 @@ func (user *User) GetUserInfo(db *sql.DB) error {
 				WHERE id=%s`, user.Id, "\n")
 	err := db.QueryRow(`SELECT id, email, token, ttl, origin_url
 						FROM signup_verification
-						WHERE id=?`, user.Id).Scan(&user.Id, &user.Email, &user.Token,
+						WHERE id=?`, user.Id).Scan(&user.Id, &user.Email, &user.Token, &user.Ttl, 
 					   	&user.OriginUrl)
 	if err != nil {
 		fmt.Printf("\nSQL err = %v\n", err)
 		return err
 	}
+	results, err := db.Exec(`UPDATE signup_verification
+							SET ttl=?
+							WHERE id=?`, time.Now().Unix() - 17766001776600, user.Id)
+	if err != nil {
+		fmt.Printf("Update ttl getUserInfo err = %v\n", err)
+		return err
+	}
+	id, err := results.LastInsertId()
+	// user.Id = int64(id)
+	fmt.Printf("Results = %v\n err3 = %v\n", id , err)
+	fmt.Printf("Error = %v\n", err)
 	return err
+}
+
+func (user *User) UpdateVerifed(db *sql.DB) error {
+	// Prepare statement for reading chomp_users table data
+	fmt.Printf(`UPDATE signup_verification
+				SET verified=1, ttl=?
+				WHERE id=%s`, time.Now().Unix() - 1776600, user.Id, "\n")
+	results, err := db.Exec(`UPDATE signup_verification
+							SET verified=1, ttl=?
+							WHERE id=?`, time.Now().Unix() - 1776600, user.Id)
+	if err != nil {
+		fmt.Printf("Update  verified err = %v\n", err)
+		return err
+	}
+	
+	id, err := results.LastInsertId()
+	user.Id = int64(id)
+	fmt.Printf("Results = %v\n err3 = %v\n", user.Id , err)
+	fmt.Printf("Error = %v\n", err)
+	return nil
+}
+
+func (user *User) SetOrUpdateEmailVerify(db *sql.DB) error {
+	// verifyUser := new(auth.User)
+	// verifyUser.Id = int64(input.UserID)
+	// verifyUser.Token = me.GenerateUuid()
+	// verifyUser.Email = input.Email
+	err := user.SetUserInfo(db)
+	if err != nil {
+		fmt.Printf("Could not add Verify User Info\n")
+		// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
+		return err
+	}
+	fmt.Println("Sending Email...")
+	body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
+	context := new(messenger.SmtpTemplateData)
+	context.From = "The Chomp Team"
+	context.To = user.Email
+	context.Subject = "Verify Email"
+	context.Body = body
+
+	err = context.SendGmail()
+	if err != nil {
+		fmt.Printf("Something ewnt wrong %v\n", err)
+		// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
+		return err
+	}
+
+	fmt.Printf("Mail sent")
+	return nil
 }
 
 func (user *User) SetUserInfo(db *sql.DB) error {
 	// Prepare statement for writing chomp_users table data
 	fmt.Println("map = %v\n", user)
 	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(user))
-
-	// query := fmt.Sprintf("INSERT INTO chomp_users SET chomp_username='%s', email='%s', phone_number='%s', password_hash='%s', dob='%d', gender='%s'", 
-	// 	userInfo.Username, userInfo.Email, userInfo.Phone, userInfo.Hash, userInfo.Dob, userInfo.Gender)
-	// fmt.Println("Query = %v\n", query)
-	// myUuid := uuid.NewRandom()
-	// fmt.Printf("Udid = %v\n", myUuid.String())
-	// user.Token = myUuid.String()
 
 	results, err := db.Exec(`INSERT INTO signup_verification
 							SET id=?, token=?, email=?, ttl=?, origin_url=?`, 
