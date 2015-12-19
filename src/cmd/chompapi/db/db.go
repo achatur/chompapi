@@ -291,6 +291,16 @@ func (userInfo *UserInfo) DeleteCrawlInfo(db *sql.DB) error {
 	return err
 }
 
+func (userInfo *UserInfo) DeleteSignupVerify(db *sql.DB) error {
+	// Prepare statement for writing chomp_users table data
+	fmt.Println("map = %v\n", userInfo)
+	fmt.Print("Type of userInfo = %v\n", reflect.TypeOf(userInfo))
+
+	_, err := db.Exec("DELETE FROM signup_verification WHERE id=?", userInfo.UserID)
+	fmt.Printf("Error = %v\n", err)
+
+	return err
+}
 
 func (userInfo *UserInfo) SetUserInactive(db *sql.DB) error {
 	// Prepare statement for writing chomp_users table data

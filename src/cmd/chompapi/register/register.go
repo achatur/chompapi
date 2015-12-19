@@ -77,9 +77,12 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
 		}
 		verifyUser := new(auth.User)
+		fmt.Printf("Int here = %v\n", input.UserID)
+		fmt.Printf("Int formatted here = %v\n", int64(input.UserID))
 		verifyUser.Id = int64(input.UserID)
 		verifyUser.Token = me.GenerateUuid()
 		verifyUser.Email = input.Email
+		fmt.Printf("Full map = %v\n", verifyUser)
 		// err = verifyUser.SetUserInfo(a.DB)
 		err = verifyUser.SetOrUpdateEmailVerify(a.DB)
 		if err != nil {

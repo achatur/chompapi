@@ -9,53 +9,28 @@ import (
 	"io/ioutil"
 	// "strconv"
 	"encoding/json"
+	// "os"
+	// "io"
 )
 
-// const emailTemplate = `From: {{.From}}
-// To: {{.To}}
-// Subject: {{.Subject}}
-// MIME-version: 1.0
-// Content-Type: text/html; charset="UTF-8"
-// Content-Transfer-Encoding: quoted-printable
+// type EmailUser struct {
+//     Username    string
+//     Password    string
+//     EmailServer string
+//     Port        int
+// }
 
-// Hello!
-// {{if .Pass}}
-// We have reset your password at your request:</br>
-// </br>
-// {{.Pass}}</br></br>
-// {{else if .Username}}
-// We recently recieved word that you forgot your username.  Here's your username:</br>
-// </br>
-// {{.Username}}</br></br>
-// {{else}}
-// This is just an email to inform you that you changed your password recently.</br>
-// {{end}}
-// Feel free to delete this email and carry on enjoying your food!</br>
-// </br>
-// <a href="chompapp://">Login To App</a></br>
-// </br>
-// All the best,</br>
-// </br>
-// The Chomp Team</br></body></html>` 
+// type SmtpTemplateData struct {
+//     From    string
+//     To      string
+//     Subject string
+//     Body    string
+//     Pass 	string
+//     Username string
+//     Link	string
+// }
 
-type EmailUser struct {
-    Username    string
-    Password    string
-    EmailServer string
-    Port        int
-}
-
-type SmtpTemplateData struct {
-    From    string
-    To      string
-    Subject string
-    Body    string
-    Pass 	string
-    Link	string
-    Username string
-}
-
-func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
+func (smtpTemplateData *SmtpTemplateData) SendGmailVerify() error {
 
 	fmt.Printf("smtp data = %v\n", smtpTemplateData)
 	emailUser := new(EmailUser)
@@ -68,7 +43,7 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 		return err
 	}
 
-	emailTemplateByte, err := ioutil.ReadFile("./messenger/email_template_2.html")
+	emailTemplateByte, err := ioutil.ReadFile("./messenger/email_template_verify_email.html")
 	if err != nil {
 	    return err
 	}
@@ -92,17 +67,23 @@ func (smtpTemplateData *SmtpTemplateData) SendGmail() error {
 	t := template.New("emailTemplate")
 
 	if t, err = t.Parse(emailTemplate); err != nil {
-	    fmt.Print("error trying to parse mail template")
+	    fmt.Printf("error trying to parse mail template, %v\n", err)
 	    return err
 	}
 
+	fmt.Printf("template = %v\n", emailTemplate)
 
 	if err = t.Execute(&doc, smtpTemplateData); err != nil {
-	    fmt.Print("error trying to execute mail template")
+	    fmt.Print("error trying to execute mail template, %v\n", err)
 	    return err
 	}
 
 	//sending mail
+	fmt.Printf("Doc = %v\n", doc.String())
+	//doc.WriteTo(os.Stdout)
+	// os.Stdout.Write(doc)
+	// io.Copy(os.Stdout, doc)
+
 	err = smtp.SendMail(emailUser.EmailServer+":587", // in our case, "smtp.google.com:587"
     auth,
     emailUser.Username,

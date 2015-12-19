@@ -13,6 +13,8 @@ import (
 	"reflect"
 	// "github.com/pborman/uuid"
 	"cmd/chompapi/messenger"
+	"net/url"
+	"strconv"
 )
 
 const (
@@ -113,14 +115,43 @@ func (user *User) SetOrUpdateEmailVerify(db *sql.DB) error {
 		return err
 	}
 	fmt.Println("Sending Email...")
-	body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
+	fmt.Printf("User in here = %v\n", user)
+	body := fmt.Sprintf("Please Verify Your Password.\n\nRegards,\n\nThe Chomp Team")
 	context := new(messenger.SmtpTemplateData)
 	context.From = "The Chomp Team"
 	context.To = user.Email
-	context.Subject = "Verify Email"
+	context.Subject = "Please Verify Your Email"
 	context.Body = body
+	// Build login url
+	params := url.Values{}
+	params.Add("token", user.Token)
+	fmt.Printf("Int = %v\nformatted = %v\n", user.Id, strconv.FormatInt(user.Id, 10))
+	params.Add("uid", strconv.FormatInt(user.Id, 10))
+	// params.Add("uid", user.Uid)
 
-	err = context.SendGmail()
+	verifyUrl := url.URL{}
+
+	// if r.URL.IsAbs() {
+	// 	verifyUrl.Scheme = r.URL.Scheme
+	// 	verifyUrl.Host = r.URL.Host
+	// } else {
+	verifyUrl.Scheme = "https"
+	verifyUrl.Host = "api.chompapp.com"
+	// }
+
+	verifyUrl.Path = "/verify"
+
+	// Send login email
+	// var mailContent bytes.Buffer
+	// ctx := struct {
+	// 	verifyUrl string
+	// }{
+	// 	fmt.Sprintf("%s?%s", verifyUrl.String(), params.Encode()),
+	// }
+	context.Link = fmt.Sprintf("%s?%s", verifyUrl.String(), params.Encode())
+
+	fmt.Printf("Context = %v\n", context)
+	err = context.SendGmailVerify()
 	if err != nil {
 		fmt.Printf("Something ewnt wrong %v\n", err)
 		// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
@@ -133,7 +164,7 @@ func (user *User) SetOrUpdateEmailVerify(db *sql.DB) error {
 
 func (user *User) SetUserInfo(db *sql.DB) error {
 	// Prepare statement for writing chomp_users table data
-	fmt.Println("map = %v\n", user)
+	fmt.Printf("map = %v\n", user)
 	fmt.Printf("Type of userInfo = %v\n", reflect.TypeOf(user))
 
 	results, err := db.Exec(`INSERT INTO signup_verification
@@ -146,8 +177,7 @@ func (user *User) SetUserInfo(db *sql.DB) error {
 	}
 	
 	id, err := results.LastInsertId()
-	user.Id = int64(id)
-	fmt.Printf("Results = %v\n err3 = %v\n", user.Id , err)
+	fmt.Printf("Results = %v\n, ID = %v\nerr3 = %v\n", user.Id, id, err)
 	fmt.Printf("Error = %v\n", err)
 	return nil
 }

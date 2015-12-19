@@ -307,6 +307,13 @@ func DeleteMe(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.
 	        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
 	        }
 	    }
+	    err = userInfo.DeleteSignupVerify(a.DB)
+	    if err != nil {
+	        //need logging here instead of print
+	        if strings.Contains("0 rows deleted", err.Error()) == false  {
+	        	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, err.Error()}
+	        }
+	    }
 
 	    fmt.Printf("Deleting user %v\n", userInfo.Username)
 	    err = userInfo.DeleteUser(a.DB)

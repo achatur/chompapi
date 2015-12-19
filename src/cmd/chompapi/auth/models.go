@@ -117,7 +117,7 @@ func VerifyHandler(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *
 	// }
 
 	switch r.Method {
-	case "POST":
+	case "GET":
 	// Collect URL params
 		params := r.URL.Query()
 		fmt.Printf("params = %v\n", params)

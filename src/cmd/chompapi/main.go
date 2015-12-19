@@ -216,7 +216,7 @@ func main() {
 
 
 	router.HandleFunc("/login", AppHandler{context, login.DoLogin}.ServerHttp)
-	router.HandleFunc("/auth", AppHandler{context, auth.VerifyHandler}.ServerHttp)
+	router.HandleFunc("/verify", AppHandler{context, auth.VerifyHandler}.ServerHttp)
 	router.HandleFunc("/register", AppHandler{context, register.DoRegister}.ServerHttp)
 
 	router.HandleFunc("/admin/fp", BasicAuth(AppHandler{context, register.ForgotPassword}.ServerHttp))
