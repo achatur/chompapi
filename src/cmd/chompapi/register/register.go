@@ -11,7 +11,7 @@ import (
 	"time"
 	"cmd/chompapi/globalsessionkeeper"
 	"cmd/chompapi/me"
-	"cmd/chompapi/auth"
+//	"cmd/chompapi/auth"
 )
 
 func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
@@ -76,19 +76,21 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			fmt.Printf("Could not update table\n")
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "IG UpdateLastPull failed: " + err.Error()}
 		}
-		verifyUser := new(auth.User)
-		fmt.Printf("Int here = %v\n", input.UserID)
-		fmt.Printf("Int formatted here = %v\n", int64(input.UserID))
-		verifyUser.Id = int64(input.UserID)
-		verifyUser.Token = me.GenerateUuid()
-		verifyUser.Email = input.Email
-		fmt.Printf("Full map = %v\n", verifyUser)
-		// err = verifyUser.SetUserInfo(a.DB)
-		err = verifyUser.SetOrUpdateEmailVerify(a.DB)
-		if err != nil {
-			fmt.Printf("Could not add Verify User Info\n")
-			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
-		}
+		// Got to come back and fix this.  Database failures and email failures are causing
+		// API to fail
+		//verifyUser := new(auth.User)
+		//fmt.Printf("Int here = %v\n", input.UserID)
+		//fmt.Printf("Int formatted here = %v\n", int64(input.UserID))
+		//verifyUser.Id = int64(input.UserID)
+		//verifyUser.Token = me.GenerateUuid()
+		//verifyUser.Email = input.Email
+		//fmt.Printf("Full map = %v\n", verifyUser)
+		//// err = verifyUser.SetUserInfo(a.DB)
+		//err = verifyUser.SetOrUpdateEmailVerify(a.DB)
+		//if err != nil {
+		//	fmt.Printf("Could not add Verify User Info\n")
+		//	return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
+		//}
 		// fmt.Println("Sending Email...")
 		// body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
 		// context := new(messenger.SmtpTemplateData)
