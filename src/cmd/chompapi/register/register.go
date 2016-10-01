@@ -92,12 +92,12 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 			return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not add to verify table: " + err.Error()}
 		}
 		fmt.Println("Sending Email...")
-		body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
-		context := new(messenger.SmtpTemplateData)
-	    context.From = "The Chomp Team"
-	    context.To = input.Email
-	    context.Subject = "Verify Email"
-	    context.Body = body
+		// body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
+		// context := new(messenger.SmtpTemplateData)
+	 //    context.From = "The Chomp Team"
+	 //    context.To = input.Email
+	 //    context.Subject = "Verify Email"
+	 //    context.Body = body
 
 	    err := context.SendGmail()
 	    if err != nil {
