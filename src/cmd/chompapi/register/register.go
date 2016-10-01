@@ -11,7 +11,7 @@ import (
 	"time"
 	"cmd/chompapi/globalsessionkeeper"
 	"cmd/chompapi/me"
-//	"cmd/chompapi/auth"
+	"cmd/chompapi/auth"
 )
 
 func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
