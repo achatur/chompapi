@@ -155,7 +155,7 @@ func (user *User) SetOrUpdateEmailVerify(db *sql.DB) error {
 	if err != nil {
 		fmt.Printf("Something ewnt wrong %v\n", err)
 		// return globalsessionkeeper.ErrorResponse{http.StatusInternalServerError, "Could not send mail" + err.Error()}
-		return err
+		// return err
 	}
 
 	fmt.Printf("Mail sent")
