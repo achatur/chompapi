@@ -12,6 +12,7 @@ import (
 	"cmd/chompapi/globalsessionkeeper"
 	"cmd/chompapi/me"
 	"cmd/chompapi/auth"
+	"cmd/chompapi/messenger"
 )
 
 func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *http.Request) error {
@@ -93,11 +94,11 @@ func DoRegister(a *globalsessionkeeper.AppContext, w http.ResponseWriter, r *htt
 		}
 		fmt.Println("Sending Email...")
 		// body := fmt.Sprintf("Your password was recently changed.\n\nRegards,\n\nThe Chomp Team")
-		// context := new(messenger.SmtpTemplateData)
-	 //    context.From = "The Chomp Team"
-	 //    context.To = input.Email
-	 //    context.Subject = "Verify Email"
-	 //    context.Body = body
+		context := new(messenger.SmtpTemplateData)
+	    context.From = "The Chomp Team"
+	    context.To = input.Email
+	    context.Subject = "Verify Email"
+	    context.Body = body
 
 	    err := context.SendGmail()
 	    if err != nil {
